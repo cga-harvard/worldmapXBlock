@@ -1,0 +1,500 @@
+{% extends "fullscreen.html" %}
+{% load i18n %}
+{% block title %} {% trans "Map Viewer" %} - {{ block.super }} {% endblock %}
+
+{% block head %}
+{% include "geonode/ext_header.html" %}
+{% include "geonode/app_header.html" %}
+{% include "geonode/geo_header.html" %}
+{% include "geonode/xblock_header.html" %}
+{{ block.super }}
+{% if "gme-" in GOOGLE_API_KEY %}
+<script src="https://www.google.com/jsapi?client={{GOOGLE_API_KEY}}"></script>
+{% else %}
+<script src="https://www.google.com/jsapi?key={{GOOGLE_API_KEY}}"></script>
+{% endif %}
+<script type="text/javascript">
+    google.load("earth", "1");
+</script>
+
+<script type="text/javascript">
+
+var app;
+
+
+//************************************** XBLOCK RELATED FUNCTIONS & GLOBALS *****************************************
+var markerLayer, polygonLayer;
+var markers = new Array();
+var polygons= new Array();
+var polylines=new Array();
+
+var currentAnswer = null;  //what we're currently searching for with the currently selected tool
+
+var CLICK_CONTROL = OpenLayers.Class(OpenLayers.Control, {
+    defaultHandlerOptions: {
+        'single': true,
+        'double': false,
+        'pixelTolerance': 0,
+        'stopSingle': false,
+        'stopDouble': false
+    },
+
+    initialize: function(options) {
+        this.handlerOptions = OpenLayers.Util.extend(
+            {}, this.defaultHandlerOptions
+        );
+        OpenLayers.Control.prototype.initialize.apply(
+            this, arguments
+        );
+        this.handler = new OpenLayers.Handler.Click(
+            this, {
+                'click': this.trigger
+            }, this.handlerOptions
+        );
+    },
+
+    trigger: function(e) {
+        var map = e.object;
+        var lonlat = map.getLonLatFromPixel(e.xy);
+        var point = transformToLonLat(lonlat);
+
+        var size = new OpenLayers.Size(21,25);
+        var offset = new OpenLayers.Pixel(-size.w/2, -size.h);
+        var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png',size,offset);
+        icon.imageDiv.firstChild.setAttribute("style","background-color:"+currentAnswer.color);
+
+        if( markers[currentAnswer.id] ) {
+            markerLayer.removeMarker(markers[currentAnswer.id]);
+        }
+        markers[currentAnswer.id] = new OpenLayers.Marker(lonlat,icon);
+        markerLayer.addMarker(markers[currentAnswer.id]);
+
+        MESSAGING.getInstance().send(
+            new Message("point_response",
+                {
+                    point: {lon:point.x, lat:point.y},
+                    answer: currentAnswer
+                }
+            )
+        );
+    }
+});
+
+function getLayerLegendInfo( layers, layer ) {
+   for( var i=0; i<layers.length; i++ ) {
+      if( layers[i].styles ) {
+         if( layers[i].title == layer.name ) {
+             return {
+                        styles: layers[i].styles,
+                        name:   layers[i].name,
+                        url:    layers[i].url
+                    }
+         }
+      }
+   }
+   return null;
+}
+
+function transformToXY( lonlat ) {
+    var Geographic  = new OpenLayers.Projection("EPSG:4326");
+    var Mercator = new OpenLayers.Projection("EPSG:900913");
+    return new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat).transform(Geographic,Mercator);
+}
+
+function transformToLonLat( lonlat ) {
+    var Geographic  = new OpenLayers.Projection("EPSG:4326");
+    var Mercator = new OpenLayers.Projection("EPSG:900913");
+    return new OpenLayers.Geometry.Point(lonlat.lon, lonlat.lat).transform(Mercator, Geographic);
+}
+//************************************ END - XBLOCK RELATED FUNCTIONS ***********************************************
+
+
+
+Ext.onReady(function() {
+{% autoescape off %}
+    var config = {
+        useCapabilities: false,
+        tools: [{
+            ptype: "gxp_wmsgetfeatureinfo",
+            // uncomment the line below if you want feature info in a grid
+            format: "grid",
+            actionTarget: "main.tbar",
+            outputConfig: {width: 400, height: 200, panIn: false}
+        },
+            {
+                ptype: "gxp_coordinatetool",
+                title: "<span class='x-btn-text'>{% trans 'Map Coordinates - longitude, latitude' %}</span>",
+                actionTarget:  {target: "main.tbar"}
+            },
+            {
+                ptype: "gxp_annotation",
+                user: "{{ user.id }}",
+                toggleGroup: 'featureGroup',
+                actionTarget:  {target: "main.tbar", index: 6}
+            }],
+        createTools: function() {
+            return [new Ext.Button({
+                tooltip: GeoExplorer.prototype.backgroundContainerText,
+                iconCls: 'icon-layer-switcher',
+                menu: new gxp.menu.LayerMenu({
+                    layers: this.mapPanel.layers
+                })
+            })]
+        },
+        proxy: "/proxy/?url=",
+        siteUrl: "{{ SITE_URL }}",
+
+        /* The URL to a REST map configuration service.  This service
+         * provides listing and, with an authenticated user, saving of
+         * maps on the server for sharing and editing.
+         */
+        rest: "/maps/"
+    };
+
+    Ext.apply(config, {{ config }});
+    
+    app = new GeoExplorer.Viewer(config);
+
+
+
+
+
+    //********************************************* XBLOCK RELATED CODE ********************************************
+    //useful for debugging...
+    MESSAGING.getInstance().registerHandler("info", function(m) { alert("INFO: the slave code received this 'info' message: "+m.getMessage()); });
+
+    app.on("ready", function() {
+
+        markerLayer = new OpenLayers.Layer.Markers("worldmap-markers");
+        polygonLayer = new OpenLayers.Layer.Vector("worldmap-polygons", {
+            styleMap: new OpenLayers.StyleMap({
+                fillColor: "#ff0000",
+                fillOpacity: 0.3
+            })
+        });
+        var polylineLayer = new OpenLayers.Layer.Vector("worldmap-polyline", {
+            styleMap: new OpenLayers.StyleMap({
+                strokeColor: "#000000",
+                strokeOpacity: 1.0,
+                strokeWidth: 3
+            })
+        });
+
+        var polygonControl =
+            new OpenLayers.Control.DrawFeature(polygonLayer, OpenLayers.Handler.Polygon, {
+                callbacks: {
+                    done: function(geo) {
+                       var polygon = [];
+                       for( var i=0;i<geo.components[0].components.length; i++) {
+                           var point = transformToLonLat({lon: geo.components[0].components[i].x, lat:geo.components[0].components[i].y});
+                           polygon.push({lon: point.x, lat: point.y});
+                       }
+
+                       MESSAGING.getInstance().send(
+                           new Message("polygon_response",
+                               {
+                                   polygon: polygon,
+                                   answer: currentAnswer
+                               }
+                           )
+                       );
+
+                       var feature = new OpenLayers.Feature.Vector(geo,{},{
+                           fillColor: '#'+currentAnswer.color,
+                           fillOpacity: 0.4
+                       });
+                       var proceed = this.events.triggerEvent( "sketchcomplete", {feature:feature});
+                       if( proceed !== false ) {
+                          feature.state = OpenLayers.State.INSERT;
+                          if( polygons[currentAnswer.id] ) {
+                             polygonLayer.removeFeatures([polygons[currentAnswer.id]]);
+                          }
+                          polygons[currentAnswer.id] = feature;
+                          polygonLayer.addFeatures([feature]);
+                          this.featureAdded(feature);
+                          this.events.triggerEvent("featureadded",{feature:feature});
+                       }
+
+                    }
+                }
+            });
+
+        var polylineControl =
+            new OpenLayers.Control.DrawFeature(polylineLayer, OpenLayers.Handler.Path, {
+                doubleTouchTolerance: 50,
+                callbacks: {
+                    done: function(geo) {
+                       var polyline = [];
+                       for( var i=0;i<geo.components.length; i++) {
+                           var point = transformToLonLat({lon: geo.components[i].x, lat:geo.components[i].y});
+                           polyline.push({lon: point.x, lat: point.y});
+                       }
+
+                       MESSAGING.getInstance().send(
+                           new Message("polyline_response",
+                               {
+                                   polyline: polyline,
+                                   answer: currentAnswer
+                               }
+                           )
+                       );
+
+                       var feature = new OpenLayers.Feature.Vector(geo,{},{
+                           strokeColor: '#'+currentAnswer.color,
+                           strokeOpacity: 1,
+                           strokeWidth: 3
+                       });
+                       var proceed = this.events.triggerEvent( "sketchcomplete", {feature:feature});
+                       if( proceed !== false ) {
+                          feature.state = OpenLayers.State.INSERT;
+                          if( polylines[currentAnswer.id] ) {
+                             polylineLayer.removeFeatures([polylines[currentAnswer.id]]);
+                          }
+                          polylines[currentAnswer.id] = feature;
+                          polylineLayer.addFeatures([feature]);
+                          this.featureAdded(feature);
+                          this.events.triggerEvent("featureadded",{feature:feature});
+                       }
+                    }
+                }
+            });
+
+        app.mapPanel.map.addLayers([markerLayer,polygonLayer,polylineLayer]);
+
+        app.mapPanel.map.events.register("moveend", app.mapPanel, function(){
+            // calculate lat/lon
+            MESSAGING.getInstance().send(new Message("moveend",{center: transformToLonLat(app.mapPanel.map.getCenter()),zoomLevel:app.mapPanel.map.getZoom()}));
+        });
+
+        app.mapPanel.map.events.register("zoomend", app.mapPanel.map, function(){
+            MESSAGING.getInstance().send(new Message("zoomend", app.mapPanel.map.getZoom()));
+        });
+
+        app.mapPanel.map.events.register("changelayer", app.mapPanel.map, function(e) {
+            MESSAGING.getInstance().send(new Message("changelayer", {name: e.layer.name, id:e.layer.id, visibility:e.layer.visibility,opacity:e.layer.opacity, legendData: getLayerLegendInfo(app.config.map.layers, e.layer)}));
+        });
+
+        MESSAGING.getInstance().registerHandler("setZoomLevel", function(m) { app.mapPanel.map.zoomTo(m.getMessage()); });
+        MESSAGING.getInstance().registerHandler("setCenter",function(m) {
+            var data = m.getMessage();
+            //Ext.example.msg("Info","setCenter: "+data.centerLat+","+data.centerLon+"   zoom="+data.zoomLevel);
+            var pt = transformToXY({lon:data.centerLon,lat:data.centerLat});
+            app.mapPanel.map.setCenter([pt.x, pt.y],data.zoomLevel,false,false);
+        });
+        MESSAGING.getInstance().registerHandler("setLayers",function(m) {
+            var data = JSON.parse(m.getMessage());
+            for(var id in data){
+               var layer = app.mapPanel.map.getLayer(id);
+               if( layer != null ) {
+                 //  layer.setVisibility(data[id]['visibility']);
+                   var ctrl = Ext.getCmp("layer_menu_" + layer.id);
+                   layer.setOpacity(data[id]['opacity']);
+                   if( (ctrl.checked && !data[id]['visibility']) || (!ctrl.checked && data[id]['visibility']) ) {
+                       ctrl.setChecked( data[id]['visibility']);
+                   }
+               } else {
+                   console.log("ERROR: could not find layer for id: "+id);
+               }
+            }
+        });
+
+        var markerControl = new CLICK_CONTROL();
+        app.mapPanel.map.addControl(markerControl);
+        app.mapPanel.map.addControl(polygonControl);
+        app.mapPanel.map.addControl(polylineControl);
+
+        MESSAGING.getInstance().registerHandler("reset-answer-tool", function(m) {
+           var id = app.mapPanel.map.id+"_OpenLayers_ViewPort";
+           console.log("reset-answer-tool for: "+id);
+           document.getElementById(id).style.cursor = "default";
+           markerControl.deactivate();
+           polygonControl.deactivate();
+           polylineControl.deactivate();
+           currentAnswer = null;
+        });
+
+        MESSAGING.getInstance().registerHandler("set-answer-tool", function(e) {
+
+            var message = JSON.parse(e.message);
+            currentAnswer = message;
+
+            //TODO: fix url - make relative
+            document.getElementById(app.mapPanel.map.id+"_OpenLayers_ViewPort").style.cursor = "url(http://robertlight.com/tmp/"+currentAnswer.type+"Cursor.png) 16 16, auto";
+            if( currentAnswer.type == 'point' ) {
+               Ext.example.msg("Info",{% trans 'Click the map at the location requested' %} );
+               markerControl.activate();
+            } else if( currentAnswer.type == 'polygon' ) {
+               // window.alert("color="+currentAnswer.color);
+                polygonLayer.styleMap = new OpenLayers.StyleMap({
+                        fillColor: '#'+currentAnswer.color,
+                        fillOpacity: 0.3
+                    });
+                Ext.example.msg("Info",{%  trans "Please click on the boundaries of a polygon.<br/>Double-click to end drawing." %});
+                polygonControl.activate();
+            } else if( currentAnswer.type == 'polyline' ) {
+                Ext.example.msg("Info",{%  trans "Please click on the verticies of a polyline.<br/>Double-click to end drawing." %});
+                polylineControl.activate();
+            }
+
+        });
+
+        MESSAGING.getInstance().registerHandler("flash-polygon", function(e) {
+            var data = JSON.parse(e.message);
+            var features = [];
+            var bounds = null;
+            for( var i=0; i<data.length; i++ ) {
+                var points = [];
+                for( var j=0; j<data[i].length; j++ ) {
+                    points.push(transformToXY(data[i][j]));
+                }
+                var ring = new OpenLayers.Geometry.LinearRing(points);
+                var center = ring.getCentroid();
+                var feature =
+                    new OpenLayers.Feature.Vector(
+                       new OpenLayers.Geometry.Polygon(ring),
+                       {},
+                       {
+                           fillColor: '#FF0000',
+                           fillOpacity: 0.05,
+                           strokeColor: '#FF0000',
+                           strokeOpacity: 0.05
+                       }
+                    );
+                feature.state = OpenLayers.State.INSERT;
+                var b = ring.getBounds();
+                if( bounds != null ) {
+                    bounds.extend(b);
+                } else {
+                    bounds = b;
+                }
+                features.push(feature);
+            }
+
+            app.mapPanel.map.setCenter(
+                    [center.x, center.y],
+                    Math.min(15,app.mapPanel.map.getZoomForExtent( bounds, false))
+            );
+            polygonLayer.addFeatures(features);
+            polygonLayer.redraw();
+            setTimeout( function() {
+                polygonLayer.removeFeatures(features);
+                polygonLayer.redraw();
+            },3000);
+
+        });
+
+        MESSAGING.getInstance().registerHandler("highlight-layer",function(m) {
+            var data = JSON.parse(m.getMessage());
+           var layer = app.mapPanel.map.getLayer(data['layer']);
+           var duration = data['duration'];
+           if( layer != null ) {
+               var ctrl = Ext.getCmp("layer_menu_" + data['layer']);
+               if( !ctrl.checked ) {
+                   ctrl.setChecked( true );
+               }
+               var zoom = app.mapPanel.map.getZoomForExtent(layer.maxExtent, true) + data['relativeZoom'];
+               app.mapPanel.map.setCenter(layer.maxExtent.getCenterLonLat(), zoom);
+               if( duration != undefined && duration > 0 ) {
+                   setTimeout( function() {
+                       ctrl.setChecked( false );
+                   },duration);
+               }
+           } else {
+               console.log("ERROR: could not find layer for id: "+id);
+           }
+        });
+
+        MESSAGING.getInstance().registerHandler("highlight-geometry", function(e) {
+            var data = JSON.parse(e.message);
+            var type = data['type'];
+            var duration = data['duration']
+            var features = [];
+            var relativeZoom = data['relativeZoom'] == undefined ? 0 : data['relativeZoom'];
+            var bounds = null;
+            if( type == 'polygon' ) {
+                var points = [];
+                for( var i=0; i<data['points'].length; i++ ) {
+                    points.push(transformToXY(data['points'][i]))
+                }
+                var ring = new OpenLayers.Geometry.LinearRing(points);
+                var center = ring.getCentroid();
+                var feature =
+                    new OpenLayers.Feature.Vector(
+                       new OpenLayers.Geometry.Polygon(ring),
+                       {},
+                       {
+                           fillColor: '#FF0000',
+                           fillOpacity: 0.5,
+                           strokeColor: '#FF0000',
+                           strokeOpacity: 0.5
+                       }
+                    );
+                feature.state = OpenLayers.State.INSERT;
+                bounds = ring.getBounds();
+                features.push(feature);
+                app.mapPanel.map.setCenter(
+                        [center.x, center.y],
+                        Math.min(15, relativeZoom + app.mapPanel.map.getZoomForExtent( bounds, false))
+                );
+                polygonLayer.addFeatures(features);
+                polygonLayer.redraw();
+                if( duration != undefined && duration > 0 ) {
+                    setTimeout( function() {
+                        polygonLayer.removeFeatures(features);
+                        polygonLayer.redraw();
+                    },duration);
+                }
+            } else if( type == 'point') {
+               // app.mapPanel.map
+                var size = new OpenLayers.Size(21,25);
+                var offset = new OpenLayers.Pixel(-size.w/2, -size.h);
+                var xy = transformToXY(data);
+                var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png',size,offset);
+                app.mapPanel.map.setCenter( [xy.x, xy.y], 11+relativeZoom);
+                marker = new OpenLayers.Marker({lon:xy.x,lat:xy.y},icon);
+                markerLayer.addMarker(marker);
+                if( duration != undefined && duration > 0 ) {
+                    setTimeout( function() {
+                        markerLayer.removeMarker(marker);
+                    },duration);
+                }
+            } else if( type == 'polyline') {
+                var points = [];
+                for( var i=0; i<data['points'].length; i++) {
+                    points.push(transformToXY(data['points'][i]));
+                }
+
+                var line = new OpenLayers.Geometry.LineString(points);
+                var center = line.getCentroid();
+                var bounds = line.getBounds();
+                var feature = new OpenLayers.Feature.Vector( line, {}, { strokeColor: '#FF0000', strokeWidth: 4, strokeOpacity: 1.0});
+                feature.state = OpenLayers.State.INSERT;
+                features.push(feature);
+                app.mapPanel.map.setCenter(
+                        [center.x, center.y],
+                        Math.min(15, relativeZoom + app.mapPanel.map.getZoomForExtent( bounds, false))
+                );
+                polygonLayer.addFeatures(features);
+                polygonLayer.redraw();
+                if( duration != undefined && duration > 0 ) {
+                    setTimeout( function() {
+                        polygonLayer.removeFeatures(features);
+                        polygonLayer.redraw();
+                    },duration);
+                }
+            }
+
+        });
+
+        MESSAGING.getInstance().send(new Message("portalReady", {}));
+
+        //**************************************** END - XBLOCK RELATED CODE ****************************************
+    });
+
+
+{% endautoescape %}
+});
+</script>
+{% endblock %}
+{% block body %}
+{% endblock %}

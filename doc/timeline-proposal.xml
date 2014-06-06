@@ -1,0 +1,48 @@
+
+<worldmap href="blah" >
+    <layers>
+        <layer id="..." >  <!-- zero or more layer tags -->
+            <param name="..." value="...."  |  min="..." max="..." />   <!-- value or min & max but not both -->
+            <param name="..." value="...."/>
+        </layer>
+        ....
+    </layers>
+
+    <!-- NOTE: this will allow a single layer to appear in more than one place in the group hierarchy -->
+    <!--
+            If the group/layer is controlVisible="false" then it will not be visible in the group but it will
+            abide by the visibility value of it's parent.  Default value for controlVisible is 'true'
+    -->
+    <group name="Layers" controlVisible="true">
+        <layer id="..." name="..."  controlVisible="true"/>
+        <layer id="..." controlVisible="false"/> <!-- no need to give it a name, it's never shown -->
+        <group name="...">
+            <group name="....">
+                ...more layers | groups
+            </group>
+            <group name="....">
+
+            </group>
+        </group>
+    </group>
+
+    <sliders> <!-- zero or more slider controls -->
+        <slider id="..." position="left|right|top|bottom" param="...paramNameHere..." min="..." max="..."  step="...">
+            <help>
+                <!-- html help text displayed in mouseover tooltip -->
+            </help>....
+        </slider>
+        .....
+    </sliders>
+</worldmap>
+
+
+<!--
+    Layer control:
+    The above will generate two kinds of controls a grouped-hierarchy control of checkbox-selectable groups of layers.
+    If the user checks a "group", all members of that group are selected.  The checkboxes of the group names will be
+    tri-state controls (checked,unchecked & mixed).
+
+    If sliders are defined, then only those layers whose values match the slider param value will be shown in
+    the layer hierarchy controls.
+-->

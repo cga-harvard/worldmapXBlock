@@ -1,0 +1,2 @@
+recursive-include worldmap/static *
+recursive-include worldmap/public *

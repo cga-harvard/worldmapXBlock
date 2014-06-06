@@ -1,0 +1,117 @@
+<!--
+
+   The following is a way of defining what type of answer the map should require the student to give during an assessment.
+   It defines not only what type of input is being elicited (a point-click, a polygon, a polyline) but how to evaluate
+   whether or not that input is correct or not.
+-->
+
+<worldmap-quiz padding="10">
+    <worldmap .... />
+    <explanation>
+        <!-- overall explanation of what the constitutes a proper answer - optional -->
+    </explanation>
+    <answer id="uniqId1" color="#FF0000" type="point|polygon|polyline|directed-polyline" >
+        <explanation>
+            <!-- html to display to explain this part of the proper answer -->
+        </explanation>
+        <constraints>
+            <matches percentOfGrade="25" percentMatch="100">
+                <geometry>
+                </geometry>
+                <explanation>
+                    <!-- html to explain that this answer match the particular geometry within allowed tolerance -->
+                </explanation>
+            </matches>
+            <excludes percentOfGrade="25" >
+                <geometry>
+
+                </geometry>
+                .... <!-- specify one-or-more geometry tags that it must exclude -->
+                <explanation>
+                    <!-- html to explain why answer must exclude this area -->
+                </explanation>
+            </excludes>
+            <includes percentOfGrade="25" >
+                <geometry>
+
+                </geometry>
+                .... <!-- specify one-or-more geometry tags that it must include -->
+                <explanation>
+                    <!-- html to explain wy answer must include this area -->
+                </explanation>
+            </includes>
+
+
+            <!-- FUTURE ENHANCEMENT  - compare multiple answer 'parts' -->
+            <overlap id="otherUniqId" percentOfGrade="25" minPercentOverlap="20" maxPercentOverlap="50">  <!-- use maxPercentOverlap="0" to define NO-overlap -->
+               <explanation>
+                   <!-- html to explain that this answer must overlap by a certain amount the area sketched as 'otherUniqId' -->
+               </explanation>
+            </overlap>
+            .... <!-- zero-or-more overlap constraints  -->
+            <heading id="otherUniqId" degrees="90" percentOfGrade="25" >  <!-- center of area relative to otherUniqId's center of area in degrees CW from NORTH -->
+               <explanation>
+                   <!-- html to explain that this answer must be a particular heading away from the user's 'otherUniqId' sketch -->
+               </explanation>
+            </heading>
+            .... <!-- zero-or-more heading constraints -->
+            <relative-size id="otherUniqId" percentOfGrade="25" minPercentArea="20" maxPercentArea="50"/> <!-- ie: must be 20-50% of otherUniqId's area -->
+            <!-- ========================================================= -->
+
+        </constraints>
+    </answer>
+
+    <!-- FUTURE ENHANCEMENT - allow multiple parts of an answer -->
+    <answer id="uniqId2" color="#00FF00" type="point|polygon|polyline|directed-polyline" percentAnswerInsidePaddedGeometry="100" percentGeometryInsidePaddedAnswer="100">
+        <constraints>
+           ....
+        </constraints>
+    </answer>
+    <!-- ======================================================= -->
+
+
+    <explanation>
+        <!-- html to display to explain the proper answer -->
+    </explanation>
+</worldmap-quiz>
+
+<!--
+   percentAnswerInsidePaddedGeometry is the amount of the answer geometry which must be inside the padded target geometry
+       - a single "point" (click) should be 100% inside the target geometry since it has no area.
+   percentGeometryInsidePaddedAnswer is the amount of the target geometry which is inside the padded answer geometry
+       - again, a single "point" (click) should be 100% inside the target geometry since it has no area.
+-->
+
+<!-- other types of geometry -->
+        <polygon>
+           <point lat=" " lon=" "/>
+           <point lat=" " lon=" "/>
+           <point lat=" " lon=" "/>
+           <point lat=" " lon=" "/>
+           <point lat=" " lon=" "/>
+           <point lat=" " lon=" "/>
+            ...
+        </polygon>
+
+        <polyline>
+           <point lat=" " lon=" "/>
+           <point lat=" " lon=" "/>
+           <point lat=" " lon=" "/>
+           ....
+        </polyline>
+
+        <directed-polyline ordered="true|false">  <!-- default:   ordered="false" -->
+           <vector>
+             <point lat=" " lon=" "/>  <!-- root of vector -->
+             <point lat=" " lon=" "/>  <!-- tip of vector -->
+           </vector>
+           <vector>
+             <point lat=" " lon=" "/>  <!-- root of vector -->
+             <point lat=" " lon=" "/>  <!-- tip of vector -->
+           </vector>
+           ....
+        </directed-polyline>
+
+        <point lat="" lon=""/>
+
+

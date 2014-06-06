@@ -1,0 +1,133 @@
+/* CSS for WorldMapXBlock */
+
+.worldmap_block .count {
+    font-weight: bold;
+}
+
+.worldmap_block p {
+    cursor: pointer;
+}
+
+.hidden {
+    visibility: hidden;
+    display: none;
+}
+
+.vertical-label {
+    -webkit-transform: rotate(-90deg);
+    -moz-transform:    rotate(-90deg);
+    -ms-transform:     rotate(-90deg);
+    -o-transform:      rotate(-90deg);
+    transform:         rotate(-90deg);
+    filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3); //for IE
+    float: left;
+    position:relative;
+    top:-15;
+    left:-7px;
+    white-space:nowrap;
+    font-size: 9pt;
+}
+
+.vertical-label-title {
+    -webkit-transform: rotate(-90deg);
+    -moz-transform:    rotate(-90deg);
+    -ms-transform:     rotate(-90deg);
+    -o-transform:      rotate(-90deg);
+    transform:         rotate(-90deg);
+    position: relative;
+    top:-100px;
+    left: -7px;
+    z-index:1;
+    font-size: 9pt;
+    color:grey;
+    white-space:nowrap;
+}
+.vertical-label-bottom {
+    clear:left;
+    top:20px;
+    left:-7px;
+}
+
+.slider-thumb-value {
+    position: absolute;
+    z-index: 3;
+    border:0;
+}
+.slider-help {
+    position: relative;
+    z-index: 3;
+    border:0;
+}
+
+.vertical-slider-container {
+    float:right;
+    width:40px;
+}
+
+.sliders-right {
+    white-space:nowrap;
+}
+.sliders-left {
+    white-space:nowrap;
+}
+.vertical-slider {
+    float: left;
+    clear:left;
+    font-size: 9pt;
+    width:22px;
+    margin-left:5px;
+    margin-right:5px;
+}
+.horizontal-slider {
+    width:100%;
+    margin-top:5px;
+    margin-bottom:5px;
+    margin-left:auto;
+    margin-right:auto;
+    font-size:9pt;
+    white-space:nowrap;
+}
+.horizontal-label-left {
+    width:60px;
+}
+.horizontal-label-title {
+    position: relative;
+    left: -220px;
+    color: grey;
+}
+.horizontal-label {
+    float:left;
+}
+
+.point-tool {
+    display:inline-block;
+    background: no-repeat scroll 0 0 transparent;
+    height:48px;
+    width:48px;
+    background-image: url('$imagesRoot/markerIcon.png');
+}
+.polygon-tool {
+    display:inline-block;
+    background: no-repeat scroll 0 0 transparent;
+    height:48px;
+    width:48px;
+    background-image: url('$imagesRoot/polygonIcon.png');
+}
+.polyline-tool {
+    display:inline-block;
+    background: no-repeat scroll 0 0 transparent;
+    height:48px;
+    width:48px;
+    background-image: url('$imagesRoot/polylineIcon.png');
+}
+.no-close .ui-dialog-titlebar-close {
+  display: none;
+}
+ul.dynatree-container {
+    border: none
+}
+
+.debugInfo {
+   width:600px;
+   height: 54px;
+}
