@@ -52,6 +52,14 @@ tag itself::
         <worldmap href='...' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'/>
     </worldmap-expository>
 
+Javascript highlight() function:
+
+    highlight( id,  delay,  relativeZoom)
+    id - a unique string to identify the piece of geometry
+    delay - milliseconds before highlighted geometry disappears (0=do not erase)
+    relativeZoom - relative zoom level to "natural" zoom level required to view entire geometry
+
+
 <worldmap-quiz> tag
 -------------------
 For assessments, we wanted to give the ability to ask questions that require the student to go to the map and point at

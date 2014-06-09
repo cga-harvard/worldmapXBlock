@@ -186,13 +186,9 @@ class WorldMapXBlock(XBlock):
         result = []
         if( self.layers != None ):
             for layer in self.layers:
-                params = []
-                for param in layer.params:
-                    params.append({ 'name':param.name, 'value':param.value, 'min':param.min, 'max':param.max})
-
                 result.append({
                    'id':   layer.id,
-                   'params':  params
+                   'params':  layer.params
                 })
         return result
 
@@ -576,21 +572,11 @@ class WorldMapXBlock(XBlock):
              <vertical_demo>
                 <worldmap-expository>
                     <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
-                      <layer id="geonode:qing_charity_v1_mzg"/>
-                      <layer id="OpenLayers_Layer_WMS_122">
-                      </layer>
-                      <layer id="OpenLayers_Layer_WMS_124">
-                      </layer>
-                      <layer id="OpenLayers_Layer_WMS_120">
-                      </layer>
-                      <layer id="OpenLayers_Layer_WMS_118">
-                      </layer>
-                      <layer id="OpenLayers_Layer_Vector_132">
-                      </layer>
+
                     </worldmap>
                     <explanation>
                           testing Chinese: 基區提供本站原典資料庫收藏之外的許多經典文獻的全文閱讀和檢索功<br/>
-                          Lorem ipsum dolor sit amet, <a href='#' onclick='return highlight(\"backbay\", 0, -2)'>Back Bay</a> adipiscing elit. Aliquam a neque diam . Cras ac erat nisi. Etiam aliquet ultricies lobortis <a href='#' onclick='return highlight(\"esplanade\")'>Esplanade</a>. Etiam lacinia malesuada leo, pretium egestas mauris suscipit at. Fusce ante mi, faucibus a purus quis, commodo accumsan ipsum. Morbi vitae ultrices nibh. Quisque quis dolor elementum sem mollis pharetra vitae quis magna. Duis auctor pretium ligula a eleifend.
+                          Lorem ipsum dolor sit amet, <a href='#' onclick='return highlight(\"backbay\", 2000, -2)'>Back Bay</a> adipiscing elit. Aliquam a neque diam . Cras ac erat nisi. Etiam aliquet ultricies lobortis <a href='#' onclick='return highlight(\"esplanade\")'>Esplanade</a>. Etiam lacinia malesuada leo, pretium egestas mauris suscipit at. Fusce ante mi, faucibus a purus quis, commodo accumsan ipsum. Morbi vitae ultrices nibh. Quisque quis dolor elementum sem mollis pharetra vitae quis magna. Duis auctor pretium ligula a eleifend.
                           <p/>Curabitur sem <a href='#' onclick='return highlightLayer(\"OpenLayers_Layer_WMS_124\",5000, -2)'>layer diam</a>, congue sed vehicula vitae  <a href='#' onclick='return highlight(\"bay-village\", 10000, -5)'>Bay Village</a>, lobortis pulvinar odio. Phasellus ac lacus sapien. Nam nec tempus metus, sit amet ullamcorper tellus. Nullam ac nibh semper felis vulputate elementum eget in ligula. Integer semper pharetra orci, et tempor orci commodo a. Duis id faucibus felis. Maecenas bibendum accumsan nisi, ut semper quam elementum quis. Donec erat libero, pretium sollicitudin augue a, suscipit mollis libero. Mauris aliquet sem eu ligula rutrum imperdiet. Proin quis velit congue, fermentum ligula vitae, eleifend nisi. Sed justo est, egestas id nisl non, fringilla vulputate orci. Ut non nisl vitae lectus tincidunt sollicitudin. Donec ornare purus eu dictum sollicitudin. Aliquam erat volutpat.
                           <p/>Vestibulum ante ipsum primis <a href='#' onclick='return highlight(\"beltway\",4000, -1)'>beltway around boston</a> faucibus orci luctus et <a href='#' onclick='return highlight(\"big-island\", 2000)'>Big Island</a>ultrices posuere cubilia Curae; Quisque purus dolor, fermentum eu vestibulum nec, ultricies semper tellus. Vivamus nunc mi, fermentum a commodo vel, iaculis in odio. Vivamus commodo mi convallis, congue magna eget, sodales sem. Morbi facilisis nunc vitae porta elementum. Praesent auctor vitae nisi a pharetra. Mauris non urna auctor nunc dignissim mollis. In sem ipsum, porta sit amet dignissim ut, adipiscing eu dui. Nam sodales nisi quis urna malesuada, quis aliquet ipsum placerat.
 
@@ -666,7 +652,7 @@ class WorldMapXBlock(XBlock):
                     </polyline>
                     <point id="big-island" lon="-70.9657058456866" lat="42.32011232390349"/>
                 </worldmap-expository>
-                <worldmap-quiz>
+             <worldmap-quiz>
                     <explanation>
                          A quiz about the Boston area... particularly <B><a href='#' onclick='return highlight(\"backbay\", 5000, -2)'>Back Bay</a></B>
                     </explanation>
@@ -1210,34 +1196,24 @@ class PointBlock(GeometryBlock):
             'lon':self.lon
         }
 
-class PolygonBlock(GeometryBlock):
+class PolyBlock(GeometryBlock):
 
     has_children = True
+    points = List(help="list of points", default=None, scope=Scope.content)
+    type   = String(help="polygon|polyline", default=None, scope=Scope.content)
 
+    @classmethod
+    def parse_xml(cls, node, runtime, keys, id_generator):
 
-    def student_view(self, context=None):
-        return Fragment()
+        block = runtime.construct_xblock_from_class(cls, keys)
+        block.points = []
 
-    @property
-    def points(self):
-        points = []
-        for child_id in self.children: #pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child,PointBlock):
-                points.append(child)
-        return points
+        # The base implementation: child nodes become child blocks.
+        for child in node:
+           block.points.append( {'type':'point', 'lat':float(child.attrib['lat']), 'lon':float(child.attrib['lon'])})
 
-    @property
-    def data(self):
-        pts = []
-        for pt in self.points:
-            pts.append(pt.data)
-        return {
-            'type': 'polygon',
-            'points':pts
-        }
-
-class PolylineBlock(PolygonBlock):
+        block.type = block.plugin_name
+        return block
 
 
     def student_view(self, context=None):
@@ -1245,13 +1221,19 @@ class PolylineBlock(PolygonBlock):
 
     @property
     def data(self):
-        pts = []
-        for pt in self.points:
-            pts.append(pt.data)
         return {
-            'type': 'polyline',
-            'points':pts
+            'type': self.type,
+            'points':self.points
         }
+
+# class PolylineBlock(PolygonBlock):
+#     pass
+    # @property
+    # def data(self):
+    #     return {
+    #         'type': self.plugin_name,
+    #         'points':self.points
+    #     }
 
 class AnswerBlock(XBlock):
 
@@ -1375,14 +1357,14 @@ class SliderBlock(XBlock):
     position=String(help="position of slider.  Values: top,bottom,left,right", default="bottom", scope=Scope.content)
     title=String(help="title/label for slider",default=None, scope=Scope.content)
 
-    @property
-    def params(self):
-        params = []
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, ParamBlock):
-                params.append(child)
-        return params
+    # @property
+    # def params(self):
+    #     params = []
+    #     for child_id in self.children:  # pylint: disable=E1101
+    #         child = self.runtime.get_block(child_id)
+    #         if isinstance(child, ParamBlock):
+    #             params.append(child)
+    #     return params
 
     @property
     def help(self):
@@ -1485,34 +1467,65 @@ class LayerBlock(XBlock):
     has_children = True
 
     id = String(help="worldmap layer id", default=None, scope=Scope.content)
+    params = List(help="list of parameters", default=None, scope=Scope.content)
 
-    @property
-    def params(self):
-        params = []
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, ParamBlock):
-                params.append(child)
-        return params
-
-
-    def student_view(self, context=None):
-        return Fragment()
-
-
-class ParamBlock(XBlock):
-    """An XBlock that records the layer parameter info."""
-
-    has_children = False
-
-    name  = String(help="worldmap layer parameter name",  default=None, scope=Scope.content)
-    value = String(help="worldmap layer parameter value", default=None, scope=Scope.content)
-    min   = Float(help="worldmap layer parameter range minimum", default=None, scope=Scope.content)
-    max   = Float(help="worldmap layer parameter range maximum", default=None, scope=Scope.content)
+    # @property
+    # def params(self):
+    #     params = []
+    #     for child_id in self.children:  # pylint: disable=E1101
+    #         child = self.runtime.get_block(child_id)
+    #         if isinstance(child, ParamBlock):
+    #             params.append(child)
+    #     return params
 
 
     def student_view(self, context=None):
         return Fragment()
+
+    @classmethod
+    def parse_xml(cls, node, runtime, keys, id_generator):
+
+        block = runtime.construct_xblock_from_class(cls, keys)
+
+        block.params = []
+
+        # The base implementation: child nodes become child blocks.
+        for child in node:
+            if( child.tag == "param"):
+                p = {
+                    'name': child.attrib['name']
+                }
+                try:
+                    p['value'] = child.attrib['value']
+                except: pass
+
+                try:
+                    p['min'] = float(child.attrib['min'])
+                    p['max'] = float(child.attrib['max'])
+                except: pass
+                block.params.append(p)
+
+        # Attributes become fields.
+        for name, value in node.items():
+            if name in block.fields:
+                setattr(block, name, value)
+
+        return block
+
+
+# class ParamBlock(XBlock):
+#     """An XBlock that records the layer parameter info."""
+#
+#     has_children = False
+#
+#     name  = String(help="worldmap layer parameter name",  default=None, scope=Scope.content)
+#     value = String(help="worldmap layer parameter value", default=None, scope=Scope.content)
+#     min   = Float(help="worldmap layer parameter range minimum", default=None, scope=Scope.content)
+#     max   = Float(help="worldmap layer parameter range maximum", default=None, scope=Scope.content)
+#
+#
+#     def student_view(self, context=None):
+#         return Fragment()
 
 
 class LayerControlBlock(XBlock):

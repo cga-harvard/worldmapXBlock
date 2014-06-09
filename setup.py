@@ -50,8 +50,8 @@ setup(
             'group-control          = worldmap:GroupControlBlock',
             'explanation            = worldmap:HelpBlock',
             'help                   = worldmap:HelpBlock',
-            'polygon                = worldmap:PolygonBlock',
-            'polyline               = worldmap:PolylineBlock',
+            'polygon                = worldmap:PolyBlock',
+            'polyline               = worldmap:PolyBlock',
             'point                  = worldmap:PointBlock',
             'answer                 = worldmap:AnswerBlock',
             'constraints            = worldmap:ConstraintsBlock',
@@ -61,7 +61,6 @@ setup(
             'excludes               = worldmap:ExcludesConstraintBlock',
             'sliders                = worldmap:SlidersBlock',
             'slider                 = worldmap:SliderBlock',
-            'param                  = worldmap:ParamBlock',
         ]
     },
     package_data=package_data,

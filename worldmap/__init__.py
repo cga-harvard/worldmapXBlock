@@ -1,6 +1,5 @@
 from .worldmap import WorldMapXBlock
 from .worldmap import LayerBlock
-from .worldmap import ParamBlock
 from .worldmap import GroupControlBlock
 from .worldmap import LayerControlBlock
 from .worldmap import SlidersBlock
@@ -15,5 +14,4 @@ from .worldmap import InsideOfConstraintBlock
 from .worldmap import IncludesConstraintBlock
 from .worldmap import ExcludesConstraintBlock
 from .worldmap import PointBlock
-from .worldmap import PolygonBlock
-from .worldmap import PolylineBlock
+from .worldmap import PolyBlock
