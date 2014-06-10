@@ -85,11 +85,12 @@ class WorldMapXBlock(XBlock):
 
     @property
     def sliders(self):
+        sliders = []
         for child_id in self.children:  # pylint: disable=E1101
             child = self.runtime.get_block(child_id)
-            if isinstance(child, SlidersBlock):
-                return child.sliders
-        return None
+            if isinstance(child, SliderBlock):
+                sliders.append(child)
+        return sliders
 
     @property
     def layers(self):
@@ -139,17 +140,9 @@ class WorldMapXBlock(XBlock):
         template = Template(self.resource_string("static/css/worldmap.css"))
         frag.add_css(template.substitute(imagesRoot=self.runtime.local_resource_url(self,"public/images")))
 
-#        frag.add_css(self.resource_string("static/css/worldmap.css").Template(imagesRoot=self.runtime.local_resource_url(self,"public/images")))
         frag.add_css_url("http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css")
-#        frag.add_css_url("http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.14/themes/base/jquery-ui.css")
-#        frag.add_javascript_url("http://code.jquery.com/ui/1.10.3/jquery-ui.js")
-#        frag.add_javascript_url("http://code.jquery.com/ui/1.8.18/jquery-ui.min.js")
-#        frag.add_javascript_url("http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.js")
         frag.add_javascript(unicode(pkg_resources.resource_string(__name__, "static/js/src/xBlockCom-master.js")))
         frag.add_javascript(self.resource_string("static/js/src/worldmap.js"))
-        #frag.add_javascript_url("static/js/jquery.cookie.js")
-        #frag.add_javascript_url("static/js/jquery_dynatree.js")
-
         frag.add_javascript_url("http://code.jquery.com/ui/1.10.3/jquery-ui.js")
         frag.add_javascript_url(self.runtime.local_resource_url(self,"public/js/vendor/jquery_ui_touch-punch_min.js"))
         frag.add_javascript_url(self.runtime.local_resource_url(self,"public/js/vendor/jquery_dynatree.js"))
@@ -571,9 +564,7 @@ class WorldMapXBlock(XBlock):
              """
              <vertical_demo>
                 <worldmap-expository>
-                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
-
-                    </worldmap>
+                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'/>
                     <explanation>
                           testing Chinese: 基區提供本站原典資料庫收藏之外的許多經典文獻的全文閱讀和檢索功<br/>
                           Lorem ipsum dolor sit amet, <a href='#' onclick='return highlight(\"backbay\", 2000, -2)'>Back Bay</a> adipiscing elit. Aliquam a neque diam . Cras ac erat nisi. Etiam aliquet ultricies lobortis <a href='#' onclick='return highlight(\"esplanade\")'>Esplanade</a>. Etiam lacinia malesuada leo, pretium egestas mauris suscipit at. Fusce ante mi, faucibus a purus quis, commodo accumsan ipsum. Morbi vitae ultrices nibh. Quisque quis dolor elementum sem mollis pharetra vitae quis magna. Duis auctor pretium ligula a eleifend.
@@ -874,19 +865,17 @@ class WorldMapXBlock(XBlock):
                           </group-control>
                        </group-control>
 
-                       <sliders>
-                          <slider id="timeSlider5" title="slider:原典資料" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom">
-                             <help>
-                                 <B>This is some generalized html</B><br/>
-                                 <i>you can use to create help info for using the slider</i>
-                                 <ul>
-                                    <li>You can explain what it does</li>
-                                    <li>How to interpret things</li>
-                                    <li>What other things you might be able to do</li>
-                                 </ul>
-                             </help>
-                          </slider>
-                        </sliders>
+                       <slider id="timeSlider5" title="slider:原典資料" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom">
+                          <help>
+                             <B>This is some generalized html</B><br/>
+                             <i>you can use to create help info for using the slider</i>
+                             <ul>
+                                <li>You can explain what it does</li>
+                                <li>How to interpret things</li>
+                                <li>What other things you might be able to do</li>
+                             </ul>
+                          </help>
+                       </slider>
                     </worldmap>
                 </worldmap-quiz>
                 <worldmap-quiz>
@@ -1040,6 +1029,8 @@ class WorldmapExpositoryBlock(XBlock):
             if isinstance(child, GeometryBlock) and child.id == id:
                 return child
         return None
+
+
 
 class WorldmapQuizBlock(WorldmapExpositoryBlock):
 
@@ -1324,25 +1315,6 @@ class ConstraintsBlock(XBlock):
 #***********************************************************************************************************
 #  Worldmap layout items
 #***********************************************************************************************************
-class SlidersBlock(XBlock):
-    """An XBlock that records the slider definitions."""
-
-    has_children = True
-
-    @property
-    def sliders(self):
-        sliders = []
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, SliderBlock):
-                sliders.append(child)
-        return sliders
-
-
-
-    def student_view(self, context=None):
-        return Fragment()
-
 
 class SliderBlock(XBlock):
     """An XBlock that records the slider definition."""

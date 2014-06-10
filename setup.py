@@ -59,7 +59,6 @@ setup(
             'inside                 = worldmap:InsideOfConstraintBlock',
             'includes               = worldmap:IncludesConstraintBlock',
             'excludes               = worldmap:ExcludesConstraintBlock',
-            'sliders                = worldmap:SlidersBlock',
             'slider                 = worldmap:SliderBlock',
         ]
     },
