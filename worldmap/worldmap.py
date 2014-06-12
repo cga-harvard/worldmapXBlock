@@ -10,7 +10,7 @@ import sys
 
 from string import Template
 from xblock.core import XBlock
-from xblock.fields import Scope, Integer, Any, String, Float, Dict, Boolean,List
+from xblock.fields import Reference, ReferenceList, Field, Scope, Integer, Any, String, Float, Dict, Boolean,List
 from xblock.fragment import Fragment
 from lxml import etree
 from shapely.geometry.polygon import Polygon
@@ -41,6 +41,12 @@ def makeLineString(list):
     for pt in list:
         arr.append((pt['lon']+360., pt['lat']))   #pad longitude by 360 degrees to avoid int'l date line problems
     return LineString(arr)
+
+def parse_contents(node):
+    content = unicode(node.text or u"")
+    for child in node:
+        content += etree.tostring(child, encoding='unicode')
+    return content
 
 #***********************************************************************************************
 
@@ -563,86 +569,88 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
              <vertical_demo>
-                <worldmap-expository>
-                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'/>
-                    <explanation>
-                          testing Chinese: 基區提供本站原典資料庫收藏之外的許多經典文獻的全文閱讀和檢索功<br/>
-                          Lorem ipsum dolor sit amet, <a href='#' onclick='return highlight(\"backbay\", 2000, -2)'>Back Bay</a> adipiscing elit. Aliquam a neque diam . Cras ac erat nisi. Etiam aliquet ultricies lobortis <a href='#' onclick='return highlight(\"esplanade\")'>Esplanade</a>. Etiam lacinia malesuada leo, pretium egestas mauris suscipit at. Fusce ante mi, faucibus a purus quis, commodo accumsan ipsum. Morbi vitae ultrices nibh. Quisque quis dolor elementum sem mollis pharetra vitae quis magna. Duis auctor pretium ligula a eleifend.
-                          <p/>Curabitur sem <a href='#' onclick='return highlightLayer(\"OpenLayers_Layer_WMS_124\",5000, -2)'>layer diam</a>, congue sed vehicula vitae  <a href='#' onclick='return highlight(\"bay-village\", 10000, -5)'>Bay Village</a>, lobortis pulvinar odio. Phasellus ac lacus sapien. Nam nec tempus metus, sit amet ullamcorper tellus. Nullam ac nibh semper felis vulputate elementum eget in ligula. Integer semper pharetra orci, et tempor orci commodo a. Duis id faucibus felis. Maecenas bibendum accumsan nisi, ut semper quam elementum quis. Donec erat libero, pretium sollicitudin augue a, suscipit mollis libero. Mauris aliquet sem eu ligula rutrum imperdiet. Proin quis velit congue, fermentum ligula vitae, eleifend nisi. Sed justo est, egestas id nisl non, fringilla vulputate orci. Ut non nisl vitae lectus tincidunt sollicitudin. Donec ornare purus eu dictum sollicitudin. Aliquam erat volutpat.
-                          <p/>Vestibulum ante ipsum primis <a href='#' onclick='return highlight(\"beltway\",4000, -1)'>beltway around boston</a> faucibus orci luctus et <a href='#' onclick='return highlight(\"big-island\", 2000)'>Big Island</a>ultrices posuere cubilia Curae; Quisque purus dolor, fermentum eu vestibulum nec, ultricies semper tellus. Vivamus nunc mi, fermentum a commodo vel, iaculis in odio. Vivamus commodo mi convallis, congue magna eget, sodales sem. Morbi facilisis nunc vitae porta elementum. Praesent auctor vitae nisi a pharetra. Mauris non urna auctor nunc dignissim mollis. In sem ipsum, porta sit amet dignissim ut, adipiscing eu dui. Nam sodales nisi quis urna malesuada, quis aliquet ipsum placerat.
-
-                    </explanation>
-                    <polygon id='backbay'>
-                         <point lon="-71.09350774082822" lat="42.35148683512319"/>
-                         <point lon="-71.09275672230382" lat="42.34706235935522"/>
-                         <point lon="-71.08775708470029" lat="42.3471733715164"/>
-                         <point lon="-71.08567569050435" lat="42.34328782922443"/>
-                         <point lon="-71.08329388889936" lat="42.34140047917672"/>
-                         <point lon="-71.07614848408352" lat="42.347379536438645"/>
-                         <point lon="-71.07640597614892" lat="42.3480456031057"/>
-                         <point lon="-71.0728225449051"  lat="42.34785529906382"/>
-                         <point lon="-71.07200715336435" lat="42.34863237027516"/>
-                         <point lon="-71.07228610310248" lat="42.34942529018035"/>
-                         <point lon="-71.07011887821837" lat="42.35004376076278"/>
-                         <point lon="-71.0708055237264"  lat="42.351835705270716"/>
-                         <point lon="-71.07325169834775" lat="42.35616470553563"/>
-                         <point lon="-71.07408854756031" lat="42.35600613935877"/>
-                         <point lon="-71.07483956608469" lat="42.357131950552244"/>
-                         <point lon="-71.09331462177917" lat="42.35166127043902"/>
-                    </polygon>
-                    <polygon id='esplanade'>
-                        <point lon="-71.07466790470745" lat="42.35719537593463"/>
-                        <point lon="-71.08492467197995" lat="42.35399231410341"/>
-                        <point lon="-71.08543965611076" lat="42.35335802506911"/>
-                        <point lon="-71.08822915348655" lat="42.35250172471913"/>
-                        <point lon="-71.08814332279839" lat="42.352279719020736"/>
-                        <point lon="-71.08689877781501" lat="42.35253343975517"/>
-                        <point lon="-71.07411000523211" lat="42.355958569427614"/>
-                        <point lon="-71.07466790470745" lat="42.35719537593463"/>
-                    </polygon>
-                    <polygon id="bay-village">
-                       <point lon="-71.06994721684204" lat="42.349520439895464"/>
-                       <point lon="-71.0687455872032" lat="42.34856893624958"/>
-                       <point lon="-71.07140633854628" lat="42.34863237027384"/>
-                    </polygon>
-                    <polyline id="beltway">
-                      <point lon='-71.0604629258' lat='42.3434622873'/>
-                      <point lon='-71.0645827988' lat='42.3262044544'/>
-                      <point lon='-71.0522231797' lat='42.3160505758'/>
-                      <point lon='-71.0549697617' lat='42.3099574622'/>
-                      <point lon='-71.0412368515' lat='42.2967536924'/>
-                      <point lon='-71.0426101426' lat='42.2804990976'/>
-                      <point lon='-71.0522231797' lat='42.268305399'/>
-                      <point lon='-71.0275039414' lat='42.2428942831'/>
-                      <point lon='-71.0247573594' lat='42.2296764566'/>
-                      <point lon='-71.0467300156' lat='42.2093359332'/>
-                      <point lon='-71.1030349472' lat='42.202215202'/>
-                      <point lon='-71.1552200058' lat='42.2144216783'/>
-                      <point lon='-71.1840591172' lat='42.2317101486'/>
-                      <point lon='-71.2074050644' lat='42.2550928966'/>
-                      <point lon='-71.2019119004' lat='42.2723702273'/>
-                      <point lon='-71.2019119004' lat='42.285579109'/>
-                      <point lon='-71.2197646836' lat='42.2987852218'/>
-                      <point lon='-71.256843541' lat='42.3373718282'/>
-                      <point lon='-71.2650832871' lat='42.3657889233'/>
-                      <point lon='-71.260963414' lat='42.3931789538'/>
-                      <point lon='-71.256843541' lat='42.4235983077'/>
-                      <point lon='-71.258216832' lat='42.4580557417'/>
-                      <point lon='-71.2444839219' lat='42.4722385889'/>
-                      <point lon='-71.2074050644' lat='42.4823672268'/>
-                      <point lon='-71.1909255722' lat='42.487430931'/>
-                      <point lon='-71.164833043' lat='42.4965445656'/>
-                      <point lon='-71.1208877305' lat='42.5046444593'/>
-                      <point lon='-71.0920486191' lat='42.50363203'/>
-                      <point lon='-71.082435582' lat='42.5188167484'/>
-                      <point lon='-71.0590896347' lat='42.5238775014'/>
-                      <point lon='-71.0439834336' lat='42.5167923324'/>
-                      <point lon='-71.0316238144' lat='42.5157800999'/>
-                      <point lon='-71.0069045762' lat='42.5167923324'/>
-                      <point lon='-70.989051793' lat='42.5228653836'/>
-                    </polyline>
-                    <point id="big-island" lon="-70.9657058456866" lat="42.32011232390349"/>
-                </worldmap-expository>
+             """
+                # <worldmap-expository>
+                #     <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'/>
+                #     <explanation>
+                #           testing Chinese: 基區提供本站原典資料庫收藏之外的許多經典文獻的全文閱讀和檢索功<br/>
+                #           Lorem ipsum dolor sit amet, <a href='#' onclick='return highlight(\"backbay\", 2000, -2)'>Back Bay</a> adipiscing elit. Aliquam a neque diam . Cras ac erat nisi. Etiam aliquet ultricies lobortis <a href='#' onclick='return highlight(\"esplanade\")'>Esplanade</a>. Etiam lacinia malesuada leo, pretium egestas mauris suscipit at. Fusce ante mi, faucibus a purus quis, commodo accumsan ipsum. Morbi vitae ultrices nibh. Quisque quis dolor elementum sem mollis pharetra vitae quis magna. Duis auctor pretium ligula a eleifend.
+                #           <p/>Curabitur sem <a href='#' onclick='return highlightLayer(\"OpenLayers_Layer_WMS_124\",5000, -2)'>layer diam</a>, congue sed vehicula vitae  <a href='#' onclick='return highlight(\"bay-village\", 10000, -5)'>Bay Village</a>, lobortis pulvinar odio. Phasellus ac lacus sapien. Nam nec tempus metus, sit amet ullamcorper tellus. Nullam ac nibh semper felis vulputate elementum eget in ligula. Integer semper pharetra orci, et tempor orci commodo a. Duis id faucibus felis. Maecenas bibendum accumsan nisi, ut semper quam elementum quis. Donec erat libero, pretium sollicitudin augue a, suscipit mollis libero. Mauris aliquet sem eu ligula rutrum imperdiet. Proin quis velit congue, fermentum ligula vitae, eleifend nisi. Sed justo est, egestas id nisl non, fringilla vulputate orci. Ut non nisl vitae lectus tincidunt sollicitudin. Donec ornare purus eu dictum sollicitudin. Aliquam erat volutpat.
+                #           <p/>Vestibulum ante ipsum primis <a href='#' onclick='return highlight(\"beltway\",4000, -1)'>beltway around boston</a> faucibus orci luctus et <a href='#' onclick='return highlight(\"big-island\", 2000)'>Big Island</a>ultrices posuere cubilia Curae; Quisque purus dolor, fermentum eu vestibulum nec, ultricies semper tellus. Vivamus nunc mi, fermentum a commodo vel, iaculis in odio. Vivamus commodo mi convallis, congue magna eget, sodales sem. Morbi facilisis nunc vitae porta elementum. Praesent auctor vitae nisi a pharetra. Mauris non urna auctor nunc dignissim mollis. In sem ipsum, porta sit amet dignissim ut, adipiscing eu dui. Nam sodales nisi quis urna malesuada, quis aliquet ipsum placerat.
+                #
+                #     </explanation>
+                #     <polygon id='backbay'>
+                #          <point lon="-71.09350774082822" lat="42.35148683512319"/>
+                #          <point lon="-71.09275672230382" lat="42.34706235935522"/>
+                #          <point lon="-71.08775708470029" lat="42.3471733715164"/>
+                #          <point lon="-71.08567569050435" lat="42.34328782922443"/>
+                #          <point lon="-71.08329388889936" lat="42.34140047917672"/>
+                #          <point lon="-71.07614848408352" lat="42.347379536438645"/>
+                #          <point lon="-71.07640597614892" lat="42.3480456031057"/>
+                #          <point lon="-71.0728225449051"  lat="42.34785529906382"/>
+                #          <point lon="-71.07200715336435" lat="42.34863237027516"/>
+                #          <point lon="-71.07228610310248" lat="42.34942529018035"/>
+                #          <point lon="-71.07011887821837" lat="42.35004376076278"/>
+                #          <point lon="-71.0708055237264"  lat="42.351835705270716"/>
+                #          <point lon="-71.07325169834775" lat="42.35616470553563"/>
+                #          <point lon="-71.07408854756031" lat="42.35600613935877"/>
+                #          <point lon="-71.07483956608469" lat="42.357131950552244"/>
+                #          <point lon="-71.09331462177917" lat="42.35166127043902"/>
+                #     </polygon>
+                #     <polygon id='esplanade'>
+                #         <point lon="-71.07466790470745" lat="42.35719537593463"/>
+                #         <point lon="-71.08492467197995" lat="42.35399231410341"/>
+                #         <point lon="-71.08543965611076" lat="42.35335802506911"/>
+                #         <point lon="-71.08822915348655" lat="42.35250172471913"/>
+                #         <point lon="-71.08814332279839" lat="42.352279719020736"/>
+                #         <point lon="-71.08689877781501" lat="42.35253343975517"/>
+                #         <point lon="-71.07411000523211" lat="42.355958569427614"/>
+                #         <point lon="-71.07466790470745" lat="42.35719537593463"/>
+                #     </polygon>
+                #     <polygon id="bay-village">
+                #        <point lon="-71.06994721684204" lat="42.349520439895464"/>
+                #        <point lon="-71.0687455872032" lat="42.34856893624958"/>
+                #        <point lon="-71.07140633854628" lat="42.34863237027384"/>
+                #     </polygon>
+                #     <polyline id="beltway">
+                #       <point lon='-71.0604629258' lat='42.3434622873'/>
+                #       <point lon='-71.0645827988' lat='42.3262044544'/>
+                #       <point lon='-71.0522231797' lat='42.3160505758'/>
+                #       <point lon='-71.0549697617' lat='42.3099574622'/>
+                #       <point lon='-71.0412368515' lat='42.2967536924'/>
+                #       <point lon='-71.0426101426' lat='42.2804990976'/>
+                #       <point lon='-71.0522231797' lat='42.268305399'/>
+                #       <point lon='-71.0275039414' lat='42.2428942831'/>
+                #       <point lon='-71.0247573594' lat='42.2296764566'/>
+                #       <point lon='-71.0467300156' lat='42.2093359332'/>
+                #       <point lon='-71.1030349472' lat='42.202215202'/>
+                #       <point lon='-71.1552200058' lat='42.2144216783'/>
+                #       <point lon='-71.1840591172' lat='42.2317101486'/>
+                #       <point lon='-71.2074050644' lat='42.2550928966'/>
+                #       <point lon='-71.2019119004' lat='42.2723702273'/>
+                #       <point lon='-71.2019119004' lat='42.285579109'/>
+                #       <point lon='-71.2197646836' lat='42.2987852218'/>
+                #       <point lon='-71.256843541' lat='42.3373718282'/>
+                #       <point lon='-71.2650832871' lat='42.3657889233'/>
+                #       <point lon='-71.260963414' lat='42.3931789538'/>
+                #       <point lon='-71.256843541' lat='42.4235983077'/>
+                #       <point lon='-71.258216832' lat='42.4580557417'/>
+                #       <point lon='-71.2444839219' lat='42.4722385889'/>
+                #       <point lon='-71.2074050644' lat='42.4823672268'/>
+                #       <point lon='-71.1909255722' lat='42.487430931'/>
+                #       <point lon='-71.164833043' lat='42.4965445656'/>
+                #       <point lon='-71.1208877305' lat='42.5046444593'/>
+                #       <point lon='-71.0920486191' lat='42.50363203'/>
+                #       <point lon='-71.082435582' lat='42.5188167484'/>
+                #       <point lon='-71.0590896347' lat='42.5238775014'/>
+                #       <point lon='-71.0439834336' lat='42.5167923324'/>
+                #       <point lon='-71.0316238144' lat='42.5157800999'/>
+                #       <point lon='-71.0069045762' lat='42.5167923324'/>
+                #       <point lon='-70.989051793' lat='42.5228653836'/>
+                #     </polyline>
+                #     <point id="big-island" lon="-70.9657058456866" lat="42.32011232390349"/>
+                # </worldmap-expository>
+             +"""
              <worldmap-quiz>
                     <explanation>
                          A quiz about the Boston area... particularly <B><a href='#' onclick='return highlight(\"backbay\", 5000, -2)'>Back Bay</a></B>
@@ -867,7 +875,7 @@ class WorldMapXBlock(XBlock):
 
                        <slider id="timeSlider5" title="slider:原典資料" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom">
                           <help>
-                             <B>This is some generalized html</B><br/>
+                             <B>This is some generalized html</B><br/><a href='yahoo.com'>yahoo</a>
                              <i>you can use to create help info for using the slider</i>
                              <ul>
                                 <li>You can explain what it does</li>
@@ -878,107 +886,109 @@ class WorldMapXBlock(XBlock):
                        </slider>
                     </worldmap>
                 </worldmap-quiz>
-                <worldmap-quiz>
-                    <explanation>
-                         <B>A quiz about the Boston area</B>
-                    </explanation>
-                    <answer id='foobar' color='00FF00' type='point' hintAfterAttempt='3'>
-                       <explanation>
-                          Where is the biggest island in Boston harbor?
-                       </explanation>
-                       <constraints>
-                          <matches percentOfGrade="25" percentMatch="100" padding='1000'>
-                              <point lon="-70.9657058456866" lat="42.32011232390349"/>
-                              <explanation>
-                                 <B> Look at boston harbor - pick the biggest island </B>
-                              </explanation>
-                          </matches>
-                       </constraints>
-                    </answer>
-                    <answer id='baz' color='0000FF' type='polygon' hintAfterAttempt='2'>
-                       <explanation>
-                          Draw a polygon around the land bridge that formed Nahant bay?
-                       </explanation>
-                       <constraints>
-                          <includes percentOfGrade="25" padding='500' maxAreaFactor='15'>
-                              <point lon="-70.93824002537393" lat="42.445896458204764"/>
-                              <explanation>
-                                 <B>Hint:</B> Look for Nahant Bay on the map
-                              </explanation>
-                          </includes>
-                       </constraints>
-                    </answer>
-                    <answer id='boffo' color='00FFFF' type='polyline' hintAfterAttempt='2'>
-                       <explanation>
-                          Draw a polyline on the land bridge that formed Nahant bay?
-                       </explanation>
-                       <constraints hintDisplayTime='-1'>
-                          <matches percentOfGrade="100" padding='500'>
-                              <polyline>
-                                 <point lon="-70.93703839573509" lat="42.455142795067786"/>
-                                 <point lon="-70.93978497776635" lat="42.44146279890606"/>
-                                 <point lon="-70.93360516819578" lat="42.43082073646349"/>
-                              </polyline>
-                              <explanation>
-                                 <B>Hint:</B> Look for Nahant Bay on the map - draw a polyline on the land bridge out to Nahant Island
-                              </explanation>
-                          </matches>
-                          <inside percentOfGrade="25"  padding='1'>
-                             <polygon>
-                                 <point lon="-70.9210738876792" lat="42.47325152648776"/>
-                                 <point lon="-70.95746609959279" lat="42.471732113995365"/>
-                                 <point lon="-70.93686673435874" lat="42.42005014321707"/>
-                                 <point lon="-70.91901395115596" lat="42.433734814183005"/>
-                             </polygon>
-                             <explanation>
-                                The land bridge is somewhere inside this polygon
-                             </explanation>
-                          </inside>
-                          <excludes percentOfGrade="25" padding="1">
-                             <polygon>
-                                <point lon="-70.9252795914228" lat="42.42955370389016"/>
-                                <point lon="-70.93763921056394" lat="42.42581580857819"/>
-                                <point lon="-70.93652341161325" lat="42.416438412427965"/>
-                                <point lon="-70.92828366551946" lat="42.41795916653644"/>
-                                <point lon="-70.92905614171568" lat="42.42112728581168"/>
-                                <point lon="-70.91978642736025" lat="42.424105171979036"/>
-                                <point lon="-70.91789815221426" lat="42.420683758749576"/>
-                                <point lon="-70.90983006749771" lat="42.416375046873334"/>
-                                <point lon="-70.90536687169678" lat="42.416628508708406"/>
-                                <point lon="-70.90227696691106" lat="42.41992341934355"/>
-                                <point lon="-70.91060254369391" lat="42.42708291670639"/>
-                                <point lon="-70.91927144322945" lat="42.42949035158941"/>
-                             </polygon>
-                             <explanation>
-                                Must not include Nahant Island
-                             </explanation>
-                          </excludes>
-                       </constraints>
-                    </answer>
-                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
-
-                       <group-control name="Census Data" visible="true" expand="true">
-                          <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="原典資料"/>
-                          <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
-                          <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
-                          <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>
-                          <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE"/>
-                          <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
-                          <group-control name="A sub group of layers">
-                             <group-control name="A sub-sub-group">
-                                <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.1"/>
-                             </group-control>
-                             <group-control name="another sub-sub-group" visible="true">
-                                <layer-control layerid="OpenLayers_Layer_WMS_118" visible="false" name="layerE.2"/>
-                                <layer-control layerid="OpenLayers_Layer_Vector_132" visible="false" name="layerF.2"/>
-                             </group-control>
-                             <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA.1"/>
-                             <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB.1"/>
-                          </group-control>
-                       </group-control>
-
-                    </worldmap>
-                </worldmap-quiz>
+                """
+                # <worldmap-quiz>
+                #     <explanation>
+                #          <B>A quiz about the Boston area</B>
+                #     </explanation>
+                #     <answer id='foobar' color='00FF00' type='point' hintAfterAttempt='3'>
+                #        <explanation>
+                #           Where is the biggest island in Boston harbor?
+                #        </explanation>
+                #        <constraints>
+                #           <matches percentOfGrade="25" percentMatch="100" padding='1000'>
+                #               <point lon="-70.9657058456866" lat="42.32011232390349"/>
+                #               <explanation>
+                #                  <B> Look at boston harbor - pick the biggest island </B>
+                #               </explanation>
+                #           </matches>
+                #        </constraints>
+                #     </answer>
+                #     <answer id='baz' color='0000FF' type='polygon' hintAfterAttempt='2'>
+                #        <explanation>
+                #           Draw a polygon around the land bridge that formed Nahant bay?
+                #        </explanation>
+                #        <constraints>
+                #           <includes percentOfGrade="25" padding='500' maxAreaFactor='15'>
+                #               <point lon="-70.93824002537393" lat="42.445896458204764"/>
+                #               <explanation>
+                #                  <B>Hint:</B> Look for Nahant Bay on the map
+                #               </explanation>
+                #           </includes>
+                #        </constraints>
+                #     </answer>
+                #     <answer id='boffo' color='00FFFF' type='polyline' hintAfterAttempt='2'>
+                #        <explanation>
+                #           Draw a polyline on the land bridge that formed Nahant bay?
+                #        </explanation>
+                #        <constraints hintDisplayTime='-1'>
+                #           <matches percentOfGrade="100" padding='500'>
+                #               <polyline>
+                #                  <point lon="-70.93703839573509" lat="42.455142795067786"/>
+                #                  <point lon="-70.93978497776635" lat="42.44146279890606"/>
+                #                  <point lon="-70.93360516819578" lat="42.43082073646349"/>
+                #               </polyline>
+                #               <explanation>
+                #                  <B>Hint:</B> Look for Nahant Bay on the map - draw a polyline on the land bridge out to Nahant Island
+                #               </explanation>
+                #           </matches>
+                #           <inside percentOfGrade="25"  padding='1'>
+                #              <polygon>
+                #                  <point lon="-70.9210738876792" lat="42.47325152648776"/>
+                #                  <point lon="-70.95746609959279" lat="42.471732113995365"/>
+                #                  <point lon="-70.93686673435874" lat="42.42005014321707"/>
+                #                  <point lon="-70.91901395115596" lat="42.433734814183005"/>
+                #              </polygon>
+                #              <explanation>
+                #                 The land bridge is somewhere inside this polygon
+                #              </explanation>
+                #           </inside>
+                #           <excludes percentOfGrade="25" padding="1">
+                #              <polygon>
+                #                 <point lon="-70.9252795914228" lat="42.42955370389016"/>
+                #                 <point lon="-70.93763921056394" lat="42.42581580857819"/>
+                #                 <point lon="-70.93652341161325" lat="42.416438412427965"/>
+                #                 <point lon="-70.92828366551946" lat="42.41795916653644"/>
+                #                 <point lon="-70.92905614171568" lat="42.42112728581168"/>
+                #                 <point lon="-70.91978642736025" lat="42.424105171979036"/>
+                #                 <point lon="-70.91789815221426" lat="42.420683758749576"/>
+                #                 <point lon="-70.90983006749771" lat="42.416375046873334"/>
+                #                 <point lon="-70.90536687169678" lat="42.416628508708406"/>
+                #                 <point lon="-70.90227696691106" lat="42.41992341934355"/>
+                #                 <point lon="-70.91060254369391" lat="42.42708291670639"/>
+                #                 <point lon="-70.91927144322945" lat="42.42949035158941"/>
+                #              </polygon>
+                #              <explanation>
+                #                 Must not include Nahant Island
+                #              </explanation>
+                #           </excludes>
+                #        </constraints>
+                #     </answer>
+                #     <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
+                #
+                #        <group-control name="Census Data" visible="true" expand="true">
+                #           <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="原典資料"/>
+                #           <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
+                #           <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
+                #           <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>
+                #           <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE"/>
+                #           <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
+                #           <group-control name="A sub group of layers">
+                #              <group-control name="A sub-sub-group">
+                #                 <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.1"/>
+                #              </group-control>
+                #              <group-control name="another sub-sub-group" visible="true">
+                #                 <layer-control layerid="OpenLayers_Layer_WMS_118" visible="false" name="layerE.2"/>
+                #                 <layer-control layerid="OpenLayers_Layer_Vector_132" visible="false" name="layerF.2"/>
+                #              </group-control>
+                #              <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA.1"/>
+                #              <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB.1"/>
+                #           </group-control>
+                #        </group-control>
+                #
+                #     </worldmap>
+                # </worldmap-quiz>
+             +"""
              </vertical_demo>
              """
             ),
@@ -991,6 +1001,8 @@ class WorldMapXBlock(XBlock):
 class WorldmapExpositoryBlock(XBlock):
 
     has_children = True
+
+    explanationHTML = String(help="explanation html", default=None, scope=Scope.content)
 
     def student_view(self, context=None):
         """Provide default student view."""
@@ -1015,14 +1027,6 @@ class WorldmapExpositoryBlock(XBlock):
                 return child
         return None
 
-    @property
-    def explanationHTML(self):
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, HelpBlock):
-                return child.content
-        return ""
-
     def getGeometry(self, id):
         for child_id in self.children:  # pylint: disable=E1101
             child = self.runtime.get_block(child_id)
@@ -1030,6 +1034,51 @@ class WorldmapExpositoryBlock(XBlock):
                 return child
         return None
 
+    @classmethod
+    def parse_xml(cls, node, runtime, keys, id_generator):
+        """
+        Use `node` to construct a new block.
+
+        Arguments:
+            node (etree.Element): The xml node to parse into an xblock.
+
+            runtime (:class:`.Runtime`): The runtime to use while parsing.
+
+            keys (:class:`.ScopeIds`): The keys identifying where this block
+                will store its data.
+
+            id_generator (:class:`.IdGenerator`): An object that will allow the
+                runtime to generate correct definition and usage ids for
+                children of this block.
+
+        """
+        block = runtime.construct_xblock_from_class(cls, keys)
+
+        explanationText = ''   #grovel out any explanation text out of <explanation> tag
+
+        # The base implementation: child nodes become child blocks.
+        for child in node:
+            if( child.tag == "explanation" ):
+                explanationText = parse_contents(child)  #found some explanation text
+            else:
+                block.runtime.add_node_as_child(block, child, id_generator)
+
+        # Attributes become fields.
+        for name, value in node.items():
+            if name in block.fields:
+                setattr(block, name, value)
+
+        setattr(block,'explanationHTML',explanationText)
+
+        # Text content becomes "content", if such a field exists.
+        if "content" in block.fields and block.fields["content"].scope == Scope.content:
+            text = node.text
+            if text:
+                text = text.strip()
+                if text:
+                    block.content = text
+
+        return block
 
 
 class WorldmapQuizBlock(WorldmapExpositoryBlock):
@@ -1059,6 +1108,7 @@ class ConstraintBlock(XBlock):
     has_children = True
     percentOfGrade = Float(help="how much of overall grade is dependent on this constraint being satisfied", default=100, scope=Scope.content)
     padding = Integer(help="default padding distance (meters)", default=1, scope=Scope.content)
+    explanationHTML = String(help="explanation html", default=None, scope=Scope.content)
 
     def student_view(self, context=None):
         return Fragment()
@@ -1073,21 +1123,58 @@ class ConstraintBlock(XBlock):
         }
 
     @property
-    def explanationHTML(self):
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, HelpBlock):
-                return child.content
-        return ""
-
-
-    @property
     def geometry(self):
         for child_id in self.children:  # pylint: disable=E1101
             child = self.runtime.get_block(child_id)
             if isinstance(child, GeometryBlock):
                 return child
         raise RuntimeError("no geometry found")
+
+    @classmethod
+    def parse_xml(cls, node, runtime, keys, id_generator):
+        """
+        Use `node` to construct a new block.
+
+        Arguments:
+            node (etree.Element): The xml node to parse into an xblock.
+
+            runtime (:class:`.Runtime`): The runtime to use while parsing.
+
+            keys (:class:`.ScopeIds`): The keys identifying where this block
+                will store its data.
+
+            id_generator (:class:`.IdGenerator`): An object that will allow the
+                runtime to generate correct definition and usage ids for
+                children of this block.
+
+        """
+        block = runtime.construct_xblock_from_class(cls, keys)
+
+        explanationText = ''   #grovel out any explanation text out of <explanation> tag
+
+        # The base implementation: child nodes become child blocks.
+        for child in node:
+            if( child.tag == "explanation" ):
+                explanationText = parse_contents(child)  #found some explanation text
+            else:
+                block.runtime.add_node_as_child(block, child, id_generator)
+
+        # Attributes become fields.
+        for name, value in node.items():
+            if name in block.fields:
+                setattr(block, name, value)
+
+        setattr(block,'explanationHTML',explanationText)
+
+        # Text content becomes "content", if such a field exists.
+        if "content" in block.fields and block.fields["content"].scope == Scope.content:
+            text = node.text
+            if text:
+                text = text.strip()
+                if text:
+                    block.content = text
+
+        return block
 
 class MatchesConstraintBlock(ConstraintBlock):
 
@@ -1197,13 +1284,29 @@ class PolyBlock(GeometryBlock):
     def parse_xml(cls, node, runtime, keys, id_generator):
 
         block = runtime.construct_xblock_from_class(cls, keys)
+
+        #TODO:  WHY do I have to initialize my fields to their default values?
+        #       shouldn't this be done in runtime.construct_xblock_from_class() ??
+        for f in block.fields:
+            f_ = block.fields[f]
+            if( isinstance(f_,Field) and not isinstance(f_, Reference) and not isinstance(f_,ReferenceList)):
+                setattr(block, f, block.fields[f].default)
+
         block.points = []
 
         # The base implementation: child nodes become child blocks.
         for child in node:
            block.points.append( {'type':'point', 'lat':float(child.attrib['lat']), 'lon':float(child.attrib['lon'])})
 
+
+        # Attributes become fields.
+        for name, value in node.items():
+            if name in block.fields:
+                setattr(block, name, value)
+
         block.type = block.plugin_name
+
+
         return block
 
 
@@ -1217,15 +1320,6 @@ class PolyBlock(GeometryBlock):
             'points':self.points
         }
 
-# class PolylineBlock(PolygonBlock):
-#     pass
-    # @property
-    # def data(self):
-    #     return {
-    #         'type': self.plugin_name,
-    #         'points':self.points
-    #     }
-
 class AnswerBlock(XBlock):
 
     has_children = True
@@ -1236,6 +1330,7 @@ class AnswerBlock(XBlock):
     color = String(help="the color of the polyline,polygon or marker", default="#FF0000", scope=Scope.content)
     type  = String(help="the type of the answer point|polygon|polyline|directed-polyline", default=None, scope=Scope.content)
     hintAfterAttempt= Integer(help="display hint button after N failed attempts", default=None, scope=Scope.content)
+    explanationHTML = String(help="explanation html", default=None, scope=Scope.content)
 
 
     def student_view(self, context=None):
@@ -1256,13 +1351,6 @@ class AnswerBlock(XBlock):
             'hintAfterAttempt': self.hintAfterAttempt,
             'hintDisplayTime' : self.hintDisplayTime
         }
-    @property
-    def explanationHTML(self):
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, HelpBlock):
-                return child.content
-        return ""
 
     @property
     def constraints(self):
@@ -1285,6 +1373,52 @@ class AnswerBlock(XBlock):
             'value':value,
             'max_value':max_value
         })
+
+    @classmethod
+    def parse_xml(cls, node, runtime, keys, id_generator):
+        """
+        Use `node` to construct a new block.
+
+        Arguments:
+            node (etree.Element): The xml node to parse into an xblock.
+
+            runtime (:class:`.Runtime`): The runtime to use while parsing.
+
+            keys (:class:`.ScopeIds`): The keys identifying where this block
+                will store its data.
+
+            id_generator (:class:`.IdGenerator`): An object that will allow the
+                runtime to generate correct definition and usage ids for
+                children of this block.
+
+        """
+        block = runtime.construct_xblock_from_class(cls, keys)
+
+        explanationText = ''   #grovel out any explanation text out of <explanation> tag
+
+        # The base implementation: child nodes become child blocks.
+        for child in node:
+            if( child.tag == "explanation" ):
+                explanationText = parse_contents(child)  #found some explanation text
+            else:
+                block.runtime.add_node_as_child(block, child, id_generator)
+
+        # Attributes become fields.
+        for name, value in node.items():
+            if name in block.fields:
+                setattr(block, name, value)
+
+        setattr(block,'explanationHTML',explanationText)
+
+        # Text content becomes "content", if such a field exists.
+        if "content" in block.fields and block.fields["content"].scope == Scope.content:
+            text = node.text
+            if text:
+                text = text.strip()
+                if text:
+                    block.content = text
+
+        return block
 
 
 class ConstraintsBlock(XBlock):
@@ -1328,6 +1462,7 @@ class SliderBlock(XBlock):
     increment= Float(help="increment value for the slider", default=None, scope=Scope.content)
     position=String(help="position of slider.  Values: top,bottom,left,right", default="bottom", scope=Scope.content)
     title=String(help="title/label for slider",default=None, scope=Scope.content)
+    help =String(help="help text", default=None, scope=Scope.content)
 
     # @property
     # def params(self):
@@ -1338,44 +1473,83 @@ class SliderBlock(XBlock):
     #             params.append(child)
     #     return params
 
-    @property
-    def help(self):
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, HelpBlock):
-                return child.content
-        return None
-
-
-    def student_view(self, context=None):
-        return Fragment()
-
-#**** HelpBlock is also used for "explanation" tags
-class HelpBlock(XBlock):
-    """An XBlock that contains help-text for a slider."""
-
-    content = String(help="The HTML to display", scope=Scope.content, default=u"")
-
-
     def student_view(self, context=None):
         return Fragment()
 
     @classmethod
     def parse_xml(cls, node, runtime, keys, id_generator):
         """
-        Parse the XML for an HTML block.
+        Use `node` to construct a new block.
 
-        The entire subtree under `node` is re-serialized, and set as the
-        content of the XBlock.
+        Arguments:
+            node (etree.Element): The xml node to parse into an xblock.
+
+            runtime (:class:`.Runtime`): The runtime to use while parsing.
+
+            keys (:class:`.ScopeIds`): The keys identifying where this block
+                will store its data.
+
+            id_generator (:class:`.IdGenerator`): An object that will allow the
+                runtime to generate correct definition and usage ids for
+                children of this block.
 
         """
         block = runtime.construct_xblock_from_class(cls, keys)
 
-        block.content = unicode(node.text or u"")
+        # The base implementation: child nodes become child blocks.
+        helpText = ''    #grovel out any help text
         for child in node:
-            block.content += etree.tostring(child, encoding='unicode')
+            if( child.tag == 'help' ):
+                helpText = parse_contents(child)  #found the help text
+            else:
+                block.runtime.add_node_as_child(block, child, id_generator)
+
+        # Attributes become fields.
+        for name, value in node.items():
+            if name in block.fields:
+                setattr(block, name, value)
+
+        if( helpText != '' ):
+            setattr(block,'help',helpText)
+
+        # # Text content becomes "content", if such a field exists.
+        # if "content" in block.fields and block.fields["content"].scope == Scope.content:
+        #     text = node.text
+        #     if text:
+        #         text = helpText.strip()
+        #         if text:
+        #             block.content = text
 
         return block
+
+
+
+#**** HelpBlock is also used for "explanation" tags
+# class HelpBlock(XBlock):
+#     """An XBlock that contains help-text for a slider."""
+#
+#     content = String(help="The HTML to display", scope=Scope.content, default=u"")
+#
+#
+#     def student_view(self, context=None):
+#         return Fragment()
+#
+#     @classmethod
+#     def parse_xml(cls, node, runtime, keys, id_generator):
+#         """
+#         Parse the XML for an HTML block.
+#
+#         The entire subtree under `node` is re-serialized, and set as the
+#         content of the XBlock.
+#
+#         """
+#         block = runtime.construct_xblock_from_class(cls, keys)
+#
+#         block.content = unicode(node.text or u"")
+#         for child in node:
+#             block.content += etree.tostring(child, encoding='unicode')
+#
+#         return block
 
 # class LayersBlock(XBlock):
 #     """An XBlock that records the layer definitions."""

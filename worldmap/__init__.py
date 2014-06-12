@@ -3,7 +3,6 @@ from .worldmap import LayerBlock
 from .worldmap import GroupControlBlock
 from .worldmap import LayerControlBlock
 from .worldmap import SliderBlock
-from .worldmap import HelpBlock
 from .worldmap import WorldmapQuizBlock
 from .worldmap import WorldmapExpositoryBlock
 from .worldmap import AnswerBlock
