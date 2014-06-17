@@ -28,7 +28,7 @@ var markers = new Array();
 var polygons= new Array();
 var polylines=new Array();
 
-var currentAnswer = null;  //what we're currently searching for with the currently selected tool
+var currentQuestion = null;  //what we're currently searching for with the currently selected tool
 
 var CLICK_CONTROL = OpenLayers.Class(OpenLayers.Control, {
     defaultHandlerOptions: {
@@ -61,19 +61,19 @@ var CLICK_CONTROL = OpenLayers.Class(OpenLayers.Control, {
         var size = new OpenLayers.Size(21,25);
         var offset = new OpenLayers.Pixel(-size.w/2, -size.h);
         var icon = new OpenLayers.Icon('http://www.openlayers.org/dev/img/marker.png',size,offset);
-        icon.imageDiv.firstChild.setAttribute("style","background-color:"+currentAnswer.color);
+        icon.imageDiv.firstChild.setAttribute("style","background-color:"+currentQuestion.color);
 
-        if( markers[currentAnswer.id] ) {
-            markerLayer.removeMarker(markers[currentAnswer.id]);
+        if( markers[currentQuestion.id] ) {
+            markerLayer.removeMarker(markers[currentQuestion.id]);
         }
-        markers[currentAnswer.id] = new OpenLayers.Marker(lonlat,icon);
-        markerLayer.addMarker(markers[currentAnswer.id]);
+        markers[currentQuestion.id] = new OpenLayers.Marker(lonlat,icon);
+        markerLayer.addMarker(markers[currentQuestion.id]);
 
         MESSAGING.getInstance().send(
             new Message("point_response",
                 {
                     point: {lon:point.x, lat:point.y},
-                    answer: currentAnswer
+                    question: currentQuestion
                 }
             )
         );
@@ -194,22 +194,22 @@ Ext.onReady(function() {
                            new Message("polygon_response",
                                {
                                    polygon: polygon,
-                                   answer: currentAnswer
+                                   question: currentQuestion
                                }
                            )
                        );
 
                        var feature = new OpenLayers.Feature.Vector(geo,{},{
-                           fillColor: '#'+currentAnswer.color,
+                           fillColor: '#'+currentQuestion.color,
                            fillOpacity: 0.4
                        });
                        var proceed = this.events.triggerEvent( "sketchcomplete", {feature:feature});
                        if( proceed !== false ) {
                           feature.state = OpenLayers.State.INSERT;
-                          if( polygons[currentAnswer.id] ) {
-                             polygonLayer.removeFeatures([polygons[currentAnswer.id]]);
+                          if( polygons[currentQuestion.id] ) {
+                             polygonLayer.removeFeatures([polygons[currentQuestion.id]]);
                           }
-                          polygons[currentAnswer.id] = feature;
+                          polygons[currentQuestion.id] = feature;
                           polygonLayer.addFeatures([feature]);
                           this.featureAdded(feature);
                           this.events.triggerEvent("featureadded",{feature:feature});
@@ -234,23 +234,23 @@ Ext.onReady(function() {
                            new Message("polyline_response",
                                {
                                    polyline: polyline,
-                                   answer: currentAnswer
+                                   question: currentQuestion
                                }
                            )
                        );
 
                        var feature = new OpenLayers.Feature.Vector(geo,{},{
-                           strokeColor: '#'+currentAnswer.color,
+                           strokeColor: '#'+currentQuestion.color,
                            strokeOpacity: 1,
                            strokeWidth: 3
                        });
                        var proceed = this.events.triggerEvent( "sketchcomplete", {feature:feature});
                        if( proceed !== false ) {
                           feature.state = OpenLayers.State.INSERT;
-                          if( polylines[currentAnswer.id] ) {
-                             polylineLayer.removeFeatures([polylines[currentAnswer.id]]);
+                          if( polylines[currentQuestion.id] ) {
+                             polylineLayer.removeFeatures([polylines[currentQuestion.id]]);
                           }
-                          polylines[currentAnswer.id] = feature;
+                          polylines[currentQuestion.id] = feature;
                           polylineLayer.addFeatures([feature]);
                           this.featureAdded(feature);
                           this.events.triggerEvent("featureadded",{feature:feature});
@@ -310,29 +310,29 @@ Ext.onReady(function() {
            markerControl.deactivate();
            polygonControl.deactivate();
            polylineControl.deactivate();
-           currentAnswer = null;
+           currentQuestion = null;
         });
 
         MESSAGING.getInstance().registerHandler("set-answer-tool", function(e) {
 
             var message = JSON.parse(e.message);
-            currentAnswer = message;
+            currentQuestion = message;
 
             //TODO: fix url - make relative
-            document.getElementById(app.mapPanel.map.id+"_OpenLayers_ViewPort").style.cursor = "url(http://robertlight.com/tmp/"+currentAnswer.type+"Cursor.png) 16 16, auto";
-            if( currentAnswer.type == 'point' ) {
-               Ext.example.msg("Info",{% trans 'Click the map at the location requested' %} );
+            document.getElementById(app.mapPanel.map.id+"_OpenLayers_ViewPort").style.cursor = "url(http://robertlight.com/tmp/"+currentQuestion.type+"Cursor.png) 16 16, auto";
+            if( currentQuestion.type == 'point' ) {
+               Ext.example.msg("Info","{% trans 'Click the map at the location requested' %}" );
                markerControl.activate();
-            } else if( currentAnswer.type == 'polygon' ) {
-               // window.alert("color="+currentAnswer.color);
+            } else if( currentQuestion.type == 'polygon' ) {
+               // window.alert("color="+currentQuestion.color);
                 polygonLayer.styleMap = new OpenLayers.StyleMap({
-                        fillColor: '#'+currentAnswer.color,
+                        fillColor: '#'+currentQuestion.color,
                         fillOpacity: 0.3
                     });
-                Ext.example.msg("Info",{%  trans "Please click on the boundaries of a polygon.<br/>Double-click to end drawing." %});
+                Ext.example.msg("Info","{%  trans "Please click on the boundaries of a polygon.<br/>Double-click to end drawing." %}");
                 polygonControl.activate();
-            } else if( currentAnswer.type == 'polyline' ) {
-                Ext.example.msg("Info",{%  trans "Please click on the verticies of a polyline.<br/>Double-click to end drawing." %});
+            } else if( currentQuestion.type == 'polyline' ) {
+                Ext.example.msg("Info","{%  trans "Please click on the verticies of a polyline.<br/>Double-click to end drawing." %}");
                 polylineControl.activate();
             }
 

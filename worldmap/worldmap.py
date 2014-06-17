@@ -7,6 +7,7 @@ import logging
 import threading
 import math
 import sys
+import json
 
 from string import Template
 from xblock.core import XBlock
@@ -197,9 +198,9 @@ class WorldMapXBlock(XBlock):
 
     @XBlock.json_handler
     def point_response(self, data, suffix=''):
-#        padding = data['answer']['padding']
-        correctGeometry = data['answer']['constraints'][0]['geometry']
-        padding = data['answer']['constraints'][0]['padding']
+        unsatisfiedConstraints = []
+        correctGeometry = data['question']['constraints'][0]['geometry']
+        padding = data['question']['constraints'][0].get('padding',1000)
         userAnswer = data['point']
         latitude = userAnswer['lat']
         longitude= userAnswer['lon']
@@ -209,9 +210,10 @@ class WorldMapXBlock(XBlock):
             correctPolygon = makePolygon(correctGeometry['points']).buffer(padding*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS))
             hit = correctPolygon.contains(makePoint(userAnswer))
         else:
-            sinHalfDeltaLon = math.sin(math.pi * (correctGeometry['lon']-longitude)/360)
-            sinHalfDeltaLat = math.sin(math.pi * (correctGeometry['lat']-latitude)/360)
-            a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*correctGeometry['lat']/180)
+            point = correctGeometry['points'][0]
+            sinHalfDeltaLon = math.sin(math.pi * (point['lon']-longitude)/360)
+            sinHalfDeltaLat = math.sin(math.pi * (point['lat']-latitude)/360)
+            a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*point['lat']/180)
             hit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < padding
 
         correctExplanation = ""
@@ -219,13 +221,15 @@ class WorldMapXBlock(XBlock):
         if not hit :
             correctExplanation = _("incorrect location")
             percentCorrect = 0
+            unsatisfiedConstraints.append(data['question']['constraints'][0])
 
         if isinstance(self.get_parent(), WorldmapQuizBlock ):
-            self.get_parent().setScore(data['answer']['id'], percentCorrect, 100)
+            self.get_parent().setScore(data['question']['id'], percentCorrect, 100)
 
         return {
-            'answer':data['answer'],
+            'question':data['question'],
             'xml': "<point lon='%s' lat='%s'/>\n" % (longitude,latitude),
+            'unsatisfiedConstraints': unsatisfiedConstraints,
             'percentCorrect': percentCorrect,
             'correctExplanation': correctExplanation,
             'isHit': hit
@@ -250,9 +254,9 @@ class WorldMapXBlock(XBlock):
 
             totalGradeValue = 0
             totalCorrect = 0
-            for constraint in data['answer']['constraints']:
+            unsatisfiedConstraints = []
+            for constraint in data['question']['constraints']:
                 constraintSatisfied = True
-
 
                 if( constraint['type'] == 'matches'):
 
@@ -285,7 +289,7 @@ class WorldMapXBlock(XBlock):
                             constraintSatisfied = constraintPolygon.disjoint(answerPolygon)
                     elif( constraint['geometry']['type'] == 'point' ):
                         if( constraint['type'] == 'includes' ):
-                            constraintPt = makePoint(constraint['geometry'])
+                            constraintPt = makePoint(constraint['geometry']['points'][0])
 
                             constraintSatisfied = answerPolygon.contains(constraintPt)
                             if constraintSatisfied and constraint['maxAreaFactor'] != None :
@@ -308,13 +312,14 @@ class WorldMapXBlock(XBlock):
                 totalGradeValue += constraint['percentOfGrade']
                 if constraintSatisfied :
                     totalCorrect += constraint['percentOfGrade']
+                else:
+                    unsatisfiedConstraints.append(constraint)
 
                 isHit = isHit and constraintSatisfied
-                constraint['satisfied'] = constraintSatisfied
 
         except TopologicalError:
             return {
-                'answer':data['answer'],
+                'question':data['question'],
                 'isHit': False,
                 'error': _('Invalid polygon topology')+'<br/><img src="'+self.runtime.local_resource_url(self,"public/images/InvalidTopology.png")+'"/>'
             }
@@ -324,11 +329,12 @@ class WorldMapXBlock(XBlock):
         percentIncorrect = math.floor( 100 - totalCorrect*100/totalGradeValue);
 
         if isinstance(self.get_parent(), WorldmapQuizBlock ):
-            self.get_parent().setScore(data['answer']['id'], 100-percentIncorrect, 100)
+            self.get_parent().setScore(data['question']['id'], 100-percentIncorrect, 100)
 
         return {
-            'answer':data['answer'],
+            'question':data['question'],
             'xml': xml,
+            'unsatisfiedConstraints': unsatisfiedConstraints,
             'isHit': isHit,
             'percentCorrect': 100-percentIncorrect,
             'correctExplanation': "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
@@ -351,7 +357,8 @@ class WorldMapXBlock(XBlock):
 
             totalGradeValue = 0
             totalCorrect = 0
-            for constraint in data['answer']['constraints']:
+            unsatisfiedConstraints = []
+            for constraint in data['question']['constraints']:
                 constraintSatisfied = True
 
                 if constraint['type'] == 'matches' :
@@ -386,9 +393,10 @@ class WorldMapXBlock(XBlock):
                 totalGradeValue += constraint['percentOfGrade']
                 if constraintSatisfied :
                     totalCorrect += constraint['percentOfGrade']
+                else:
+                    unsatisfiedConstraints.append(constraint)
 
                 isHit = isHit and constraintSatisfied
-                constraint['satisfied'] = constraintSatisfied
 
         except:
             print _("Unexpected error: "), sys.exc_info()[0]
@@ -396,39 +404,29 @@ class WorldMapXBlock(XBlock):
         percentIncorrect = math.floor( 100 - totalCorrect*100/totalGradeValue);
 
         if isinstance(self.get_parent(), WorldmapQuizBlock ):
-            self.get_parent().setScore(data['answer']['id'], 100-percentIncorrect, 100)
+            self.get_parent().setScore(data['question']['id'], 100-percentIncorrect, 100)
 
         return {
-            'answer':data['answer'],
+            'question':data['question'],
             'xml': xml,
+            'unsatisfiedConstraints': unsatisfiedConstraints,
             'isHit': isHit,
             'percentCorrect': 100-percentIncorrect,
             'correctExplanation': "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
         }
 
     @XBlock.json_handler
-    def getAnswers(self, data, suffix=''):
+    def getQuestions(self, data, suffix=''):
         if isinstance(self.get_parent(), WorldmapQuizBlock):
-            arr = []
-            for answer in self.get_parent().answers:
-                try:
-                    arr.append( answer.data )
-                except:
-                    print _("Unexpected error: "), sys.exc_info()[0]
-
             return {
-                'answers': arr,
+                'questions': self.get_parent().questions,
                 'explanation': self.get_parent().explanationHTML
             }
         return None
 
     @XBlock.json_handler
     def getGeometry(self, data, suffix=''):
-        g = self.get_parent().getGeometry(data)
-        if g != None :
-            return g.data
-        else:
-            return None
+        return self.get_parent().getGeometry(data)
 
     @XBlock.json_handler
     def getFuzzyGeometry(self, data, suffix=''):
@@ -437,7 +435,7 @@ class WorldMapXBlock(XBlock):
         # create a bunch of polygons that are more/less the shape of our original geometry
         geometryArr = []
         if data['type'] == 'point':
-            point = Point(data['geometry']['lon']+360., data['geometry']['lat'])
+            point = Point(data['geometry'][0]['lon']+360., data['geometry'][0]['lat'])
             geometryArr.append( point.buffer(buffer))
             geometryArr.append( point.buffer(buffer*2))
             geometryArr.append( point.buffer(buffer*4))
@@ -449,7 +447,7 @@ class WorldMapXBlock(XBlock):
                     arr.append((pt['lon']+360., pt['lat']))
                 polygon = Polygon(arr)
             else:
-                for pt in data['geometry']['points']:
+                for pt in data['geometry']:
                     arr.append((pt['lon']+360., pt['lat']))
                 polyline = LineString(arr)
                 buffer = max(buffer, 0.2*polyline.length)
@@ -655,186 +653,284 @@ class WorldMapXBlock(XBlock):
                     <explanation>
                          A quiz about the Boston area... particularly <B><a href='#' onclick='return highlight(\"backbay\", 5000, -2)'>Back Bay</a></B>
                     </explanation>
-                    <polygon id='backbay'>
-                         <point lon="-71.09350774082822" lat="42.35148683512319"/>
-                         <point lon="-71.09275672230382" lat="42.34706235935522"/>
-                         <point lon="-71.08775708470029" lat="42.3471733715164"/>
-                         <point lon="-71.08567569050435" lat="42.34328782922443"/>
-                         <point lon="-71.08329388889936" lat="42.34140047917672"/>
-                         <point lon="-71.07614848408352" lat="42.347379536438645"/>
-                         <point lon="-71.07640597614892" lat="42.3480456031057"/>
-                         <point lon="-71.0728225449051"  lat="42.34785529906382"/>
-                         <point lon="-71.07200715336435" lat="42.34863237027516"/>
-                         <point lon="-71.07228610310248" lat="42.34942529018035"/>
-                         <point lon="-71.07011887821837" lat="42.35004376076278"/>
-                         <point lon="-71.0708055237264"  lat="42.351835705270716"/>
-                         <point lon="-71.07325169834775" lat="42.35616470553563"/>
-                         <point lon="-71.07408854756031" lat="42.35600613935877"/>
-                         <point lon="-71.07483956608469" lat="42.357131950552244"/>
-                         <point lon="-71.09331462177917" lat="42.35166127043902"/>
-                    </polygon>
-                    <answer id='foobar' color='00FF00' type='point' hintAfterAttempt='0'>
-                       <explanation>
-                          Where is the biggest island in Boston harbor?
-                       </explanation>
-                       <constraints>
-                          <matches percentOfGrade="25" percentMatch="100" padding='1000'>
-                              <point lon="-70.9657058456866" lat="42.32011232390349"/>
-                              <explanation>
-                                 <B> Look at boston harbor - pick the biggest island </B>
-                              </explanation>
-                          </matches>
-                       </constraints>
-                    </answer>
-                    <answer id='baz' color='0000FF' type='polygon' hintAfterAttempt='2'>
-                       <explanation>
-                          Draw a polygon around the land bridge that formed Nahant bay?
-                       </explanation>
-                       <constraints>
-                          <includes percentOfGrade="25" padding='500' maxAreaFactor='15'>
-                              <point lon="-70.93824002537393" lat="42.445896458204764"/>
-                              <explanation>
-                                 <B>Hint:</B> Look for Nahant Bay on the map
-                              </explanation>
-                          </includes>
-                       </constraints>
-                    </answer>
-                    <answer id='area' color='FF00FF' type='polygon' hintAfterAttempt='2'>
-                       <explanation>
-                          Draw a polygon around "back bay"?
-                       </explanation>
-                       <constraints hintDisplayTime='-1'>
-                          <matches percentOfGrade="25" percentMatch="60" padding='1000'>
-                             <polygon>
-                                 <point lon="-71.09350774082822" lat="42.35148683512319"/>
-                                 <point lon="-71.09275672230382" lat="42.34706235935522"/>
-                                 <point lon="-71.08775708470029" lat="42.3471733715164"/>
-                                 <point lon="-71.08567569050435" lat="42.34328782922443"/>
-                                 <point lon="-71.08329388889936" lat="42.34140047917672"/>
-                                 <point lon="-71.07614848408352" lat="42.347379536438645"/>
-                                 <point lon="-71.07640597614892" lat="42.3480456031057"/>
-                                 <point lon="-71.0728225449051"  lat="42.34785529906382"/>
-                                 <point lon="-71.07200715336435" lat="42.34863237027516"/>
-                                 <point lon="-71.07228610310248" lat="42.34942529018035"/>
-                                 <point lon="-71.07011887821837" lat="42.35004376076278"/>
-                                 <point lon="-71.0708055237264"  lat="42.351835705270716"/>
-                                 <point lon="-71.07325169834775" lat="42.35616470553563"/>
-                                 <point lon="-71.07408854756031" lat="42.35600613935877"/>
-                                 <point lon="-71.07483956608469" lat="42.357131950552244"/>
-                                 <point lon="-71.09331462177917" lat="42.35166127043902"/>
-                             </polygon>
-                             <explanation>
-                                 <B>Hint:</B> Back bay was a land fill into the Charles River basin
-                             </explanation>
-                          </matches>
-                          <includes percentOfGrade="25" padding='100'>
-                             <polygon>
-                                <point lon="-71.07466790470745" lat="42.35719537593463"/>
-                                <point lon="-71.08492467197995" lat="42.35399231410341"/>
-                                <point lon="-71.08543965611076" lat="42.35335802506911"/>
-                                <point lon="-71.08822915348655" lat="42.35250172471913"/>
-                                <point lon="-71.08814332279839" lat="42.352279719020736"/>
-                                <point lon="-71.08689877781501" lat="42.35253343975517"/>
-                                <point lon="-71.07411000523211" lat="42.355958569427614"/>
-                                <point lon="-71.07466790470745" lat="42.35719537593463"/>
-                             </polygon>
-                             <explanation>
-                                <B>Must</B> include the esplanade
-                             </explanation>
-                          </includes>
-                          <excludes percentOfGrade="25" padding='25'>
-                             <point lon="-71.07071969303735" lat="42.351962566661165"/>
-                             <explanation>
-                                Must <B>not</B> include intersection of Boylston and Arlington Streets
-                             </explanation>
-                          </excludes>
-                          <excludes percentOfGrade="10" padding='150'>
-                            <polygon>
-                               <point lon="-71.06994721684204" lat="42.349520439895464"/>
-                               <point lon="-71.0687455872032" lat="42.34856893624958"/>
-                               <point lon="-71.07140633854628" lat="42.34863237027384"/>
-                            </polygon>
-                            <explanation>
-                              Must <b>not</b> include <i>Bay Village</i>
-                            </explanation>
-                          </excludes>
-                          <includes percentOfGrade="25" padding='50' >
-                             <point lon="-71.08303639683305" lat="42.341527361626746" />
-                             <explanation>
-                                <B>Must</B> include corner of <i>Mass ave.</i> and <i>SW Corridor Park</i>
-                             </explanation>
-                          </includes>
-                       </constraints>
-                    </answer>
-                    <answer id='esplanade' color='00FF00' type='polygon' hintAfterAttempt='2'>
-                       <explanation>
-                           Draw a polygon around the esplanade
-                       </explanation>
-                       <constraints hintDisplayTime='-1'>
-                          <matches percentMatch='50' percentOfGrade="25"  padding='0'>
-                             <polygon>
-                                <point lon="-71.07466790470745" lat="42.35719537593463"/>
-                                <point lon="-71.08492467197995" lat="42.35399231410341"/>
-                                <point lon="-71.08543965611076" lat="42.35335802506911"/>
-                                <point lon="-71.08822915348655" lat="42.35250172471913"/>
-                                <point lon="-71.08814332279839" lat="42.352279719020736"/>
-                                <point lon="-71.08689877781501" lat="42.35253343975517"/>
-                                <point lon="-71.07411000523211" lat="42.355958569427614"/>
-                                <point lon="-71.07466790470745" lat="42.35719537593463"/>
-                             </polygon>
-                             <explanation>
-                                <B>Must</B> include the esplanade
-                             </explanation>
-                          </matches>
-                       </constraints>
-                    </answer>
-                    <answer id='boffo' color='00FFFF' type='polyline' hintAfterAttempt='2'>
-                       <explanation>
-                          Draw a polyline on the land bridge that formed Nahant bay?
-                       </explanation>
-                       <constraints hintDisplayTime='-1'>
-                          <matches percentOfGrade="100" padding='500'>
-                              <polyline>
-                                 <point lon="-70.93703839573509" lat="42.455142795067786"/>
-                                 <point lon="-70.93978497776635" lat="42.44146279890606"/>
-                                 <point lon="-70.93360516819578" lat="42.43082073646349"/>
-                              </polyline>
-                              <explanation>
-                                 <B>Hint:</B> Look for Nahant Bay on the map - draw a polyline on the land bridge out to Nahant Island
-                              </explanation>
-                          </matches>
-                          <inside percentOfGrade="25"  padding='1'>
-                             <polygon>
-                                 <point lon="-70.9210738876792" lat="42.47325152648776"/>
-                                 <point lon="-70.95746609959279" lat="42.471732113995365"/>
-                                 <point lon="-70.93686673435874" lat="42.42005014321707"/>
-                                 <point lon="-70.91901395115596" lat="42.433734814183005"/>
-                             </polygon>
-                             <explanation>
-                                The land bridge is somewhere inside this polygon
-                             </explanation>
-                          </inside>
-                          <excludes percentOfGrade="25" padding="1">
-                             <polygon>
-                                <point lon="-70.9252795914228" lat="42.42955370389016"/>
-                                <point lon="-70.93763921056394" lat="42.42581580857819"/>
-                                <point lon="-70.93652341161325" lat="42.416438412427965"/>
-                                <point lon="-70.92828366551946" lat="42.41795916653644"/>
-                                <point lon="-70.92905614171568" lat="42.42112728581168"/>
-                                <point lon="-70.91978642736025" lat="42.424105171979036"/>
-                                <point lon="-70.91789815221426" lat="42.420683758749576"/>
-                                <point lon="-70.90983006749771" lat="42.416375046873334"/>
-                                <point lon="-70.90536687169678" lat="42.416628508708406"/>
-                                <point lon="-70.90227696691106" lat="42.41992341934355"/>
-                                <point lon="-70.91060254369391" lat="42.42708291670639"/>
-                                <point lon="-70.91927144322945" lat="42.42949035158941"/>
-                             </polygon>
-                             <explanation>
-                                Must not include Nahant Island
-                             </explanation>
-                          </excludes>
-                       </constraints>
-                    </answer>
+                <config>
+                {
+                    "highlights": [
+                       {
+                          "id": "backbay",
+                          "geometry": {
+                              "type": "polygon",
+                              "points": [
+                                 {"lon": -71.09350774082822, "lat": 42.35148683512319},
+                                 {"lon": -71.09275672230382, "lat": 42.34706235935522},
+                                 {"lon": -71.08775708470029, "lat": 42.3471733715164},
+                                 {"lon": -71.08567569050435, "lat": 42.34328782922443},
+                                 {"lon": -71.08329388889936, "lat": 42.34140047917672},
+                                 {"lon": -71.07614848408352, "lat": 42.347379536438645},
+                                 {"lon": -71.07640597614892, "lat": 42.3480456031057},
+                                 {"lon": -71.0728225449051, "lat": 42.34785529906382},
+                                 {"lon": -71.07200715336435, "lat": 42.34863237027516},
+                                 {"lon": -71.07228610310248, "lat": 42.34942529018035},
+                                 {"lon": -71.07011887821837, "lat": 42.35004376076278},
+                                 {"lon": -71.0708055237264, "lat": 42.351835705270716},
+                                 {"lon": -71.07325169834775, "lat": 42.35616470553563},
+                                 {"lon": -71.07408854756031, "lat": 42.35600613935877},
+                                 {"lon": -71.07483956608469, "lat": 42.357131950552244},
+                                 {"lon": -71.09331462177917, "lat": 42.35166127043902}
+                              ]
+                          }
+                       }
+                    ],
+                    "questions": [
+                       {
+                          "id": "foobar",
+                          "color": "00FF00",
+                          "type": "point",
+                          "explanation": "Where is the biggest island in Boston harbor?",
+                          "hintAfterAttempt": 0,
+                          "hintDisplayTime": -1,
+
+                          "constraints": [
+                             {
+                                "type": "matches",
+                                "padding": 1000,
+                                "explanation": "<B> Look at boston harbor - pick the biggest island </B>",
+                                "percentOfGrade": 100,
+                                "geometry": {
+                                   "type": "point",
+                                   "points": [
+                                      {"lon": -70.9657058456866, "lat": 42.32011232390349}
+                                   ]
+                                }
+                             }
+                          ]
+                       },
+                       {
+                          "id": "baz",
+                          "color": "0000FF",
+                          "type": "polygon",
+                          "explanation": "Draw a polygon around the land bridge that formed Nahant bay?",
+                          "hintAfterAttempt": 2,
+                          "hintDisplayTime": -1,
+
+                          "constraints": [
+                             {
+                                "type": "includes",
+                                "explanation": "<B>'Hint':</B> Look for Nahant Bay on the map",
+                                "percentOfGrade": 100,
+                                "padding": 500,
+                                "geometry": {
+                                   "type": "point",
+                                   "points": [
+                                      {"lon": -70.93824002537393, "lat": 42.445896458204764}
+                                   ]
+                                }
+                             }
+                          ]
+                       },
+                       {
+                          "id": "area",
+                          "color": "FF00FF",
+                          "type": "polygon",
+                          "explanation": "Draw a polygon around 'back bay'?",
+                          "hintAfterAttempt": 2,
+                          "hintDisplayTime": -1,
+
+                          "constraints": [
+                             {
+                                "type": "matches",
+                                "explanation": "<B>'Hint':</B> Back bay was a land fill into the Charles River basin",
+                                "percentOfGrade": 20,
+                                "geometry": {
+                                   "type": "polygon",
+                                   "points": [
+                                         {"lon": -71.09350774082822, "lat": 42.35148683512319},
+                                         {"lon": -71.09275672230382, "lat": 42.34706235935522},
+                                         {"lon": -71.08775708470029, "lat": 42.3471733715164},
+                                         {"lon": -71.08567569050435, "lat": 42.34328782922443},
+                                         {"lon": -71.08329388889936, "lat": 42.34140047917672},
+                                         {"lon": -71.07614848408352, "lat": 42.347379536438645},
+                                         {"lon": -71.07640597614892, "lat": 42.3480456031057},
+                                         {"lon": -71.07282254490510, "lat": 42.34785529906382},
+                                         {"lon": -71.07200715336435, "lat": 42.34863237027516},
+                                         {"lon": -71.07228610310248, "lat": 42.34942529018035},
+                                         {"lon": -71.07011887821837, "lat": 42.35004376076278},
+                                         {"lon": -71.07080552372640, "lat": 42.351835705270716},
+                                         {"lon": -71.07325169834775, "lat": 42.35616470553563},
+                                         {"lon": -71.07408854756031, "lat": 42.35600613935877},
+                                         {"lon": -71.07483956608469, "lat": 42.357131950552244},
+                                         {"lon": -71.09331462177917, "lat": 42.35166127043902}
+                                   ]
+                                },
+                                "percentMatch": 60,
+                                "percentOfGrade": 25,
+                                "padding": 1000
+                             },
+                             {
+                                "type": "includes",
+                                "explanation": "<B>Must</B> include the esplanade",
+                                "percentOfGrade": 20,
+                                "geometry": {
+                                   "type": "polygon",
+                                   "points": [
+                                        {"lon": -71.07466790470745, "lat": 42.35719537593463},
+                                        {"lon": -71.08492467197995, "lat": 42.35399231410341},
+                                        {"lon": -71.08543965611076, "lat": 42.35335802506911},
+                                        {"lon": -71.08822915348655, "lat": 42.35250172471913},
+                                        {"lon": -71.08814332279839, "lat": 42.352279719020736},
+                                        {"lon": -71.08689877781501, "lat": 42.35253343975517},
+                                        {"lon": -71.07411000523211, "lat": 42.355958569427614},
+                                        {"lon": -71.07466790470745, "lat": 42.35719537593463}
+                                   ]
+                                },
+                                "percentMatch": 60,
+                                "percentOfGrade": 25,
+                                "padding": 100
+                             },
+                             {
+                                "type": "excludes",
+                                "explanation": "Must <B>not</B> include intersection of Boylston and Arlington Streets",
+                                "percentOfGrade": 20,
+                                "geometry": {
+                                   "type": "point",
+                                   "points": [
+                                      {"lon": -71.07071969303735, "lat": 42.351962566661165}
+                                   ]
+                                },
+                                "percentOfGrade": 25,
+                                "padding": 25
+                             },
+                             {
+                                "type": "excludes",
+                                "explanation": "Must <b>not</b> include <i>Bay Village</i>",
+                                "percentOfGrade": 20,
+                                "geometry": {
+                                   "type": "polygon",
+                                   "points": [
+                                       {"lon": -71.06994721684204, "lat": 42.349520439895464},
+                                       {"lon": -71.06874558720320, "lat": 42.34856893624958},
+                                       {"lon": -71.07140633854628, "lat": 42.34863237027384}
+                                   ]
+                                },
+                                "percentOfGrade": 10,
+                                "padding": 150
+                             },
+                             {
+                                "type": "includes",
+                                "explanation": "<B>Must</B> include corner of <i>Mass ave.</i> and <i>SW Corridor Park</i>",
+                                "percentOfGrade": 20,
+                                "geometry": {
+                                   "type": "point",
+                                   "points": [
+                                      {"lon": -71.08303639683305, "lat": 42.341527361626746}
+                                   ]
+                                },
+                                "percentOfGrade": 25,
+                                "padding": 50
+                             }
+                          ]
+                        },
+                       {
+                          "id": "esplanade",
+                          "color": "00FF00",
+                          "type": "polygon",
+                          "explanation": "Where is the biggest island in Boston harbor?",
+                          "hintAfterAttempt": 2,
+                          "hintDisplayTime": -1,
+
+                          "constraints": [
+                             {
+                                "type": "matches",
+                                "percentMatch": 50,
+                                "percentOfGrade": 25,
+                                "padding": 0,
+                                "explanation": "<B>Must</B> include the esplanade",
+                                "geometry": {
+                                   "type": "polygon",
+                                   "points": [
+                                    {"lon": -71.07466790470745, "lat": 42.35719537593463},
+                                    {"lon": -71.08492467197995, "lat": 42.35399231410341},
+                                    {"lon": -71.08543965611076, "lat": 42.35335802506911},
+                                    {"lon": -71.08822915348655, "lat": 42.35250172471913},
+                                    {"lon": -71.08814332279839, "lat": 42.352279719020736},
+                                    {"lon": -71.08689877781501, "lat": 42.35253343975517},
+                                    {"lon": -71.07411000523211, "lat": 42.355958569427614},
+                                    {"lon": -71.07466790470745, "lat": 42.35719537593463}
+                                   ]
+                                }
+                             }
+                          ]
+                       },
+                       {
+                          "id": "boffo",
+                          "color": "00FFFF",
+                          "type": "polyline",
+                          "explanation": "Draw a polyline on the land bridge that formed Nahant bay?",
+                          "hintAfterAttempt": 2,
+                          "hintDisplayTime": -1,
+
+                          "constraints": [
+                             {
+                                "type": "matches",
+                                "percentOfGrade": 50,
+                                "padding": 500,
+                                "percentMatch": 80,
+                                "explanation": "<B>'Hint':</B> Look for Nahant Bay on the map - draw a polyline on the land bridge out to Nahant Island",
+                                "geometry": {
+                                   "type": "polyline",
+                                   "points": [
+                                     {"lon": -70.93703839573509, "lat": 42.455142795067786},
+                                     {"lon": -70.93978497776635, "lat": 42.44146279890606},
+                                     {"lon": -70.93360516819578, "lat": 42.43082073646349}
+                                   ]
+                                }
+                             },
+                             {
+                                "type": "inside",
+                                "percentOfGrade": 25,
+                                "percentMatch": 70,
+                                "padding": 1,
+                                "explanation": "The land bridge is somewhere inside this polygon",
+                                "geometry": {
+                                   "type": "polygon",
+                                   "points": [
+                                     {"lon": -70.9210738876792, "lat": 42.47325152648776},
+                                     {"lon": -70.95746609959279, "lat": 42.471732113995365},
+                                     {"lon": -70.93686673435874, "lat": 42.42005014321707},
+                                     {"lon": -70.91901395115596, "lat": 42.433734814183005}
+                                   ]
+                                }
+                             },
+                             {
+                                "type": "excludes",
+                                "percentOfGrade": 25,
+                                "percentMatch": 80,
+                                "padding": 1,
+                                "explanation": "Must not include Nahant Island",
+                                "geometry": {
+                                   "type": "polygon",
+                                   "points": [
+                                    {"lon": -70.9252795914228, "lat": 42.42955370389016},
+                                    {"lon": -70.93763921056394, "lat": 42.42581580857819},
+                                    {"lon": -70.93652341161325, "lat": 42.416438412427965},
+                                    {"lon": -70.92828366551946, "lat": 42.41795916653644},
+                                    {"lon": -70.92905614171568, "lat": 42.42112728581168},
+                                    {"lon": -70.91978642736025, "lat": 42.424105171979036},
+                                    {"lon": -70.91789815221426, "lat": 42.420683758749576},
+                                    {"lon": -70.90983006749771, "lat": 42.416375046873334},
+                                    {"lon": -70.90536687169678, "lat": 42.416628508708406},
+                                    {"lon": -70.90227696691106, "lat": 42.41992341934355},
+                                    {"lon": -70.91060254369391, "lat": 42.42708291670639},
+                                    {"lon": -70.91927144322945, "lat": 42.42949035158941}
+                                   ]
+                                }
+                             }
+                          ]
+                       }
+                    ]
+                }
+                </config>
+
                     <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
                        <layer id="geonode:qing_charity_v1_mzg"/>
                        <layer id="OpenLayers_Layer_WMS_122">
@@ -1003,6 +1099,8 @@ class WorldmapExpositoryBlock(XBlock):
     has_children = True
 
     explanationHTML = String(help="explanation html", default=None, scope=Scope.content)
+#    config = String(help="config data", default=None, scope=Scope.content)
+    config = Dict(help="config data", default=None, scope=Scope.content)
 
     def student_view(self, context=None):
         """Provide default student view."""
@@ -1028,10 +1126,9 @@ class WorldmapExpositoryBlock(XBlock):
         return None
 
     def getGeometry(self, id):
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, GeometryBlock) and child.id == id:
-                return child
+        for highlight in self.config['highlights']:  # pylint: disable=E1101
+            if ( highlight['id'] == id ):
+                return highlight['geometry']
         return None
 
     @classmethod
@@ -1060,6 +1157,8 @@ class WorldmapExpositoryBlock(XBlock):
         for child in node:
             if( child.tag == "explanation" ):
                 explanationText = parse_contents(child)  #found some explanation text
+            elif( child.tag == "config" ):
+                block.config = json.loads(parse_contents(child))
             else:
                 block.runtime.add_node_as_child(block, child, id_generator)
 
@@ -1069,6 +1168,7 @@ class WorldmapExpositoryBlock(XBlock):
                 setattr(block, name, value)
 
         setattr(block,'explanationHTML',explanationText)
+ #       setattr(block,'config', configtext)
 
         # Text content becomes "content", if such a field exists.
         if "content" in block.fields and block.fields["content"].scope == Scope.content:
@@ -1085,22 +1185,20 @@ class WorldmapQuizBlock(WorldmapExpositoryBlock):
 
     has_children = True
 
-    @property
-    def answers(self):
-        answers = []
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, AnswerBlock):
-                answers.append(child)
-        return answers
+    scores = Dict(help="scores", default=dict(), scope=Scope.user_state)
 
-    def setScore(self, answerId, value, max_value):
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if (isinstance(child, AnswerBlock) and child.id == answerId) :
-                child.setScore(value,max_value)
-                return
-        raise "Answer not found for id="+answerId
+    @property
+    def questions(self):
+        questions = self.config['questions']
+        if( questions == None ):
+            return []
+        else:
+            return questions
+
+    def setScore(self, id, value, max_value):
+        self.scores[id] = value/max_value
+        for question in self.config['questions']:
+            pass
 
 
 class ConstraintBlock(XBlock):

@@ -179,22 +179,22 @@ function WorldMapXBlock(runtime, element) {
             //********************** POINT & POLYGON TOOLS**************************
             $.ajax({
                  type: "POST",
-                 url: runtime.handlerUrl(element, 'getAnswers'),
+                 url: runtime.handlerUrl(element, 'getQuestions'),
                  data: "null",
                  success: function(result) {
                     //window.alert(JSON.stringify(result));
                     if( result != null ) {
                         var html = "<ol>"+result.explanation;
-                        for(var i in result.answers) {
+                        for(var i in result.questions) {
                             //result.answers[i].padding = result.padding;  //TODO: should be done on xml read, not here!
-                            html += "<li><span id='answer-"+result.answers[i].id+"'><span>"+result.answers[i].explanation+"</span><br/><span class='"+result.answers[i].type+"-tool'/><span id='score-"+result.answers[i].id+"'/><div id='dialog-"+result.answers[i].id+"'/></span></li>";
+                            html += "<li><span id='question-"+result.questions[i].id+"'><span>"+result.questions[i].explanation+"</span><br/><span class='"+result.questions[i].type+"-tool'/><span id='score-"+result.questions[i].id+"'/><div id='dialog-"+result.questions[i].id+"'/></span></li>";
                         }
                         html += "</ol>";
                         $('.auxArea',element).html(addUniqIdToArguments(getUniqueId(), html));
-                        for(var i in result.answers) {
-                            var tool = $('.auxArea',element).find('#answer-'+result.answers[i].id).find('.'+result.answers[i].type+'-tool');
-                            tool.css('background-color',result.answers[i].color);
-                            tool.click( result.answers[i], function(e) {
+                        for(var i in result.questions) {
+                            var tool = $('.auxArea',element).find('#question-'+result.questions[i].id).find('.'+result.questions[i].type+'-tool');
+                            tool.css('background-color',result.questions[i].color);
+                            tool.click( result.questions[i], function(e) {
                                 MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
                                 MESSAGING.getInstance().send(
                                     getUniqueId(),
@@ -205,7 +205,7 @@ function WorldMapXBlock(runtime, element) {
                     }
                  },
                  failure: function(){
-                     window.alert("getAnswers returned failure");
+                     window.alert("getQuestions returned failure");
                  }
             });
         } else if( $('.frame', element).attr('type') == "expository" ) {
@@ -291,7 +291,7 @@ function WorldMapXBlock(runtime, element) {
                     console.log("Failed to test "+ m.type+" for map: "+$('.frame', el).attr('id'));
                 } else {
                     var worldmap_block = $('.worldmap_block', element);
-                    var div = $('#score-'+result.answer.id, worldmap_block);
+                    var div = $('#score-'+result.question.id, worldmap_block);
 
                     if( result.xml != undefined ) {
                         debug(result.xml);
@@ -310,21 +310,19 @@ function WorldMapXBlock(runtime, element) {
                             if( nAttempt == undefined ) nAttempt = 0;
                             nAttempt++;
                             div.attr("nAttempts",nAttempt);
-                            var hintAfterAttempt = result.answer.hintAfterAttempt;
+                            var hintAfterAttempt = result.question.hintAfterAttempt;
                             if( hintAfterAttempt != null ) {
                                 if( nAttempt % hintAfterAttempt == 0) {
                                     var uniqId = getUniqueId();
                                     var html = "<ul>";
                                     HintManager.getInstance().reset();
-                                    for( var i=0;i<result.answer.constraints.length; i++) {
-                                        var constraint = result.answer.constraints[i];
-                                        if( !constraint.satisfied ) {
-                                            HintManager.getInstance().addConstraint(i,constraint);
-                                            html += "<li>"+constraint.explanation+"<a href='#' onclick='return HintManager.getInstance().flashHint(\""+uniqId+"\","+i+")'>hint</a></li>";
-                                        }
+                                    for( var i=0;i<result.unsatisfiedConstraints.length; i++) {
+                                        var constraint = result.unsatisfiedConstraints[i];
+                                        HintManager.getInstance().addConstraint(i,constraint);
+                                        html += "<li>"+constraint.explanation+" (<a href='#' onclick='return HintManager.getInstance().flashHint(\""+uniqId+"\","+i+")'>hint</a>)</li>";
                                     }
                                     html += "</ul>";
-                                    info(html,result.answer.hintDisplayTime);
+                                    info(html,result.question.hintDisplayTime);
                                 }
                             }
                         }
@@ -537,10 +535,8 @@ var HintManager = (function HintManagerSingleton() { // declare 'Singleton' as t
         flashHint: function(uniqId, indx) {
             var _this = this;
             var type = _this.constraints[indx]['geometry']['type'];
-            var geo = _this.constraints[indx]['geometry'];
-            if( type == 'polygon' ) {
-                geo = _this.constraints[indx]['geometry']['points'];
-            }
+            var geo = _this.constraints[indx]['geometry']['points'];
+
             var worldmapData = WorldMapRegistry[uniqId];
             $.ajax({
                 type: "POST",
