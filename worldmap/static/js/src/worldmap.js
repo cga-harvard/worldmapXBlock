@@ -12,7 +12,7 @@ function WorldMapXBlock(runtime, element) {
 
     WorldMapRegistry[ getUniqueId()] = { runtime: runtime, element: element };
 
-    console.log("Initializing WorldMapXBlock "+$('.frame', element).attr('id'))
+    debug("Initializing WorldMapXBlock "+$('.frame', element).attr('id'))
 
     MESSAGING.getInstance().addHandler(getUniqueId(),"info", function(m) { alert("info: "+m.getMessage()); });
     MESSAGING.getInstance().addHandler(getUniqueId(),"zoomend", function(m) { on_setZoomLevel(m.getMessage()); });
@@ -54,7 +54,7 @@ function WorldMapXBlock(runtime, element) {
                 for( var i=0; i<result.length; i++) {
                     var sliderSpec = result[i];
                     var sliderSpecId = sliderSpec.id;
-                    console.log("sliderSpec.id = "+sliderSpecId);
+                    debug("sliderSpec.id = "+sliderSpecId);
 
                     var top=25;
                     var left=-10;
@@ -121,20 +121,22 @@ function WorldMapXBlock(runtime, element) {
 
                             var layerSpecs = window.worldmapLayerSpecs[getUniqueId()];
                             for (var i=0; i<layerSpecs.length; i++) {
-                                for( var j=0; j<layerSpecs[i].params.length; j++) {
-                                    if( layerSpecs[i].params[j].name == null ) {
-                                        console.log("ERROR:  unnamed param in layer specification");
-                                    } else {
-                                        if( sliderSpec.param == layerSpecs[i].params[j].name ) {
-                                            var paramValue = layerSpecs[i].params[j].value;
-                                            var nFrac = 0;
-                                            if( paramValue != null ) {
-                                                var loc = paramValue.indexOf(".");
-                                                if( loc != -1 ) nFrac = paramValue.length - loc - 1;
+                                if( layerSpecs[i].params != undefined ) {
+                                    for( var j=0; j<layerSpecs[i].params.length; j++) {
+                                        if( layerSpecs[i].params[j].name == null ) {
+                                            debug("ERROR:  unnamed param in layer specification");
+                                        } else {
+                                            if( sliderSpec.param == layerSpecs[i].params[j].name ) {
+                                                var paramValue = layerSpecs[i].params[j].value;
+//                                                var nFrac = 0;
+//                                                if( paramValue != null ) {
+//                                                    var loc = paramValue.indexOf(".");
+//                                                    if( loc != -1 ) nFrac = paramValue.length - loc - 1;
+//                                                }
+                                                var visible =  (paramValue != null && paramValue == Math.floor(ui.value)) // * Math.pow(10,nFrac))/Math.pow(10,nFrac))
+                                                    || (ui.value >= layerSpecs[i].params[j].min && ui.value <= layerSpecs[i].params[j].max);
+                                                selectLayer(visible, layerSpecs[i].id);
                                             }
-                                            var visible =  (paramValue != null && paramValue == Math.floor(ui.value * Math.pow(10,nFrac))/Math.pow(10,nFrac))
-                                                || (ui.value >= layerSpecs[i].params[j].min && ui.value <= layerSpecs[i].params[j].max);
-                                            selectLayer(visible, layerSpecs[i].id);
                                         }
                                     }
                                 }
@@ -147,7 +149,9 @@ function WorldMapXBlock(runtime, element) {
 
 //                    $('.ui-slider',ctrl).tooltip({content: sliderSpec.help});
                     if( sliderSpec.help != null) {
-                        $(title).tooltip({ items:"div",content: sliderSpec.help, position: {my: 'left center', at: 'right+10 center'}});
+                        var text = "";
+                        for( var i in sliderSpec.help ) text += sliderSpec.help[i];
+                        $(title).tooltip({ items:"div",content: text, position: {my: 'left center', at: 'right+10 center'}});
                     }
 //                    $('.ui-slider', ctrl).hover( function(e) {
 //                        var obj = $(e.target).find(".slider-help");
@@ -175,52 +179,38 @@ function WorldMapXBlock(runtime, element) {
              }
         });
 
-        if( $('.frame', element).attr('type') == "quiz" ) {
-            //********************** POINT & POLYGON TOOLS**************************
-            $.ajax({
-                 type: "POST",
-                 url: runtime.handlerUrl(element, 'getQuestions'),
-                 data: "null",
-                 success: function(result) {
-                    //window.alert(JSON.stringify(result));
-                    if( result != null ) {
-                        var html = "<ol>"+result.explanation;
-                        for(var i in result.questions) {
-                            //result.answers[i].padding = result.padding;  //TODO: should be done on xml read, not here!
-                            html += "<li><span id='question-"+result.questions[i].id+"'><span>"+result.questions[i].explanation+"</span><br/><span class='"+result.questions[i].type+"-tool'/><span id='score-"+result.questions[i].id+"'/><div id='dialog-"+result.questions[i].id+"'/></span></li>";
-                        }
-                        html += "</ol>";
-                        $('.auxArea',element).html(addUniqIdToArguments(getUniqueId(), html));
-                        for(var i in result.questions) {
-                            var tool = $('.auxArea',element).find('#question-'+result.questions[i].id).find('.'+result.questions[i].type+'-tool');
-                            tool.css('background-color',result.questions[i].color);
-                            tool.click( result.questions[i], function(e) {
-                                MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
-                                MESSAGING.getInstance().send(
-                                    getUniqueId(),
-                                    new Message("set-answer-tool", e.data)
-                                );
-                            });
-                        }
+        //********************** POINT & POLYGON TOOLS**************************
+        $.ajax({
+             type: "POST",
+             url: runtime.handlerUrl(element, 'getQuestions'),
+             data: "null",
+             success: function(result) {
+                //window.alert(JSON.stringify(result));
+                if( result != null ) {
+                    var html = "<ol>"+result.explanation;
+                    for(var i in result.questions) {
+                        //result.answers[i].padding = result.padding;  //TODO: should be done on xml read, not here!
+                        html += "<li><span id='question-"+result.questions[i].id+"'><span>"+result.questions[i].explanation+"</span><br/><span class='"+result.questions[i].type+"-tool'/><span id='score-"+result.questions[i].id+"'/><div id='dialog-"+result.questions[i].id+"'/></span></li>";
                     }
-                 },
-                 failure: function(){
-                     window.alert("getQuestions returned failure");
-                 }
-            });
-        } else if( $('.frame', element).attr('type') == "expository" ) {
-
-            var uniqId = getUniqueId();
-
-            $.ajax({
-                type: "POST",
-                url: runtime.handlerUrl(element, 'getExplanation'),
-                data: "null",
-                success: function(result) {
-                    $('.auxArea',element).html(addUniqIdToArguments(getUniqueId(), result));
+                    html += "</ol>";
+                    $('.auxArea',element).html(addUniqIdToArguments(getUniqueId(), html));
+                    for(var i in result.questions) {
+                        var tool = $('.auxArea',element).find('#question-'+result.questions[i].id).find('.'+result.questions[i].type+'-tool');
+                        tool.css('background-color',result.questions[i].color);
+                        tool.click( result.questions[i], function(e) {
+                            MESSAGING.getInstance().sendAll( new Message("reset-answer-tool",null));
+                            MESSAGING.getInstance().send(
+                                getUniqueId(),
+                                new Message("set-answer-tool", e.data)
+                            );
+                        });
+                    }
                 }
-            });
-        }
+             },
+             failure: function(){
+                 window.alert("getQuestions returned failure");
+             }
+        });
         //****************** LAYER CONTROLS ***************************
         $('.layerControls',element).dynatree({
             title: "LayerControls",
@@ -288,7 +278,7 @@ function WorldMapXBlock(runtime, element) {
             data: JSON.stringify(data),
             success: function(result) {
                 if( !result ) {
-                    console.log("Failed to test "+ m.type+" for map: "+$('.frame', el).attr('id'));
+                    debug("Failed to test "+ m.type+" for map: "+$('.frame', el).attr('id'));
                 } else {
                     var worldmap_block = $('.worldmap_block', element);
                     var div = $('#score-'+result.question.id, worldmap_block);
@@ -411,7 +401,7 @@ function WorldMapXBlock(runtime, element) {
             data: json,
             success: function(result) {
                 if( !result ) {
-                    console.log("Failed to change layer for map: "+$('.frame', element).attr('id'));
+                    debug("Failed to change layer for map: "+$('.frame', element).attr('id'));
                 }
             }
         });
@@ -419,15 +409,21 @@ function WorldMapXBlock(runtime, element) {
 
 
     $(function ($) {
-        console.log("initialize on page load");
+        debug("initialize on page load");
         $('.debugInfo',element).resizable();
   //      $(document).tooltip();
         /* Here's where you'd do things on page load. */
     });
 
     function debug(str) {
-        if( $('.frame',element).attr('debug') ) {
-            $(".debugInfo",element).text(str);
+       if( $('.frame',element).attr('debug') ) {
+            var psconsole = $(".debugInfo",element);
+            var text = psconsole.val() + str+"\n";
+            psconsole.text(text);
+            psconsole.scrollTop(
+                psconsole[0].scrollHeight - psconsole.height()
+            );
+            if ('console' in self && 'log' in console) console.log(str);
         }
     }
 
@@ -460,7 +456,7 @@ function WorldMapXBlock(runtime, element) {
                 }, duration);
             }
         } catch (e) {
-            console.log("exception: "+e+"\n"+ e.stack);
+            debug("exception: "+e+"\n"+ e.stack);
         }
     }
 
@@ -482,7 +478,7 @@ function WorldMapXBlock(runtime, element) {
             }
         });
         } catch (e) {
-            console.log("exception: "+e);
+            debug("exception: "+e);
         }
     }
 
@@ -530,7 +526,7 @@ var HintManager = (function HintManagerSingleton() { // declare 'Singleton' as t
         },
         addConstraint: function(indx, constraint) {
            this.constraints[indx] = constraint;
-//            console.log("addConstraint["+this.constraints.length+"] = "+JSON.stringify(constraint));
+//            debug("addConstraint["+this.constraints.length+"] = "+JSON.stringify(constraint));
         },
         flashHint: function(uniqId, indx) {
             var _this = this;
@@ -563,5 +559,3 @@ var HintManager = (function HintManagerSingleton() { // declare 'Singleton' as t
         }
     }
 })();
-
-

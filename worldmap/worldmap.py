@@ -78,50 +78,104 @@ class WorldMapXBlock(XBlock):
 
     layerState= Dict(help="dictionary of layer states, layer name is key", default={}, scope=Scope.user_state)
 
-    has_children = True
+    config = Dict(help="config data", default=None, scope=Scope.content)
+
+    worldmapConfig = Dict(help="worldmap config data", default=None, scope=Scope.content)
+
+    explanationHTML = String(help="discussion over map", default="", scope=Scope.content)
+
+    scores = Dict(help="scores", default=dict(), scope=Scope.user_state) #TODO: make this work
 
 
-    @property
-    def worldmapType(self):
-        if isinstance(self.get_parent(), WorldmapQuizBlock):
-            return "quiz"
-        elif isinstance(self.get_parent(), WorldmapExpositoryBlock):
-            return "expository"
-        else:
-            return "unknown"
+    has_children = False
+
+
+    # @property
+    # def worldmapType(self):
+    #     if isinstance(self.get_parent(), WorldmapQuizBlock):
+    #         return "quiz"
+    #     elif isinstance(self.get_parent(), WorldmapExpositoryBlock):
+    #         return "expository"
+    #     else:
+    #         return "unknown"
 
     @property
     def sliders(self):
-        sliders = []
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, SliderBlock):
-                sliders.append(child)
-        return sliders
+        return self.worldmapConfig['sliders']
 
     @property
     def layers(self):
-        layers = []
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, LayerBlock):
-                layers.append(child)
-        return layers
+        return self.worldmapConfig.get('layers',None)
 
-    @property
-    def topLayerGroup(self):
-        for child_id in self.children: #pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if( isinstance(child, GroupControlBlock) ):
-                return child
-        return None
+    # @property
+    # def topLayerGroup(self):
+    #     return self.worldmapConfig.get('layer-controls', None)
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
         data = pkg_resources.resource_string(__name__, path)
         return data.decode("utf8")
 
-    # TO-DO: change this view to display your data your own way.
+
+
+    @classmethod
+    def parse_xml(cls, node, runtime, keys, id_generator):
+        """
+        Use `node` to construct a new block.
+
+        Arguments:
+            node (etree.Element): The xml node to parse into an xblock.
+
+            runtime (:class:`.Runtime`): The runtime to use while parsing.
+
+            keys (:class:`.ScopeIds`): The keys identifying where this block
+                will store its data.
+
+            id_generator (:class:`.IdGenerator`): An object that will allow the
+                runtime to generate correct definition and usage ids for
+                children of this block.
+
+        """
+        block = runtime.construct_xblock_from_class(cls, keys)
+
+        explanationText = ''   #grovel out any explanation text out of <explanation> tag
+
+        # The base implementation: child nodes become child blocks.
+        for child in node:
+            if( child.tag == "explanation" ):
+                explanationText = parse_contents(child)  #found some explanation text
+            elif( child.tag == "config" ):
+                block.config = json.loads(parse_contents(child))
+            elif( child.tag == "worldmap-config" ):
+                block.worldmapConfig = json.loads(parse_contents(child))
+            else:
+                block.runtime.add_node_as_child(block, child, id_generator)
+
+        # Attributes become fields.
+        for name, value in node.items():
+            if name in block.fields:
+                setattr(block, name, value)
+
+        setattr(block,'explanationHTML',explanationText)
+ #       setattr(block,'config', configtext)
+
+        # Text content becomes "content", if such a field exists.
+        if "content" in block.fields and block.fields["content"].scope == Scope.content:
+            text = node.text
+            if text:
+                text = text.strip()
+                if text:
+                    block.content = text
+
+        return block
+
+
+
+
+
+
+
+
     def student_view(self, context=None):
         """
         The primary view of the WorldMapXBlock, shown to students
@@ -166,31 +220,11 @@ class WorldMapXBlock(XBlock):
 
     @XBlock.json_handler
     def getSliderSetup(self, data, suffix=''):
-        result = []
-        if( self.sliders != None ):
-            for slider in self.sliders:
-                result.append({
-                   'id':   slider.id,
-                   'min':  slider.min,
-                   'max':  slider.max,
-                   'increment': slider.increment,
-                   'position': slider.position,
-                   'param': slider.param,
-                   'title': slider.title,
-                   'help':  slider.help
-                })
-        return result
+        return self.worldmapConfig['sliders']
 
     @XBlock.json_handler
     def getLayerSpecs(self, data, suffix=''):
-        result = []
-        if( self.layers != None ):
-            for layer in self.layers:
-                result.append({
-                   'id':   layer.id,
-                   'params':  layer.params
-                })
-        return result
+        return self.worldmapConfig['layers']
 
     @XBlock.json_handler
     def getLayerStates(self, data, suffix=''):
@@ -417,16 +451,17 @@ class WorldMapXBlock(XBlock):
 
     @XBlock.json_handler
     def getQuestions(self, data, suffix=''):
-        if isinstance(self.get_parent(), WorldmapQuizBlock):
-            return {
-                'questions': self.get_parent().questions,
-                'explanation': self.get_parent().explanationHTML
-            }
-        return None
+        return {
+            'questions': self.config.get('questions',[]),
+            'explanation': self.explanationHTML
+        }
 
     @XBlock.json_handler
-    def getGeometry(self, data, suffix=''):
-        return self.get_parent().getGeometry(data)
+    def getGeometry(self, id, suffix=''):
+        for highlight in self.config.get('highlights',[]):  # pylint: disable=E1101
+            if ( highlight['id'] == id ):
+                return highlight['geometry']
+        return None
 
     @XBlock.json_handler
     def getFuzzyGeometry(self, data, suffix=''):
@@ -485,7 +520,19 @@ class WorldMapXBlock(XBlock):
 
     @XBlock.json_handler
     def getExplanation(self,data,suffix=''):
-        return self.get_parent().explanationHTML
+        return self.explanationHTML
+
+
+    @property
+    def questions(self):
+        return self.config.get('questions',[])
+
+
+    #TODO: fix this - make it work
+    def setScore(self, id, value, max_value):
+        self.scores[id] = value/max_value
+        for question in self.config['questions']:
+            pass
 
 
     @XBlock.json_handler
@@ -493,10 +540,7 @@ class WorldMapXBlock(XBlock):
         """
         Called to get layer tree for a particular map
         """
-        if( self.topLayerGroup == None ):
-            return []
-        else:
-            return self.topLayerGroup.renderToDynatree()
+        return self.worldmapConfig.get('layer-controls', [])
 
     @XBlock.json_handler
     def set_zoom_level(self, data, suffix=''):
@@ -649,10 +693,10 @@ class WorldMapXBlock(XBlock):
                 #     <point id="big-island" lon="-70.9657058456866" lat="42.32011232390349"/>
                 # </worldmap-expository>
              +"""
-             <worldmap-quiz>
-                    <explanation>
-                         A quiz about the Boston area... particularly <B><a href='#' onclick='return highlight(\"backbay\", 5000, -2)'>Back Bay</a></B>
-                    </explanation>
+             <worldmap>
+                <explanation>
+                     A quiz about the Boston area... particularly <B><a href='#' onclick='return highlight(\"backbay\", 5000, -2)'>Back Bay</a></B>
+                </explanation>
                 <config>
                 {
                     "highlights": [
@@ -930,58 +974,157 @@ class WorldMapXBlock(XBlock):
                     ]
                 }
                 </config>
-
-                    <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
-                       <layer id="geonode:qing_charity_v1_mzg"/>
-                       <layer id="OpenLayers_Layer_WMS_122">
-                         <param name="CensusYear" value="1972"/>
-                       </layer>
-                       <layer id="OpenLayers_Layer_WMS_124">
-                         <param name="CensusYear" min="1973" max="1977"/>
-                       </layer>
-                       <layer id="OpenLayers_Layer_WMS_120">
-                         <param name="CensusYear" value="1976"/>
-                       </layer>
-                       <layer id="OpenLayers_Layer_WMS_118">
-                         <param name="CensusYear" value="1978"/>
-                       </layer>
-                       <layer id="OpenLayers_Layer_Vector_132">
-                         <param name="CensusYear" value="1980"/>
-                       </layer>
-                       <group-control name="Census Data" visible="true">
-                          <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="layer0"/>
-                          <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
-                          <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
-                          <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>
-                          <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE"/>
-                          <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
-                          <group-control name="A sub group of layers">
-                             <group-control name="A sub-sub-group">
-                                <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.1"/>
-                                <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.1"/>
-                             </group-control>
-                             <group-control name="another sub-sub-group" visible="false">
-                                <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE.2"/>
-                                <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.2"/>
-                             </group-control>
-                             <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA.1"/>
-                             <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB.1"/>
-                          </group-control>
-                       </group-control>
-
-                       <slider id="timeSlider5" title="slider:原典資料" param="CensusYear" min="1972" max="1980" increment="0.2" position="bottom">
-                          <help>
-                             <B>This is some generalized html</B><br/><a href='yahoo.com'>yahoo</a>
-                             <i>you can use to create help info for using the slider</i>
-                             <ul>
-                                <li>You can explain what it does</li>
-                                <li>How to interpret things</li>
-                                <li>What other things you might be able to do</li>
-                             </ul>
-                          </help>
-                       </slider>
-                    </worldmap>
-                </worldmap-quiz>
+                <worldmap-config>
+                {
+                    "href": "http://23.21.172.243/maps/bostoncensus/embed",
+                    "debug": true,
+                    "width": 600,
+                    "height": 400,
+                    "baseLayer":"OpenLayers_Layer_Google_116",
+                    "layers": [
+                    ],
+                    "layers": [
+                        {
+                            "id":"geonode:qing_charity_v1_mzg"
+                        },
+                        {
+                            "id":"OpenLayers_Layer_WMS_122",
+                            "params": [
+                                { "name":"CensusYear",  "value":1972 }
+                            ]
+                        },
+                        {
+                            "id":"OpenLayers_Layer_WMS_124",
+                            "params": [
+                                { "name":"CensusYear",  "min":1973, "max": 1977 }
+                            ]
+                        },
+                        {
+                            "id":"OpenLayers_Layer_WMS_120",
+                            "params": [
+                                { "name":"CensusYear",  "value":1976 }
+                            ]
+                        },
+                        {
+                            "id":"OpenLayers_Layer_WMS_118",
+                            "params": [
+                                { "name":"CensusYear",  "value":1978 }
+                            ]
+                        },
+                        {
+                            "id":"OpenLayers_Layer_Vector_132",
+                            "params": [
+                                { "name":"CensusYear",  "value":1980 }
+                            ]
+                        }
+                    ],
+                    "layer-controls": {
+                        "title":"Census Data",
+                        "expand": false,
+                        "children": [
+                            {
+                                "key":"OpenLayers_Layer_WMS_120",
+                                "visible": true,
+                                "title": "layerA"
+                            },
+                            {
+                                "key":"OpenLayers_Layer_WMS_122",
+                                "visible": true,
+                                "title": "layerB"
+                            },
+                            {
+                                "key":"OpenLayers_Layer_WMS_124",
+                                "visible": true,
+                                "title": "layerC"
+                            },
+                            {
+                                "key":"OpenLayers_Layer_WMS_120",
+                                "visible": true,
+                                "title": "layerD"
+                            },
+                            {
+                                "key":"OpenLayers_Layer_WMS_118",
+                                "visible": true,
+                                "title": "layerE"
+                            },
+                            {
+                                "key":"OpenLayers_Layer_Vector_132",
+                                "visible": true,
+                                "title": "layerF"
+                            },
+                            {
+                                "title":"A sub group of layers",
+                                "isFolder": true,
+                                "children": [
+                                    {
+                                        "title":"A sub sub group of layers",
+                                        "isFolder": true,
+                                        "children": [
+                                            {
+                                                "key":"OpenLayers_Layer_WMS_118",
+                                                "visible": true,
+                                                "title": "layerE.1"
+                                            },
+                                            {
+                                                "key":"OpenLayers_Layer_Vector_132",
+                                                "visible": true,
+                                                "title": "layerF.1"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "title":"Another sub sub group of layers",
+                                        "visible": false,
+                                        "isFolder": true,
+                                        "children": [
+                                            {
+                                                "key":"OpenLayers_Layer_WMS_118",
+                                                "visible": true,
+                                                "title": "layerE.2"
+                                            },
+                                            {
+                                                "key":"OpenLayers_Layer_Vector_132",
+                                                "visible": true,
+                                                "title": "layerF.2"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "key":"OpenLayers_Layer_WMS_122",
+                                        "visible": true,
+                                        "title": "layerA.1"
+                                    },
+                                    {
+                                        "key":"OpenLayers_Layer_WMS_124",
+                                        "visible": true,
+                                        "title": "layerB.1"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "sliders": [
+                       {
+                            "id":"timeSlider1",
+                            "title":"slider: 原典資料",
+                            "param":"CensusYear",
+                            "min":1972,
+                            "max":1980,
+                            "increment": 0.2,
+                            "position":"bottom",
+                            "help": [
+                                "<B>This is some generalized html</B><br/><i>you can use to create help info for using the slider</i>",
+                                "<ul>",
+                                "   <li>You can explain what it does</li>",
+                                "   <li>How to interpret things</li>",
+                                "   <li>What other things you might be able to do</li>",
+                                "</ul>"
+                            ]
+                       }
+                    ]
+                }
+                </worldmap-config>
+                </worldmap>
                 """
                 # <worldmap-quiz>
                 #     <explanation>
@@ -1101,6 +1244,7 @@ class WorldmapExpositoryBlock(XBlock):
     explanationHTML = String(help="explanation html", default=None, scope=Scope.content)
 #    config = String(help="config data", default=None, scope=Scope.content)
     config = Dict(help="config data", default=None, scope=Scope.content)
+    worldmapConfig = Dict(help="worldmap config data", default=None, scope=Scope.content)
 
     def student_view(self, context=None):
         """Provide default student view."""
@@ -1117,19 +1261,19 @@ class WorldmapExpositoryBlock(XBlock):
         result.add_content(self.runtime.render_template("vertical.html", children=child_frags))
         return result
 
-    @property
-    def worldmap(self):
-        for child_id in self.children:  # pylint: disable=E1101
-            child = self.runtime.get_block(child_id)
-            if isinstance(child, WorldMapXBlock):
-                return child
-        return None
+    # @property
+    # def worldmap(self):
+    #     for child_id in self.children:  # pylint: disable=E1101
+    #         child = self.runtime.get_block(child_id)
+    #         if isinstance(child, WorldMapXBlock):
+    #             return child
+    #     return None
 
-    def getGeometry(self, id):
-        for highlight in self.config['highlights']:  # pylint: disable=E1101
-            if ( highlight['id'] == id ):
-                return highlight['geometry']
-        return None
+    # def getGeometry(self, id):
+    #     for highlight in self.config['highlights']:  # pylint: disable=E1101
+    #         if ( highlight['id'] == id ):
+    #             return highlight['geometry']
+    #     return None
 
     @classmethod
     def parse_xml(cls, node, runtime, keys, id_generator):
@@ -1159,6 +1303,8 @@ class WorldmapExpositoryBlock(XBlock):
                 explanationText = parse_contents(child)  #found some explanation text
             elif( child.tag == "config" ):
                 block.config = json.loads(parse_contents(child))
+            elif( child.tag == "worldmap-config" ):
+                block.worldmapConfig = json.loads(parse_contents(child))
             else:
                 block.runtime.add_node_as_child(block, child, id_generator)
 
