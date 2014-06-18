@@ -1,10 +1,15 @@
 # coding=utf-8
-"""TO-DO: Write a description of what this XBlock is."""
-import json
+"""
 
+  This is an XBlock which creates a bridge between EdX and Harvard's Worldmap mapping client.
+  It sets up a client-slave relationship with the worldmap client which is loaded in an iframe and can get
+  that client to do our bidding via a message passing interface.
+
+  Written by Robert Light   light@alum.mit.edu
+
+"""
 import pkg_resources
 import logging
-import threading
 import math
 import sys
 import json
@@ -18,7 +23,6 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry import LineString
 from shapely.geometry.point import Point
 from shapely.geos import TopologicalError
-from django.utils.translation import ugettext as _
 from shapely import affinity
 from shapely import ops
 from random import randrange
@@ -55,7 +59,7 @@ class WorldMapXBlock(XBlock):
     """
     A testing block that checks the behavior of the container.
     """
-    threadLock = threading.Lock()
+ #   threadLock = threading.Lock()
 
     # Fields are defined on the class.  You can access them in your code as
     # self.<fieldname>.
@@ -66,11 +70,6 @@ class WorldMapXBlock(XBlock):
     # )
 
     # see:  https://xblock.readthedocs.org/en/latest/guide/xblock.html#guide-fields
-    href = String(help="URL of the worldmap page at the provider", default=None, scope=Scope.content)
-    baseLayer = String(help="id of base layer", default=None, scope=Scope.content)
-    width= Integer(help="width of map", default=750, scope=Scope.content)
-    height=Integer(help="height of map", default=550, scope=Scope.content)
-    debug =Boolean(help="enable the debug pane", default=False, scope=Scope.content)
 
     zoomLevel = Integer(help="zoom level of map", default=None, scope=Scope.user_state)
     centerLat = Float(help="center of map (latitude)", default=None, scope=Scope.user_state)
@@ -170,7 +169,11 @@ class WorldMapXBlock(XBlock):
         except:
             pass
 
-        self.url = self.href + delimiter + "xblockId=worldmap_" + self.scope_ids.usage_id
+        self.url =   self.worldmapConfig.get("href",None) + delimiter + "xblockId=worldmap_" + self.scope_ids.usage_id
+        self.width=  self.worldmapConfig.get("width",600)
+        self.height= self.worldmapConfig.get("height",400)
+        self.debug = self.worldmapConfig.get("debug",False)
+
 
         frag = Fragment(self.resource_string("static/html/worldmap.html").format(self=self))
         template = Template(self.resource_string("static/css/worldmap.css"))
@@ -288,13 +291,18 @@ class WorldMapXBlock(XBlock):
                         constraintPolygon = makePolygon(constraint['geometry']['points'])
 
                         if( constraint['type'] == 'includes' ):
-                            constraintSatisfied = answerPolygon.contains(constraintPolygon)
-                            if constraintSatisfied and constraint['maxAreaFactor'] != None :
+                            constraintSatisfied = constraintPolygon.difference(answerPolygon).area/constraintPolygon.area < 0.05 #allow 5% slop
+                            if constraintSatisfied and constraint.get('maxAreaFactor',None) != None :
                                 constraintSatisfied = answerPolygon.area/constraintPolygon.area < constraint['maxAreaFactor']
                                 if not constraintSatisfied :
                                     additionalErrorInfo = _(" (polygon too big)")
-                        else:
-                            constraintSatisfied = constraintPolygon.disjoint(answerPolygon)
+                            else:
+                                if( answerPolygon.disjoint(constraintPolygon) ):
+                                    additionalErrorInfo = _(" (polygon not drawn around proper area)")
+                                elif( not answerPolygon.contains(constraintPolygon)):
+                                    additionalErrorInfo = _(" (you hit a piece of the right area, but not enough)")
+                        else: #EXCLUDES
+                            constraintSatisfied = constraintPolygon.difference(answerPolygon).area/constraintPolygon.area > 0.95 #allow for 5% slop
                     elif( constraint['geometry']['type'] == 'point' ):
                         if( constraint['type'] == 'includes' ):
                             constraintPt = makePoint(constraint['geometry']['points'][0])
@@ -306,7 +314,7 @@ class WorldMapXBlock(XBlock):
                                 if not constraintSatisfied :
                                     additionalErrorInfo = _(" (polygon too big)")
                         else:
-                            constraintSatisfied = answerPolygon.disjoint(makePoint(constraint['geometry']))
+                            constraintSatisfied = answerPolygon.disjoint(makePoint(constraint['geometry']['points'][0]))
                     elif( constraint['geometry']['type'] == 'polyline' ):
                         constraintLine = makeLineString(constraint['geometry'])
                         if( constraint['type'] == 'includes' ) :
@@ -334,6 +342,11 @@ class WorldMapXBlock(XBlock):
             }
         except:
             print _("Unexpected error: "), sys.exc_info()[0]
+            return {
+                'question':data['question'],
+                'isHit': False,
+                'error': _("Unexpected error: "+sys.exc_info()[0])
+            }
 
         percentIncorrect = math.floor( 100 - totalCorrect*100/totalGradeValue);
 
@@ -538,9 +551,9 @@ class WorldMapXBlock(XBlock):
             return False
         else:
             # we have a threading problem... need to behave in single-threaded mode here
-            self.threadLock.acquire()
+          #  self.threadLock.acquire()
             self.layerState[id] = { 'name':data.get('name'), 'opacity':data.get('opacity'), 'visibility':data.get('visibility')}
-            self.threadLock.release()
+          #  self.threadLock.release()
 
             pass
         return True
