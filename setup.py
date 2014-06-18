@@ -42,24 +42,7 @@ setup(
     ],
     entry_points={
         'xblock.v1': [
-            'worldmap               = worldmap:WorldMapXBlock',
-            'layer                  = worldmap:LayerBlock',
-            'worldmap-expository    = worldmap:WorldmapExpositoryBlock',
-            'worldmap-quiz          = worldmap:WorldmapQuizBlock',
-            'layer-control          = worldmap:LayerControlBlock',
-            'group-control          = worldmap:GroupControlBlock',
-            # 'explanation            = worldmap:HelpBlock',
-            # 'help                   = worldmap:HelpBlock',
-            'polygon                = worldmap:PolyBlock',
-            'polyline               = worldmap:PolyBlock',
-            'point                  = worldmap:PointBlock',
-            'answer                 = worldmap:AnswerBlock',
-            'constraints            = worldmap:ConstraintsBlock',
-            'matches                = worldmap:MatchesConstraintBlock',
-            'inside                 = worldmap:InsideOfConstraintBlock',
-            'includes               = worldmap:IncludesConstraintBlock',
-            'excludes               = worldmap:ExcludesConstraintBlock',
-            'slider                 = worldmap:SliderBlock',
+            'worldmap               = worldmap:WorldMapXBlock'
         ]
     },
     package_data=package_data,
