@@ -1,0 +1,24 @@
+.CodeMirror {
+    height:270px !important;
+}
+
+.wrapper-comp-settings .list-input.settings-list .field.comp-setting-entry {
+    padding: 3px 3px !important;
+    margin: 0px 6px !important;
+}
+.ui-tabs .ui-tabs-panel {
+    padding: 0px 2px !important;
+}
+
+#tabs {
+    height: 300px;
+}
+
+.ui-tabs .ui-tabs-nav li {
+    margin: -1px .2em 0 !important;
+}
+
+.ui-tabs .ui-tabs-nav .ui-tabs-anchor {
+    padding: 0.2em 1em !important;
+    font-size: smaller !important;
+}

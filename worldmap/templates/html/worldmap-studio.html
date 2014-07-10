@@ -1,0 +1,59 @@
+{% load i18n %}
+
+<!-- TODO: Replace by default edit view once available in Studio -->
+<div class="wrapper-comp-settings is-active editor-with-buttons " id="settings-tab">
+  <ul class="list-input settings-list">
+      <li class="field comp-setting-entry is-set">
+          <div class="wrapper-comp-setting">
+            <label class="label setting-label" for="edit_display_name">Title</label>
+            <input class="input setting-input edit-display-name" id="edit_display_name" value="{{ display_name }}" type="text">
+          </div>
+      </li>
+
+      <li class="field comp-setting-entry is-set">
+
+          <div id="tabs">
+              <ul>
+                <li><a href="#tabs-1">Questions</a></li>
+                <li><a href="#tabs-2">Map config</a></li>
+              </ul>
+              <div id="tabs-1">
+                  <div class="wrapper-comp-setting">
+<!--                    <label class="label setting-label" for="edit_data">Questions</label>
+                        <span class="tip setting-help">The JSON definition for the questions configuration</span>
+-->
+                    <div class='codemirror-editor-wrapper'>
+                      <textarea id="configEditor" class="block-json-editor edit-data">{{ config_json}}</textarea>
+                    </div>
+                  </div>
+              </div>
+              <div id="tabs-2">
+                  <div class="wrapper-comp-setting">
+<!--                    <label class="label setting-label" for="edit_data">Questions</label>
+                        <span class="tip setting-help">The JSON definition for the questions configuration</span>
+-->
+                    <div class='codemirror-editor-wrapper'>
+                      <textarea id="configEditor2" class="block-json-editor2 edit-data">{{ worldmapConfig_json}}</textarea>
+                    </div>
+                  </div>
+              </div>
+          </div>
+      </li>
+  </ul>
+  <div class="xblock-actions">
+    <span class="xblock-editor-error-message"></span>
+    <ul>
+      <li class="action-item">
+        <a href="#" class="button action-primary save-button">{% trans "Save" %}</a>
+      </li>
+
+      <li class="action-item">
+        <a href="#" class="button cancel-button">{% trans "Cancel" %}</a>
+      </li>
+    </ul>
+  </div>
+</div>
+<script language="javascript">
+    $('#configEditor' ).val(JSON.stringify(JSON.parse($('#configEditor').val()),null, '\t'));
+    $('#configEditor2' ).val(JSON.stringify(JSON.parse($('#configEditor2').val()),null, '\t'));
+</script>
