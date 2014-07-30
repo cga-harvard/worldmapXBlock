@@ -34,24 +34,24 @@ distinguishes one slave instance from another (we use the XBlock's unique value 
 
 From the point of view of the master, to send a message to a particular slave, you use::
 
-    MESSAGING.getInstance().send(slaveUniqId, new Message(messageType, dataFromMaster));
+    window.MESSAGING.getInstance().send(slaveUniqId, new Message(messageType, dataFromMaster));
 
 to setup a function to field messages from a particular slave, you use::
 
-    MESSAGING.getInstance().addHandler(slaveUniqId, messageType, function(msg) {
+    window.MESSAGING.getInstance().addHandler(slaveUniqId, messageType, function(msg) {
         alert("the slave said: "+msg.message);
         //generally we use: dataFromSlave = JSON.parse(msg.message) to get to the data.
     });
 
 In the slave, to setup a handler function to field messages of *messageType* from the master, you use::
 
-    MESSAGING.getInstance().registerHandler(messageType, function(msg) {
+    window.MESSAGING.getInstance().registerHandler(messageType, function(msg) {
         dataFromMaster = msg.getMessage();
     });
 
 The slave, of course can send a message at anytime back to the master via::
 
-    MESSAGING.getInstance().send( new Message( messageType, dataFromSlave));
+    window.MESSAGING.getInstance().send( new Message( messageType, dataFromSlave));
 
 
 The xBlockCom-master.js and xBlockCom-slave.js are written to be completely divorced from worldmap and can be used in any other
