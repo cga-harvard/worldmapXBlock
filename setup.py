@@ -27,7 +27,7 @@ def find_package_data(pkg, data_paths):
 package_data = {}
 # package_data.update(find_package_data("sample_xblocks.basic", ["public", "templates"]))
 # package_data.update(find_package_data("sample_xblocks.thumbs", ["static"]))
-package_data.update(find_package_data("worldmap", ["static", "public"]))
+package_data.update(find_package_data("worldmap", ["templates", "static", "public"]))
 
 
 setup(
@@ -38,11 +38,11 @@ setup(
         'worldmap',
     ],
     install_requires=[
-        'XBlock',
+        'XBlock'
     ],
     entry_points={
         'xblock.v1': [
-            'worldmap               = worldmap:WorldMapXBlock'
+            'worldmap = worldmap:WorldMapXBlock'
         ]
     },
     package_data=package_data,

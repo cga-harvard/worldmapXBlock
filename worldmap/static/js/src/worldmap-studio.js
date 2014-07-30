@@ -113,10 +113,9 @@ function WorldMapEditBlock(runtime, element) {
             console.log("geoDialog.open() called");
             $('#id',this).val(geoDialog.data('highlight')['id']);
 
-            onChangeTool();
-
             $("input[name=geo-boundary-type]").val([geoDialog.data('highlight')['geometry']['type']]);
 
+//            onChangeTool();
 
             if( myApp.MESSAGING.getInstance().isPortalReady(getUniqueId()) ) {
                 initMap();
@@ -159,9 +158,17 @@ function WorldMapEditBlock(runtime, element) {
         var data = geoDialog.data('highlight')['geometry'];
         data['relativeZoom'] = -2;
         data['duration'] = -1;
+        var type = $("#geo-boundary-type input:checked").val();
+        $("#geometry-type-label").text("Specify "+ (type==undefined?"the type of geometry you wish to define":type));
 //        myApp.MESSAGING.getInstance().send(getUniqueId(), new myApp.Message("reset-answer-tool", null));
 //        myApp.MESSAGING.getInstance().send(getUniqueId(), new myApp.Message("set-answer-tool", {type: data['type']}));
-        myApp.MESSAGING.getInstance().send(getUniqueId(), new myApp.Message("highlight-geometry", data));
+        if( type != undefined) {
+            myApp.MESSAGING.getInstance().send(getUniqueId(), new myApp.Message("highlight-geometry", data));
+            myApp.MESSAGING.getInstance().send(getUniqueId(), new myApp.Message("set-answer-tool", {type: type, color: '0000FF'}));
+        } else {
+            myApp.MESSAGING.getInstance().send(getUniqueId(), new myApp.Message("reset-answer-tool", null));
+            myApp.MESSAGING.getInstance().send(getUniqueId(), new myApp.Message("reset-highlights", null));
+        }
     }
     function refresh() {
         $('#prose-polygon-list').empty().hide();

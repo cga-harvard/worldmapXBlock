@@ -5,7 +5,8 @@
 .prose-area .CodeMirror {
     width: 400px !important;
     height:180px !important;
-    border: 1px solid;
+    border: none;
+    background-color: #e5e5e5;
 }
 
 #prose-polygon-list {
@@ -13,7 +14,8 @@
     overflow: auto;
     width: 100%;
     height: 100%;
-    border:1px solid;
+    border: none;
+    background-color: #e5e5e5;
 }
 
 #add-reference-geometry {
@@ -65,4 +67,17 @@
 #geo-boundary-type label,
 #geo-boundary-type input {
     display: inline !important;
+}
+
+#edit_display_name {
+    font-size: 10pt;
+    height: 20px;
+}
+
+label[for=edit_display_name] {
+    font-size: 8pt;
+}
+
+li[role=tab] {
+    font-size: 10pt;
 }
