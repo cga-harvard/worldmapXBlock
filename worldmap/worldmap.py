@@ -8,11 +8,13 @@
   Written by Robert Light   light@alum.mit.edu
 
 """
+from hashlib import md5
 import pkg_resources
 import logging
 import math
 import sys
 import json
+import time
 
 from string import Template
 from xblock.core import XBlock
@@ -27,6 +29,8 @@ from shapely import affinity
 from shapely import ops
 from random import randrange
 from django.utils.translation import ugettext as _    #see - https://docs.djangoproject.com/en/1.3/topics/i18n/internationalization/
+from xmodule.modulestore import Location
+from .utils import load_resource, render_template
 
 log = logging.getLogger(__name__)
 
@@ -71,17 +75,446 @@ class WorldMapXBlock(XBlock):
 
     # see:  https://xblock.readthedocs.org/en/latest/guide/xblock.html#guide-fields
 
+    configJson = """
+                {
+                    "explanation": "A quiz about the Boston area... particularly <B><a href='#' onclick='return highlight(\\"backbay\\", 5000, -2)'>Back Bay</a></B>",
+                    "highlights": [
+                       {
+                          "id": "backbay",
+                          "geometry": {
+                              "type": "polygon",
+                              "points": [
+                                 {"lon": -71.09350774082822, "lat": 42.35148683512319},
+                                 {"lon": -71.09275672230382, "lat": 42.34706235935522},
+                                 {"lon": -71.08775708470029, "lat": 42.3471733715164},
+                                 {"lon": -71.08567569050435, "lat": 42.34328782922443},
+                                 {"lon": -71.08329388889936, "lat": 42.34140047917672},
+                                 {"lon": -71.07614848408352, "lat": 42.347379536438645},
+                                 {"lon": -71.07640597614892, "lat": 42.3480456031057},
+                                 {"lon": -71.0728225449051, "lat": 42.34785529906382},
+                                 {"lon": -71.07200715336435, "lat": 42.34863237027516},
+                                 {"lon": -71.07228610310248, "lat": 42.34942529018035},
+                                 {"lon": -71.07011887821837, "lat": 42.35004376076278},
+                                 {"lon": -71.0708055237264, "lat": 42.351835705270716},
+                                 {"lon": -71.07325169834775, "lat": 42.35616470553563},
+                                 {"lon": -71.07408854756031, "lat": 42.35600613935877},
+                                 {"lon": -71.07483956608469, "lat": 42.357131950552244},
+                                 {"lon": -71.09331462177917, "lat": 42.35166127043902}
+                              ]
+                          }
+                       }
+                    ],
+                    "questions": [
+                       {
+                          "id": "foobar",
+                          "color": "00FF00",
+                          "type": "point",
+                          "explanation": "Where is the biggest island in Boston harbor?",
+                          "hintAfterAttempt": 0,
+                          "hintDisplayTime": -1,
+
+                          "constraints": [
+                             {
+                                "type": "matches",
+                                "padding": 1000,
+                                "explanation": "<B> Look at boston harbor - pick the biggest island </B>",
+                                "percentOfGrade": 100,
+                                "geometry": {
+                                   "type": "point",
+                                   "points": [
+                                      {"lon": -70.9657058456866, "lat": 42.32011232390349}
+                                   ]
+                                }
+                             }
+                          ]
+                       },
+                       {
+                          "id": "baz",
+                          "color": "0000FF",
+
+
+                         "type": "polygon",
+                          "explanation": "Draw a polygon around the land bridge that formed Nahant bay?",
+                          "hintAfterAttempt": 2,
+                          "hintDisplayTime": -1,
+
+                          "constraints": [
+                             {
+                                "type": "includes",
+                                "explanation": "<B>'Hint':</B> Look for Nahant Bay on the map",
+                                "percentOfGrade": 100,
+                                "padding": 500,
+                                "geometry": {
+                                   "type": "point",
+                                   "points": [
+                                      {"lon": -70.93824002537393, "lat": 42.445896458204764}
+                                   ]
+                                }
+                             }
+                          ]
+                       },
+                       {
+                          "id": "area",
+                          "color": "FF00FF",
+                          "type": "polygon",
+                          "explanation": "Draw a polygon around 'back bay'?",
+                          "hintAfterAttempt": 2,
+                          "hintDisplayTime": -1,
+
+                          "constraints": [
+                             {
+                                "type": "matches",
+                                "explanation": "<B>'Hint':</B> Back bay was a land fill into the Charles River basin",
+                                "percentOfGrade": 20,
+                                "geometry": {
+                                   "type": "polygon",
+                                   "points": [
+                                         {"lon": -71.09350774082822, "lat": 42.35148683512319},
+                                         {"lon": -71.09275672230382, "lat": 42.34706235935522},
+                                         {"lon": -71.08775708470029, "lat": 42.3471733715164},
+                                         {"lon": -71.08567569050435, "lat": 42.34328782922443},
+                                         {"lon": -71.08329388889936, "lat": 42.34140047917672},
+                                         {"lon": -71.07614848408352, "lat": 42.347379536438645},
+                                         {"lon": -71.07640597614892, "lat": 42.3480456031057},
+                                         {"lon": -71.07282254490510, "lat": 42.34785529906382},
+                                         {"lon": -71.07200715336435, "lat": 42.34863237027516},
+                                         {"lon": -71.07228610310248, "lat": 42.34942529018035},
+                                         {"lon": -71.07011887821837, "lat": 42.35004376076278},
+                                         {"lon": -71.07080552372640, "lat": 42.351835705270716},
+                                         {"lon": -71.07325169834775, "lat": 42.35616470553563},
+                                         {"lon": -71.07408854756031, "lat": 42.35600613935877},
+                                         {"lon": -71.07483956608469, "lat": 42.357131950552244},
+                                         {"lon": -71.09331462177917, "lat": 42.35166127043902}
+                                   ]
+                                },
+                                "percentMatch": 60,
+                                "percentOfGrade": 25,
+                                "padding": 1000
+                             },
+                             {
+                                "type": "includes",
+                                "explanation": "<B>Must</B> include the esplanade",
+                                "percentOfGrade": 20,
+                                "geometry": {
+                                   "type": "polygon",
+                                   "points": [
+                                        {"lon": -71.07466790470745, "lat": 42.35719537593463},
+                                        {"lon": -71.08492467197995, "lat": 42.35399231410341},
+                                        {"lon": -71.08543965611076, "lat": 42.35335802506911},
+                                        {"lon": -71.08822915348655, "lat": 42.35250172471913},
+                                        {"lon": -71.08814332279839, "lat": 42.352279719020736},
+                                        {"lon": -71.08689877781501, "lat": 42.35253343975517},
+                                        {"lon": -71.07411000523211, "lat": 42.355958569427614},
+                                        {"lon": -71.07466790470745, "lat": 42.35719537593463}
+                                   ]
+                                },
+                                "percentMatch": 60,
+                                "percentOfGrade": 25,
+                                "padding": 100
+                             },
+                             {
+                                "type": "excludes",
+                                "explanation": "Must <B>not</B> include intersection of Boylston and Arlington Streets",
+                                "percentOfGrade": 20,
+                                "geometry": {
+                                   "type": "point",
+                                   "points": [
+                                      {"lon": -71.07071969303735, "lat": 42.351962566661165}
+                                   ]
+                                },
+                                "percentOfGrade": 25,
+                                "padding": 25
+                             },
+                             {
+                                "type": "excludes",
+                                "explanation": "Must <b>not</b> include <i>Bay Village</i>",
+                                "percentOfGrade": 20,
+                                "geometry": {
+                                   "type": "polygon",
+                                   "points": [
+                                       {"lon": -71.06994721684204, "lat": 42.349520439895464},
+                                       {"lon": -71.06874558720320, "lat": 42.34856893624958},
+                                       {"lon": -71.07140633854628, "lat": 42.34863237027384}
+                                   ]
+                                },
+                                "percentOfGrade": 10,
+                                "padding": 150
+                             },
+                             {
+                                "type": "includes",
+                                "explanation": "<B>Must</B> include corner of <i>Mass ave.</i> and <i>SW Corridor Park</i>",
+                                "percentOfGrade": 20,
+                                "geometry": {
+                                   "type": "point",
+                                   "points": [
+                                      {"lon": -71.08303639683305, "lat": 42.341527361626746}
+                                   ]
+                                },
+                                "percentOfGrade": 25,
+                                "padding": 50
+                             }
+                          ]
+                        },
+                       {
+                          "id": "esplanade",
+                          "color": "00FF00",
+                          "type": "polygon",
+                          "explanation": "Where is the biggest island in Boston harbor?",
+                          "hintAfterAttempt": 2,
+                          "hintDisplayTime": -1,
+
+                          "constraints": [
+                             {
+                                "type": "matches",
+                                "percentMatch": 50,
+                                "percentOfGrade": 25,
+                                "padding": 0,
+                                "explanation": "<B>Must</B> include the esplanade",
+                                "geometry": {
+                                   "type": "polygon",
+                                   "points": [
+                                    {"lon": -71.07466790470745, "lat": 42.35719537593463},
+                                    {"lon": -71.08492467197995, "lat": 42.35399231410341},
+                                    {"lon": -71.08543965611076, "lat": 42.35335802506911},
+                                    {"lon": -71.08822915348655, "lat": 42.35250172471913},
+                                    {"lon": -71.08814332279839, "lat": 42.352279719020736},
+                                    {"lon": -71.08689877781501, "lat": 42.35253343975517},
+                                    {"lon": -71.07411000523211, "lat": 42.355958569427614},
+                                    {"lon": -71.07466790470745, "lat": 42.35719537593463}
+                                   ]
+                                }
+                             }
+                          ]
+                       },
+                       {
+                          "id": "boffo",
+                          "color": "00FFFF",
+                          "type": "polyline",
+                          "explanation": "Draw a polyline on the land bridge that formed Nahant bay?",
+                          "hintAfterAttempt": 2,
+                          "hintDisplayTime": -1,
+
+                          "constraints": [
+                             {
+                                "type": "matches",
+                                "percentOfGrade": 50,
+                                "padding": 500,
+                                "percentMatch": 80,
+                                "explanation": "<B>'Hint':</B> Look for Nahant Bay on the map - draw a polyline on the land bridge out to Nahant Island",
+                                "geometry": {
+                                   "type": "polyline",
+                                   "points": [
+                                     {"lon": -70.93703839573509, "lat": 42.455142795067786},
+                                     {"lon": -70.93978497776635, "lat": 42.44146279890606},
+                                     {"lon": -70.93360516819578, "lat": 42.43082073646349}
+                                   ]
+                                }
+                             },
+                             {
+                                "type": "inside",
+                                "percentOfGrade": 25,
+                                "percentMatch": 70,
+                                "padding": 1,
+                                "explanation": "The land bridge is somewhere inside this polygon",
+                                "geometry": {
+                                   "type": "polygon",
+                                   "points": [
+                                     {"lon": -70.9210738876792, "lat": 42.47325152648776},
+                                     {"lon": -70.95746609959279, "lat": 42.471732113995365},
+                                     {"lon": -70.93686673435874, "lat": 42.42005014321707},
+                                     {"lon": -70.91901395115596, "lat": 42.433734814183005}
+                                   ]
+                                }
+                             },
+                             {
+                                "type": "excludes",
+                                "percentOfGrade": 25,
+                                "percentMatch": 80,
+                                "padding": 1,
+                                "explanation": "Must not include Nahant Island",
+                                "geometry": {
+                                   "type": "polygon",
+                                   "points": [
+                                    {"lon": -70.9252795914228, "lat": 42.42955370389016},
+                                    {"lon": -70.93763921056394, "lat": 42.42581580857819},
+                                    {"lon": -70.93652341161325, "lat": 42.416438412427965},
+                                    {"lon": -70.92828366551946, "lat": 42.41795916653644},
+                                    {"lon": -70.92905614171568, "lat": 42.42112728581168},
+                                    {"lon": -70.91978642736025, "lat": 42.424105171979036},
+                                    {"lon": -70.91789815221426, "lat": 42.420683758749576},
+                                    {"lon": -70.90983006749771, "lat": 42.416375046873334},
+                                    {"lon": -70.90536687169678, "lat": 42.416628508708406},
+                                    {"lon": -70.90227696691106, "lat": 42.41992341934355},
+                                    {"lon": -70.91060254369391, "lat": 42.42708291670639},
+                                    {"lon": -70.91927144322945, "lat": 42.42949035158941}
+                                   ]
+                                }
+                             }
+                          ]
+                       }
+                    ]
+                }
+    """
+    worldmapConfigJson = """
+                {
+                    "href": "http://23.21.172.243/maps/bostoncensus/embed",
+                    "debug": true,
+                    "width": 600,
+                    "height": 400,
+                    "baseLayer":"OpenLayers_Layer_Google_116",
+                    "layers": [
+                        {
+                            "id":"geonode:qing_charity_v1_mzg"
+                        },
+                        {
+                            "id":"OpenLayers_Layer_WMS_122",
+                            "params": [
+                                { "name":"CensusYear",  "value":1972 }
+                            ]
+                        },
+                        {
+                            "id":"OpenLayers_Layer_WMS_124",
+                            "params": [
+                                { "name":"CensusYear",  "min":1973, "max": 1977 }
+                            ]
+                        },
+                        {
+                            "id":"OpenLayers_Layer_WMS_120",
+                            "params": [
+                                { "name":"CensusYear",  "value":1976 }
+                            ]
+                        },
+                        {
+                            "id":"OpenLayers_Layer_WMS_118",
+                            "params": [
+                                { "name":"CensusYear",  "value":1978 }
+                            ]
+                        },
+                        {
+                            "id":"OpenLayers_Layer_Vector_132",
+                            "params": [
+                                { "name":"CensusYear",  "value":1980 }
+                            ]
+                        }
+                    ],
+                    "layer-controls": {
+                        "title":"Census Data",
+                        "expand": false,
+                        "children": [
+                            {
+                                "key":"OpenLayers_Layer_WMS_120",
+                                "visible": true,
+                                "title": "layerA"
+                            },
+                            {
+                                "key":"OpenLayers_Layer_WMS_122",
+                                "visible": true,
+                                "title": "layerB"
+                            },
+                            {
+                                "key":"OpenLayers_Layer_WMS_124",
+                                "visible": true,
+                                "title": "layerC"
+                            },
+                            {
+                                "key":"OpenLayers_Layer_WMS_120",
+                                "visible": true,
+                                "title": "layerD"
+                            },
+                            {
+                                "key":"OpenLayers_Layer_WMS_118",
+                                "visible": true,
+                                "title": "layerE"
+                            },
+                            {
+                                "key":"OpenLayers_Layer_Vector_132",
+                                "visible": true,
+                                "title": "layerF"
+                            },
+                            {
+                                "title":"A sub group of layers",
+                                "isFolder": true,
+                                "children": [
+                                    {
+                                        "title":"A sub sub group of layers",
+                                        "isFolder": true,
+                                        "children": [
+                                            {
+                                                "key":"OpenLayers_Layer_WMS_118",
+                                                "visible": true,
+                                                "title": "layerE.1"
+                                            },
+                                            {
+                                                "key":"OpenLayers_Layer_Vector_132",
+                                                "visible": true,
+                                                "title": "layerF.1"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "title":"Another sub sub group of layers",
+                                        "visible": false,
+                                        "isFolder": true,
+                                        "children": [
+                                            {
+                                                "key":"OpenLayers_Layer_WMS_118",
+                                                "visible": true,
+                                                "title": "layerE.2"
+                                            },
+                                            {
+                                                "key":"OpenLayers_Layer_Vector_132",
+                                                "visible": true,
+                                                "title": "layerF.2"
+                                            }
+                                        ]
+                                    },
+                                    {
+                                        "key":"OpenLayers_Layer_WMS_122",
+                                        "visible": true,
+                                        "title": "layerA.1"
+                                    },
+                                    {
+                                        "key":"OpenLayers_Layer_WMS_124",
+                                        "visible": true,
+                                        "title": "layerB.1"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    "sliders": [
+                       {
+                            "id":"timeSlider1",
+                            "title":"slider: 原典資料",
+                            "param":"CensusYear",
+                            "min":1972,
+                            "max":1980,
+                            "increment": 0.2,
+                            "position":"bottom",
+                            "help": [
+                                "<B>This is some generalized html</B><br/><i>you can use to create help info for using the slider</i>",
+                                "<ul>",
+                                "   <li>You can explain what it does</li>",
+                                "   <li>How to interpret things</li>",
+                                "   <li>What other things you might be able to do</li>",
+                                "</ul>"
+                            ]
+                       }
+                    ]
+                }
+    """
+
+    display_name = String(help="appears in horizontal nav at top of page", default="WorldMap", scope=Scope.content)
+
     zoomLevel = Integer(help="zoom level of map", default=None, scope=Scope.user_state)
     centerLat = Float(help="center of map (latitude)", default=None, scope=Scope.user_state)
     centerLon = Float(help="center of map (longitude)", default=None, scope=Scope.user_state)
 
     layerState= Dict(help="dictionary of layer states, layer name is key", default={}, scope=Scope.user_state)
 
-    config = Dict(help="config data", default=None, scope=Scope.content)
+    config = Dict(help="config data", scope=Scope.content, default=json.loads(configJson))
 
-    worldmapConfig = Dict(help="worldmap config data", default=None, scope=Scope.content)
-
-    explanationHTML = String(help="discussion over map", default="", scope=Scope.content)
+    worldmapConfig = Dict(help="worldmap config data", scope=Scope.content, default=json.loads(worldmapConfigJson))
 
     scores = Dict(help="scores", default=dict(), scope=Scope.user_state) #TODO: make this work
 
@@ -94,6 +527,9 @@ class WorldMapXBlock(XBlock):
     # @property
     # def layers(self):
     #     return self.worldmapConfig.get('layers',None)
+
+    def getUniqueId(self):
+        return md5(unicode(str(self.scope_ids.usage_id) + str(time.time()))).hexdigest()
 
     def resource_string(self, path):
         """Handy helper for getting resources from our kit."""
@@ -138,7 +574,7 @@ class WorldMapXBlock(XBlock):
             if name in block.fields:
                 setattr(block, name, value)
 
-        setattr(block,'explanationHTML',explanationText)
+       # setattr(block,'explanationHTML',explanationText)
 
         # Text content becomes "content", if such a field exists.
         if "content" in block.fields and block.fields["content"].scope == Scope.content:
@@ -164,34 +600,103 @@ class WorldMapXBlock(XBlock):
 
         delimiter = "?"
         try:
-            self.href.index("?")
+            self.worldmapConfig.get("href",None).index("?")
             delimiter = "&"
         except:
             pass
 
-        self.url =   self.worldmapConfig.get("href",None) + delimiter + "xblockId=worldmap_" + self.scope_ids.usage_id
+
+        uniqueId = self.getUniqueId()
+
+        self.url =   self.worldmapConfig.get("href",None) + delimiter + "xblockId=worldmap_" + uniqueId
         self.width=  self.worldmapConfig.get("width",600)
         self.height= self.worldmapConfig.get("height",400)
         self.debug = self.worldmapConfig.get("debug",False)
+        self.baseLayer = self.worldmapConfig.get("baseLayer",None)
 
 
-        frag = Fragment(self.resource_string("static/html/worldmap.html").format(self=self))
+        frag = Fragment(self.resource_string("static/html/worldmap.html").format(self=self, uniqueId=uniqueId))
         template = Template(self.resource_string("static/css/worldmap.css"))
         frag.add_css(template.substitute(imagesRoot=self.runtime.local_resource_url(self,"public/images")))
 
-        frag.add_css_url("http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css")
         frag.add_javascript(unicode(pkg_resources.resource_string(__name__, "static/js/src/xBlockCom-master.js")))
         frag.add_javascript(self.resource_string("static/js/src/worldmap.js"))
-        frag.add_javascript_url("http://code.jquery.com/ui/1.10.3/jquery-ui.js")
+
+
+        if not isinstance(self.scope_ids.usage_id, Location):
+            frag.add_javascript_url("http://code.jquery.com/ui/1.10.3/jquery-ui.js")
+            frag.add_css_url("http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css")
+        frag.add_javascript_url(self.runtime.local_resource_url(self,"public/js/vendor/jNotify_jquery_min.js"))
         frag.add_javascript_url(self.runtime.local_resource_url(self,"public/js/vendor/jquery_ui_touch-punch_min.js"))
         frag.add_javascript_url(self.runtime.local_resource_url(self,"public/js/vendor/jquery_dynatree.js"))
-        frag.add_javascript_url(self.runtime.local_resource_url(self,"public/js/vendor/jNotify_jquery_min.js"))
         frag.add_css_url(self.runtime.local_resource_url(self,"public/css/vendor/jNotify_jquery.css"))
         frag.add_css_url(self.runtime.local_resource_url(self,"public/css/dynatree/skin/ui_dynatree.css"))
 
         frag.initialize_js('WorldMapXBlock')
 
         return frag
+
+
+    def studio_view(self,context):
+        """
+        Studio edit view
+        """
+
+        delimiter = "?"
+        try:
+            self.worldmapConfig.get("href",None).index("?")
+            delimiter = "&"
+        except:
+            pass
+
+        uniqueId = self.getUniqueId();
+
+        fragment = Fragment()
+        fragment.add_content(render_template('templates/html/worldmap-studio.html',
+            {
+                'display_name': self.display_name,
+                'config_json': json.dumps(self.config),
+                'prose': self.config.get("explanation"),
+                'worldmapConfig_json': json.dumps(self.worldmapConfig),
+                'url': self.worldmapConfig.get("href",None) + delimiter + "xblockId=worldmap_config_"+uniqueId,
+                'uniqueId': uniqueId
+            }))
+        fragment.add_css_url(self.runtime.local_resource_url(self,"public/css/worldmap-studio.css"))
+        fragment.add_css_url(self.runtime.local_resource_url(self,"public/css/jquery-ui.css"))
+
+        # why can't we do a fragment.add_javascript_url here?
+        fragment.add_javascript(self.resource_string('public/js/jquery-ui-1.10.4.custom.js'))
+        fragment.add_javascript(self.resource_string('static/js/src/worldmap-studio.js'))
+
+        fragment.initialize_js('WorldMapEditBlock')
+        return fragment
+
+    @XBlock.json_handler
+    def getConfig(self, data, suffix=''):
+        return { 'result':'success' }
+
+    @XBlock.json_handler
+    def studio_submit(self, submissions, suffix=''):
+        self.display_name = submissions['display_name']
+      #  self.url =   self.worldmapConfig.get("href",None) + delimiter + "xblockId=worldmap_" + uniqueId
+        try:
+           config =  json.loads(submissions['config'])
+        except ValueError as e:
+            return {'result': 'error', 'message': e.message, 'tab':'Questions'}
+
+        try:
+            worldmapConfig =  json.loads(submissions['worldmapConfig'])
+        except ValueError as e:
+            return {'result': 'error', 'message':e.message, 'tab':'Map config'}
+
+        self.config = config
+        self.worldmapConfig = worldmapConfig
+
+
+        self.config['explanation'] = submissions['prose']
+        self.config['highlights']  = submissions['highlights']
+
+        return { 'result':'success' }
 
     #Radius of earth:
     SPHERICAL_DEFAULT_RADIUS = 6378137    #Meters
@@ -439,7 +944,7 @@ class WorldMapXBlock(XBlock):
     def getQuestions(self, data, suffix=''):
         return {
             'questions': self.config.get('questions',[]),
-            'explanation': self.explanationHTML
+            'explanation': self.config.get('explanation',[])
         }
 
     @XBlock.json_handler

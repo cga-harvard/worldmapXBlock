@@ -113,29 +113,28 @@ Message.prototype = {
     getMessageStr: function() { return this.message; }
 };
 
-var loadHandler = function(event){
-   console.log("DOMContentLoaded handler called");
-   var parentWindow =  event.currentTarget.opener ? event.currentTarget.opener : window.parent;
-   MESSAGING.getInstance().setOpener(parentWindow);
-   MESSAGING.getInstance().registerHandler("master-acknowledge", 
-                        function(msg) { 
-                           console.log("handler for master-acknowledge called  type="+msg.getType()+",   message="+msg.getMessage());
-                           if( msg.getType() === "master-acknowledge" && msg.getMessage()===MESSAGING.getInstance().uniqueId) {
-                                console.log("master-acknowledge: masterSlave = true");
-                                MESSAGING.getInstance().setMasterSlave(true);
-                           }
-                        });
-   MESSAGING.getInstance().initialize();
+window.addEventListener('DOMContentLoaded',
+    function(event){
+       console.log("DOMContentLoaded handler called");
+       var parentWindow =  event.currentTarget.opener ? event.currentTarget.opener : window.parent;
+       MESSAGING.getInstance().setOpener(parentWindow);
+       MESSAGING.getInstance().registerHandler("master-acknowledge",
+                            function(msg) {
+                               console.log("handler for master-acknowledge called  type="+msg.getType()+",   message="+msg.getMessage());
+                               if( msg.getType() === "master-acknowledge" && msg.getMessage()===MESSAGING.getInstance().uniqueId) {
+                                    console.log("master-acknowledge: masterSlave = true");
+                                    MESSAGING.getInstance().setMasterSlave(true);
+//                                    MESSAGING.getInstance().send(new Message("portalReady", {}));
+                               }
+                            });
+       MESSAGING.getInstance().initialize();
 
-   window.addEventListener(
-      'message',
-      function(event){
-         MESSAGING.getInstance().handleMessageEvent(event);
-      }, 
-      false
-    );
-}
-window.addEventListener('DOMContentLoaded', loadHandler, false);
-
-   //Register a handler for an "info" message
-   //   MESSAGING.getInstance().registerHandler("info", function(m) { alert("the client code received this 'info' message: "+m.getMessage()); });
+       window.addEventListener(
+          'message',
+          function(event){
+             MESSAGING.getInstance().handleMessageEvent(event);
+          },
+          false
+        );
+    }, false
+);

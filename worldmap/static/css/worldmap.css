@@ -22,10 +22,17 @@
     filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3); //for IE
     float: left;
     position:relative;
-    top:-15;
-    left:-7px;
+    top:-15px;
+    left:-6px;
     white-space:nowrap;
     font-size: 9pt;
+}
+.vertical-label-title .slider-help {
+    -webkit-transform: rotate(90deg) translateX(30%);
+    -moz-transform:    rotate(90deg) translateX(30%);
+    -ms-transform:     rotate(90deg) translateX(30%);
+    -o-transform:      rotate(90deg) translateX(30%);
+    transform:         rotate(90deg) translateX(30%);
 }
 
 .vertical-label-title {
@@ -36,7 +43,7 @@
     transform:         rotate(-90deg);
     position: relative;
     top:-100px;
-    left: -7px;
+    left: -6px;
     z-index:1;
     font-size: 9pt;
     color:grey;
@@ -54,28 +61,42 @@
     border:0;
 }
 .slider-help {
-    position: relative;
+    position: absolute !important;
+    top: 20px !important;
+    left:20px !important;
     z-index: 3;
     border:0;
+    padding: 10px;
 }
 
 .vertical-slider-container {
-    float:right;
     width:40px;
+}
+
+.vertical-slider-container .ui-slider .ui-slider-handle {
+    width: 1.6em;
+    height: 1.6em;
+    left: -5px;
 }
 
 .sliders-right {
     white-space:nowrap;
+    vertical-align: top;
 }
 .sliders-left {
     white-space:nowrap;
+    vertical-align: top;
+}
+.ui-slider.ui-widget-content {
+    border: 1px solid #000000 !important;
+    background-color: rgb(248,239,239) !important;
 }
 .vertical-slider {
     float: left;
     clear:left;
     font-size: 9pt;
-    width:22px;
-    margin-left:5px;
+    width: 1em;
+    margin-left:8px;
     margin-right:5px;
 }
 .horizontal-slider {
@@ -95,8 +116,13 @@
     left: -220px;
     color: grey;
 }
+.horizontal-label-title .slider-help {
+    left: 260px !important;
+    top: 30px !important;
+}
 .horizontal-label {
     float:left;
+    top: 4px;
 }
 
 .point-tool {
@@ -130,4 +156,22 @@ ul.dynatree-container {
 .debugInfo {
    width:600px;
    height: 54px;
+}
+
+.ui-dialog {
+    z-index: 99 !important;
+    background: white !important;
+    border: 1px solid #000000 !important;
+}
+.ui-dialog .ui-dialog-titlebar {
+    background: grey !important;
+}
+.ui-widget-overlay {
+    z-index: 98 !important;
+}
+
+.questions-list {
+    list-style-type: lower-alpha !important;
+    list-style-position: outside !important;
+    margin-left: 20px;
 }

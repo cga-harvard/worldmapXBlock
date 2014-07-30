@@ -9,6 +9,9 @@
             <input class="input setting-input edit-display-name" id="edit_display_name" value="{{ display_name }}" type="text">
           </div>
       </li>
+      <li>
+         <button id="test-polygon">Add/Change Polygon</button>
+      </li>
 
       <li class="field comp-setting-entry is-set">
 
@@ -16,6 +19,7 @@
               <ul>
                 <li><a href="#tabs-1">Questions</a></li>
                 <li><a href="#tabs-2">Map config</a></li>
+                <li><a href="#tabs-3">General</a></li>
               </ul>
               <div id="tabs-1">
                   <div class="wrapper-comp-setting">
@@ -23,7 +27,7 @@
                         <span class="tip setting-help">The JSON definition for the questions configuration</span>
 -->
                     <div class='codemirror-editor-wrapper'>
-                      <textarea id="configEditor" class="block-json-editor edit-data">{{ config_json}}</textarea>
+                      <textarea id="config" class="block-json-editor edit-data">{{ config_json}}</textarea>
                     </div>
                   </div>
               </div>
@@ -33,9 +37,24 @@
                         <span class="tip setting-help">The JSON definition for the questions configuration</span>
 -->
                     <div class='codemirror-editor-wrapper'>
-                      <textarea id="configEditor2" class="block-json-editor2 edit-data">{{ worldmapConfig_json}}</textarea>
+                      <textarea id="worldmapConfig" class="block-json-editor2 edit-data">{{ worldmapConfig_json}}</textarea>
                     </div>
                   </div>
+              </div>
+              <div id="tabs-3">
+                  <table width="100%" cellpadding="5px"><tr><td nowrap>
+                      <div class="wrapper-comp-setting prose-area ">
+                        <label class="label setting-label" for="prose">Prose</label>
+                        <span class="tip setting-help">(html description of this module)</span>
+                        <div class='codemirror-editor-wrapper'>
+                          <textarea id="prose" class="block-html-editor edit-data">{{prose}}</textarea>
+                        </div>
+                      </div>
+                   </td><td nowrap>
+                      <label style="width:50% !important" class="label setting-label" for="prose-polygon-list">Referenced Geometry</label>
+                      <span style="width:40%; text-align:right" class="tip setting-help"><button id="add-reference-geometry">Add a reference</button></span>
+                      <ul id="prose-polygon-list"></ul>
+                  </td></tr></table>
               </div>
           </div>
       </li>
@@ -53,7 +72,63 @@
     </ul>
   </div>
 </div>
+
+<div id="dialog-geo-form" title="Specify Reference Geometry">
+    <form>
+        <fieldset>
+            <label for="id">ID</label>
+            <input type="text" name="id" id="id" value="" class="text ui-widget-content ui-corner-all">
+
+            <label for="worldmap_config_{{uniqueId}}" id="geometry-type-label">Specify polygon</label>
+            <iframe class='frame' id="worldmap_config_{{uniqueId}}"
+                    src="{{url}}"
+                    frameborder='0' width='400' height='300'
+                    debug="false"
+                    >
+            </iframe>
+            <div id="geo-boundary-type">
+                <input type="radio" id="geo-boundary-type-point" name="geo-boundary-type" value="point"/><label for="geo-boundary-type-point">Point</label><br/>
+                <input type="radio" id="geo-boundary-type-polyline" name="geo-boundary-type" value="polyline"/><label for="geo-boundary-type-polyline">Polyline</label><br/>
+                <input type="radio" id="geo-boundary-type-polygon" name="geo-boundary-type" value="polygon"/><label for="geo-boundary-type-polygon">Polygon</label>
+            </div>
+        </fieldset>
+    </form>
+</div>
+
+<div id="dialog-confirm"></div>
+
 <script language="javascript">
-    $('#configEditor' ).val(JSON.stringify(JSON.parse($('#configEditor').val()),null, '\t'));
-    $('#configEditor2' ).val(JSON.stringify(JSON.parse($('#configEditor2').val()),null, '\t'));
+//    $('#configEditor' ).val(JSON.stringify(JSON.parse($('#configEditor').val()),null, '\t'));
+//    $('#configEditor2' ).val(JSON.stringify(JSON.parse($('#configEditor2').val()),null, '\t'));
+
+//    $( "#test-polygon" ).button().on( "click", function() {
+//      dialog.dialog( "open" );
+//    });
+//
+//    function setPolygon() {
+//        window.alert("setPolygon called");
+//    }
+//    var dialog, form;
+//
+//    dialog = $( "#dialog-geo-form" ).dialog({
+//      autoOpen: false,
+//      height: 500,
+//      dialogClass: "no-close",
+//      width: 650,
+//      modal: true,
+//      buttons: {
+//        "Set Polygon": setPolygon,
+//        Cancel: function() {
+//          dialog.dialog( "close" );
+//        }
+//      },
+//      close: function() {
+//        form[ 0 ].reset();
+//      }
+//    });
+//
+//    form = dialog.find( "form" ).on( "submit", function( event ) {
+//      event.preventDefault();
+//      window.alert("this is where we would store the polygon");
+//    });
 </script>
