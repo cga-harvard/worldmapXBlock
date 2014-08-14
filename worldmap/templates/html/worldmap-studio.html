@@ -56,7 +56,7 @@
                   </td></tr></table>
               </div>
               <div id="tabs-4">
-                 <label id="sortable-questions-label" class="label setting-label" for="sortable-questions">Double click to edit, drag to re-order.</label>
+                 <label id="sortable-questions-label" class="label setting-label" for="sortable-questions">Drag to re-order.</label>
                  <ul id="sortable-questions" class="scroll"/>
                  <div style="width:95%; text-align:right" class="tip setting-help"><button id="new-question">New question</button></div>
               </div>
@@ -125,6 +125,7 @@
                     src="{{url}}{{delimiter}}xblockId=worldmap_config_{{uniqueId}}"
                     frameborder='0' width='400' height='300'
                     debug="false"
+                    style="display:inline;"
                     >
             </iframe>
             <div id="geo-boundary-type">
@@ -179,7 +180,7 @@
 
 <!-- slider details -->
 <div id="dialog-slider-form" class="dialog-form" title="Slider details">
-    <form>
+    <form id="slider-form">
         <fieldset>
             <table>
                 <tr>

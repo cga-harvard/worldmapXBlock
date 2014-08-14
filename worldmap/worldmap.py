@@ -670,6 +670,8 @@ class WorldMapXBlock(XBlock):
 
         # why can't we do a fragment.add_javascript_url here?
         fragment.add_javascript(self.resource_string('public/js/jquery-ui-1.10.4.custom.js'))
+        # fragment.add_javascript(self.resource_string('public/js/jquery-validation-min.js'))
+        # fragment.add_javascript(self.resource_string('public/js/jquery-validation-additional-methods-min.js'))
         fragment.add_javascript(self.resource_string('static/js/src/worldmap-studio.js'))
 
         fragment.initialize_js('WorldMapEditBlock')
@@ -756,7 +758,6 @@ class WorldMapXBlock(XBlock):
 
         return {
             'question':data['question'],
-            'xml': "<point lon='%s' lat='%s'/>\n" % (longitude,latitude),
             'unsatisfiedConstraints': unsatisfiedConstraints,
             'percentCorrect': percentCorrect,
             'correctExplanation': correctExplanation,
@@ -766,12 +767,9 @@ class WorldMapXBlock(XBlock):
     @XBlock.json_handler
     def polygon_response(self, data, suffix=''):
 
-        xml = "<polygon>\n"
         arr = []
         for pt in data['polygon']:
             arr.append((pt['lon']+360., pt['lat']))
-            xml += "  <point lon='%s' lat='%s'/>\n" % (pt['lon'],pt['lat'])
-        xml += "</polygon>"
 
         answerPolygon = Polygon(arr)
 
@@ -871,7 +869,6 @@ class WorldMapXBlock(XBlock):
 
         return {
             'question':data['question'],
-            'xml': xml,
             'unsatisfiedConstraints': unsatisfiedConstraints,
             'isHit': isHit,
             'percentCorrect': 100-percentIncorrect,
@@ -881,12 +878,10 @@ class WorldMapXBlock(XBlock):
     @XBlock.json_handler
     def polyline_response(self, data, suffix=''):
 
-        xml = "<polyline>\n"
         arr = []
         for pt in data['polyline']:
             arr.append((pt['lon']+360., pt['lat']))
-            xml += "  <point lon='%s' lat='%s'/>\n" % (pt['lon'],pt['lat'])
-        xml += "</polyline>"
+
         answerPolyline = LineString(arr)
         additionalErrorInfo = ""
 
@@ -945,7 +940,6 @@ class WorldMapXBlock(XBlock):
 
         return {
             'question':data['question'],
-            'xml': xml,
             'unsatisfiedConstraints': unsatisfiedConstraints,
             'isHit': isHit,
             'percentCorrect': 100-percentIncorrect,

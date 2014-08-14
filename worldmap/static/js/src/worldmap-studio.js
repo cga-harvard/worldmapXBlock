@@ -6,9 +6,6 @@ var myApp = myApp || {};
 function WorldMapEditBlock(runtime, element) {
 
     console.log("INITIALIZATION of WorldMapEditBlock *******************************************");
-//    var jsonEditorTextarea = $('.block-json-editor', element);
-//    var jsonEditorTextarea2 = $('.block-json-editor2', element);
-//    var htmlEditorTextarea =  $('.block-html-editor', element);
 
     //rewrite the json so it is formatted nicely.
     var config = JSON.parse($('#config').val());
@@ -349,6 +346,8 @@ function WorldMapEditBlock(runtime, element) {
                 }
             }
         ],
+        create: function() {
+        },
         open: function() {
             var slider = $(this).data('slider');
             $('#slider-title',this).val(slider['title']);

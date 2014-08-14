@@ -297,10 +297,6 @@ function WorldMapXBlock(runtime, element) {
                     var worldmap_block = $('.worldmap_block', element);
                     var div = $('#score-'+result.question.id, worldmap_block);
 
-                    if( result.xml != undefined ) {
-                        debug(result.xml);
-                    }
-
                     if( result.isHit ) {
                         //   "/resource/worldmap/public/images/correct-icon.png" seems to work for workbench
                         div.html("<img src='/xblock/resource/worldmap/public/images/correct-icon.png'/>");
@@ -424,7 +420,6 @@ function WorldMapXBlock(runtime, element) {
 
 
     $(function ($) {
-        debug("initialize on page load");
         $('.debugInfo',element).resizable();
   //      $(document).tooltip();
         /* Here's where you'd do things on page load. */
