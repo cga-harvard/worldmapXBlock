@@ -19,7 +19,8 @@
 }
 
 #add-reference-geometry {
-    font-size:70%;
+    font-size:90%;
+    margin-right:4px;
 }
 .wrapper-comp-settings .list-input.settings-list .field.comp-setting-entry {
     padding: 3px 3px !important;
@@ -30,7 +31,7 @@
 }
 
 #tabs {
-    height: 300px;
+    height: 325px;
 }
 
 .ui-tabs .ui-tabs-nav li {
@@ -41,13 +42,54 @@
     padding: 0.2em 1em !important;
 }
 
-#dialog-geo-form body {
+.dialog-form form {
        font-size: 80%;
        font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
 }
-#dialog-geo-form label, input { display:block; }
-#dialog-geo-form input.text { margin-bottom:12px; width:95%; padding: .4em; }
-#dialog-geo-form fieldset { padding:0; border:0; margin-top:25px; }
+.dialog-form label,
+.dialog-form input { display:block; }
+.dialog-form input.text { margin-bottom:12px; width:95%; padding: .4em; }
+.dialog-form input.radio { display:inline; margin-bottom:12px; margin-left:20px; padding: .4em; }
+.dialog-form fieldset { padding:0; border:0; margin-top:5px; }
+
+/*#dialog-layerControl-form body {*/
+       /*font-size: 80%;*/
+       /*font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";*/
+/*}*/
+/*#dialog-layerControl-form label,*/
+/*#dialog-layerControl-form input { display:block; }*/
+/*#dialog-layerControl-form label { font-size:80% }*/
+/*#dialog-layerControl-form input.text { margin-bottom:12px; width:95%; padding: .4em; }*/
+/*#dialog-layerControl-form fieldset { padding:0; border:0; margin-top:25px; }*/
+#layer-control .dynatree-container {
+    border: none;
+}
+#layerControl-isFolder-label {
+    font-family: Verdana,Arial,sans-serif;
+    display: inline-flex;
+}
+/*#dialog-slider-form label,*/
+/*#dialog-slider-form input { display:block; }*/
+/*#dialog-slider-form label { font-size:80% }*/
+/*#dialog-slider-form input.text { margin-bottom:12px; width:95%; padding: .4em; }*/
+/*#dialog-slider-form fieldset { padding:0; border:0; margin-top:25px; }*/
+#slider-position { width:95%; height:30px; display:block;}
+#slider-html {width:95%; height:150px; margin:1px;}
+#slider-layers {
+    height:75px !important;
+}
+#sliders {
+    height:55px !important;
+}
+#sliderLayer-params {
+    height: 85px;
+}
+#dialog-param-form input.text {
+    display:inline !important;
+}
+#param-value, #param-min, #param-max {
+    width:25%;
+}
 .ui-dialog {
     padding: .3em;
     z-index: 1001 !important ;
@@ -56,8 +98,14 @@
     z-index: 1000 !important;
 }
 
-.highlight-geometry {
+.select-list-item {
     cursor: pointer;
+}
+.slider-select-list-item {
+    font-size: 75%;
+}
+.sliderLayer-select-list-item {
+    font-size: 75%;
 }
 
 #geo-boundary-type {
@@ -80,4 +128,88 @@ label[for=edit_display_name] {
 
 li[role=tab] {
     font-size: 10pt;
+}
+
+/* ---------------- Questions tab -------------------- */
+  #sortable-questions-label {
+      margin-top: 10px;
+      margin-left: 20px;
+      font-size: 75%;
+      color: darkgray;
+      width: 50%;
+  }
+  #sortable-questions {
+    list-style-type: none;
+    margin-left: 20px;
+    margin-top: 0px;
+    padding: 0px;
+    width: 95%;
+    font-size: 62.5%;
+  }
+  #sortable-questions li {
+      margin: 0 3px 3px 3px;
+      padding: 0.4em;
+      padding-left: 1.5em;
+      font-size: 1.4em;
+      height: 18px;
+  }
+  #sortable-questions li span {
+	position: absolute;
+	margin-left: -1.3em;
+  }
+  .scroll{
+    overflow-y: scroll;
+    border:2px solid lightgrey;
+    height: 175px;
+    position:relative;
+  }
+  .content {
+      width: 97%;
+      min-width: 600px;
+      max-width: 800px;
+  }
+
+#dialog-question-detail label {
+    font-size: 75%;
+    margin-top: 5px;
+}
+
+#dialog-question-detail button {
+    height: 20px;
+    font-size:9pt;
+}
+
+#dialog-question-detail #add-constraint {
+    float: right;
+    margin-right:50px;
+}
+#dialog-question-detail #constraint-list-wrapper {
+    padding-left:70px;
+    padding-top:10px;
+}
+#dialog-question-detail #explanation {
+    width: 100%;
+}
+#dialog-constraint-detail #explanation {
+    width: 100%;
+}
+
+/* ------------- map tab --------------- */
+input.dependent-property {
+    width: inherit !important;
+    min-width: inherit !important;
+    margin-right: 10px !important;
+    margin-left: 0px !important;
+    margin-top: 5px !important;
+    padding: 0px !important;
+    padding-left:5px !important;
+}
+
+label.dependent-property {
+    width: inherit !important;
+    min-width: inherit !important;
+    margin-right: 0px !important;
+    margin-left: 20px !important;
+    margin-top: 5px !important;
+    padding: 0px !important;
 }

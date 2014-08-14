@@ -17,13 +17,14 @@ myApp.MESSAGING = (function Messaging() { // declare 'Singleton' as the return v
              this.clientCredentials[id] = creds;
              console.log("setClientCredentials: xblockId: "+id+" host: "+creds.clientHost+"   uniqueId: "+creds.uniqueClientId);
         },
-        setPortalReady: function(id,b) {
-            this.portalReady[id] = b;
+        setPortalReady: function(id) {
+            this.portalReady.push(id);
         },
         isPortalReady: function(id) {
-            if( id in this.portalReady ) {
-                return this.portalReady[id];
-            } else return false;
+            for( var i in this.portalReady ) {
+                if( this.portalReady[i] == id ) return true;
+            }
+            return false;
         },
         addHandler: function(id, type, h) {
            if( ! (id in this.handlers) ) {
@@ -118,7 +119,7 @@ window.addEventListener('message',
         } else {
            if(e.data.message.type == "portalReady" ) {
                console.log("portalReady received at master code");
-               myApp.MESSAGING.getInstance().setPortalReady(e.data.xblockId, true);
+               myApp.MESSAGING.getInstance().setPortalReady(e.data.xblockId);
            }
            var msg = new myApp.Message(e.data.message.type, e.data.message.message);
            myApp.MESSAGING.getInstance().handleMessage(e.data.xblockId, e.data.uniqueClientId, msg);
@@ -126,6 +127,4 @@ window.addEventListener('message',
     }, false);
 
 $( document).ready(function() {
-    debugger;
-    console.log("jquery .ready() ran from master code");
 });

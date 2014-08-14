@@ -649,16 +649,20 @@ class WorldMapXBlock(XBlock):
         except:
             pass
 
-        uniqueId = self.getUniqueId();
+        uniqueId = self.getUniqueId()
 
         fragment = Fragment()
+
+        print "creating worldmap-studio.html uniqueid="+uniqueId
+
         fragment.add_content(render_template('templates/html/worldmap-studio.html',
             {
                 'display_name': self.display_name,
                 'config_json': json.dumps(self.config),
                 'prose': self.config.get("explanation"),
                 'worldmapConfig_json': json.dumps(self.worldmapConfig),
-                'url': self.worldmapConfig.get("href",None) + delimiter + "xblockId=worldmap_config_"+uniqueId,
+                'url': self.worldmapConfig.get("href",None),
+                'delimiter': delimiter,
                 'uniqueId': uniqueId
             }))
         fragment.add_css_url(self.runtime.local_resource_url(self,"public/css/worldmap-studio.css"))
@@ -695,6 +699,14 @@ class WorldMapXBlock(XBlock):
 
         self.config['explanation'] = submissions['prose']
         self.config['highlights']  = submissions['highlights']
+        self.config['questions']   = submissions['questions']
+        self.worldmapConfig['layer-controls'] = submissions['layer-controls'][0]
+        self.worldmapConfig['href']  = submissions['href']
+        self.worldmapConfig['height']= submissions['height']
+        self.worldmapConfig['width']=  submissions['width']
+        self.worldmapConfig['baseLayer'] = submissions['baseLayer']
+        self.worldmapConfig['sliders']   = submissions['sliders']
+        self.worldmapConfig['layers']    = submissions['layers']
 
         return { 'result':'success' }
 

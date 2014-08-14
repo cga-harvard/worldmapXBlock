@@ -38,7 +38,7 @@ function WorldMapXBlock(runtime, element) {
         selectMode: 3,
 //            fx: null, // or  {height: "toggle", duration:200 }
 //            noLink: true,
-        debugLevel: 2, // 0:quiet, 1:normal, 2:debug
+        debugLevel: 0, // 0:quiet, 1:normal, 2:debug
         onRender: function(node, nodeSpan) {
             $(nodeSpan).find('.dynatree-icon').remove();
         },
@@ -120,7 +120,6 @@ function WorldMapXBlock(runtime, element) {
 
                     for( var i=0; i<result.length; i++) {
                         var sliderSpec = result[i];
-                        var sliderSpecId = sliderSpec.id;
 
                         var thumb = $('<div class="slider-thumb-value" />').css({
                             top: (sliderSpec.position=="top"?-15:25),
@@ -153,7 +152,7 @@ function WorldMapXBlock(runtime, element) {
                         }
 
                         if( sliderSpec.help != null) {
-                            var help = $('<div class="slider-help">').html(sliderSpec.help.join("")).css({
+                            var help = $('<div class="slider-help">').html(sliderSpec.help).css({
                                 position: 'relative',
                                 border: '1px solid #000000',
                                 backgroundColor: '#FFFFFF',

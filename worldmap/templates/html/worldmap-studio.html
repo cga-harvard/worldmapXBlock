@@ -5,7 +5,7 @@
   <ul class="list-input settings-list">
       <li class="field comp-setting-entry is-set">
           <div class="wrapper-comp-setting">
-            <label class="label setting-label" for="edit_display_name">Title</label>
+            <label class="label setting-label" for="edit_display_name" style="width:inherit; min-width:inherit; display: inline;">Title</label>
             <input class="input setting-input edit-display-name" id="edit_display_name" value="{{ display_name }}" type="text">
           </div>
       </li>
@@ -17,6 +17,8 @@
                 <li><a href="#tabs-1">Questions</a></li>
                 <li><a href="#tabs-2">Map config</a></li>
                 <li><a href="#tabs-3">General</a></li>
+                <li><a href="#tabs-4">Questions</a></li>
+                <li><a href="#tabs-5">Map</a></li>
               </ul>
               <div id="tabs-1">
                   <div class="wrapper-comp-setting">
@@ -53,9 +55,50 @@
                       <ul id="prose-polygon-list"></ul>
                   </td></tr></table>
               </div>
+              <div id="tabs-4">
+                 <label id="sortable-questions-label" class="label setting-label" for="sortable-questions">Double click to edit, drag to re-order.</label>
+                 <ul id="sortable-questions" class="scroll"/>
+                 <div style="width:95%; text-align:right" class="tip setting-help"><button id="new-question">New question</button></div>
+              </div>
+              <div id="tabs-5" class="map-tab">
+                 <table>
+                     <tr>
+                         <td colspan="2">
+                            <label style="margin-left:0px !important;" class="label setting-label" for="map-url">Map URL</label>
+                            <input type="text" id="map-url" style="width:100% !important; padding: 6px;" class="text ui-widget-content ui-corner-all">
+                            <label class="dependent-property label setting-label" for="map-width">Width</label>
+                            <input type="text" id="map-width" style="width:60px !important;" class="dependent-property text ui-widget-content ui-corner-all">
+                            <label class="dependent-property label setting-label" for="map-height">Height</label>
+                            <input type="text" id="map-height" style="width:60px !important;" class="dependent-property text ui-widget-content ui-corner-all">
+                            <label class="dependent-property label setting-label" for="map-baseLayer">Base Layer</label>
+                            <input type="text" id="map-baseLayer" style="width:350px !important" class="dependent-property text ui-widget-content ui-corner-all">
+                            <hr/>
+                         </td>
+                     </tr>
+                     <tr>
+                         <td style="padding-right:15px; width: 65%;" >
+                            <label class="label setting-label" for="layer-control" style="width:70%;">Layer Controls (double click to modify, drag to reorder)</label>
+                            <span style="width:26% !important; min-width:inherit; text-align:right" class="tip setting-help"><button disabled id="new-node">New node</button></span>
+                            <div id="layer-control" class="scroll" style="height:165px">
+                                <div id="layer-controls"/>
+                            </div>
+                         </td>
+                         <td style="width:35%;">
+                             <label class="label setting-label" style="width:49% !important;margin-right:0px;" for="sliders">Sliders</label>
+                             <span style="width:49% !important; min-width:inherit; text-align:right" class="tip setting-help"><button id="new-slider">New slider</button></span>
+                             <ul id="sliders" class="scroll" />
+                             <label class="label setting-label" style="width:49% !important; margin-right:0px; min-width:inherit;" for="slider-layers">Slider layers</label>
+                             <span style="width:49% !important; min-width:inherit; text-align:right" class="tip setting-help"><button id="new-sliderLayer">New slider layer</button></span>
+                             <ul id="slider-layers" class="scroll" />
+                         </td>
+                     </tr>
+                 </table>
+              </div>
           </div>
       </li>
   </ul>
+
+  <!-- MAIN PAGE ACTIONS   -->
   <div class="xblock-actions">
     <span class="xblock-editor-error-message"></span>
     <ul>
@@ -70,15 +113,16 @@
   </div>
 </div>
 
-<div id="dialog-geo-form" title="Specify Reference Geometry">
+<!-- SPECIFYING A GEO BOUNDARY -->
+<div id="dialog-geo-form" class="dialog-form" title="Specify Reference Geometry">
     <form>
         <fieldset>
-            <label for="id">ID</label>
+            <label for="id">Unique ID</label>
             <input type="text" name="id" id="id" value="" class="text ui-widget-content ui-corner-all">
 
             <label for="worldmap_config_{{uniqueId}}" id="geometry-type-label">Specify polygon</label>
             <iframe class='frame' id="worldmap_config_{{uniqueId}}"
-                    src="{{url}}"
+                    src="{{url}}{{delimiter}}xblockId=worldmap_config_{{uniqueId}}"
                     frameborder='0' width='400' height='300'
                     debug="false"
                     >
@@ -92,38 +136,181 @@
     </form>
 </div>
 
-<div id="dialog-confirm"></div>
-
-<script language="javascript">
-//    $('#configEditor' ).val(JSON.stringify(JSON.parse($('#configEditor').val()),null, '\t'));
-//    $('#configEditor2' ).val(JSON.stringify(JSON.parse($('#configEditor2').val()),null, '\t'));
 
 
-//
-//    function setPolygon() {
-//        window.alert("setPolygon called");
-//    }
-//    var dialog, form;
-//
-//    dialog = $( "#dialog-geo-form" ).dialog({
-//      autoOpen: false,
-//      height: 500,
-//      dialogClass: "no-close",
-//      width: 650,
-//      modal: true,
-//      buttons: {
-//        "Set Polygon": setPolygon,
-//        Cancel: function() {
-//          dialog.dialog( "close" );
-//        }
-//      },
-//      close: function() {
-//        form[ 0 ].reset();
-//      }
-//    });
-//
-//    form = dialog.find( "form" ).on( "submit", function( event ) {
-//      event.preventDefault();
-//      window.alert("this is where we would store the polygon");
-//    });
-</script>
+<!-- sliderLayer details -->
+<div id="dialog-sliderLayer-detail" class="dialog-form" title="Slider layer details">
+    <form>
+        <fieldset>
+            <label>ID<input type="text" id="sliderLayer-id" class="text ui-widget-content ui-corner-all"></label>
+            <label id="sliderLayer-params-label" style="display:inline;" class="label setting-label" for="sliderLayer-params">Parameters</label>
+            <span class="tip setting-help"><button id="new-param" style="float:right; font-size:80%;">New parameter</button></span>
+            <ul id="sliderLayer-params" class="scroll"/>
+        </fieldset>
+    </form>
+</div>
+<!-- layer-control node details -->
+<div id="dialog-layerControl-form" class="dialog-form" title="Layer control details">
+    <form>
+        <fieldset>
+            <label>Title<input type="text" id="layerControl-title" class="text ui-widget-content ui-corner-all"></label>
+            <span id="layerControl-key-span"><label>Layer ID<input type="text" id="layerControl-key" class="text ui-widget-content ui-corner-all"></label></span>
+            <label id="layerControl-isFolder-label">Folder: <input type="checkbox" id="layerControl-isFolder"></label>
+        </fieldset>
+    </form>
+</div>
+<!-- param details -->
+<div id="dialog-param-form" class="dialog-form" title="Parameter details">
+    <form>
+        <fieldset>
+            <label>Name<input type="text" id="param-name" class="text ui-widget-content ui-corner-all"></label>
+            <input id="param-type-value" type="radio" class="radio" value="value" name="param-type">Value</input>
+            <span id="param-value-span">
+               <input type="text" id="param-value" class="text ui-widget-content ui-corner-all">
+            </span><br/>
+            <input id="param-type-range" type="radio" class="radio" value="range" name="param-type">Range</input>
+            <span id="param-range-span">
+               <input type="text" id="param-min" class="text ui-widget-content ui-corner-all" placeholder="min"> to
+               <input type="text" id="param-max" class="text ui-widget-content ui-corner-all" placeholder="max">
+            </span>
+        </fieldset>
+    </form>
+</div>
+
+<!-- slider details -->
+<div id="dialog-slider-form" class="dialog-form" title="Slider details">
+    <form>
+        <fieldset>
+            <table>
+                <tr>
+                    <td>
+                        <label>Title<input type="text" id="slider-title" class="text ui-widget-content ui-corner-all"></label>
+                    </td>
+                    <td>
+                        <label>Parameter<input type="text" id="slider-param" class="text ui-widget-content ui-corner-all"></label>
+                    </td>
+                    <td>
+                        <label>Position
+                            <select id="slider-position" class="text ui-widget-content ui-corner-all">
+                                <option value="bottom">Bottom</option>
+                                <option value="top">Top</option>
+                                <option value="left">Left</option>
+                                <option value="right">Right</option>
+                            </select>
+                        </label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label>Minimum<input type="text" id="slider-min" class="text ui-widget-content ui-corner-all"></label>
+                    </td>
+                    <td>
+                        <label>Maximum<input type="text" id="slider-max" class="text ui-widget-content ui-corner-all"></label>
+                    </td>
+                    <td>
+                        <label>Increment<input type="text" id="slider-incr" class="text ui-widget-content ui-corner-all"></label>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="3">
+                        <label>Help (html)<textarea id="slider-html" class="text ui-widget-content ui-corner-all"/></label>
+                    </td>
+                </tr>
+            </table>
+        </fieldset>
+    </form>
+</div>
+
+
+<!-- SPECIFYING A CONSTRAINT DETAILS -->
+<div id="dialog-constraint-form" title="Constraint details">
+    <form>
+        <fieldset>
+            <table cellpadding="10px">
+                <tr>
+                    <td colspan="2">
+                        <label for="constraint-explanation">Hint (html)</label>
+                        <input type="text" name="constraintExplanation" id="constraint-explanation" value="" class="text ui-widget-content ui-corner-all" style="width:92%">
+                        <hr/>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width:40%">
+                        <label for="constraint-percentOfGrade">% of grade</label>
+                        <input type="text" name="constraintPercentOfGrade" id="constraint-percentOfGrade" value="" class="text ui-widget-content ui-corner-all">
+                        <label for="constraint-percentMatch">% match</label>
+                        <input type="text" name="constraintPercentMatch" id="constraint-percentMatch" value="" class="text ui-widget-content ui-corner-all">
+                        <label for="constraint-padding">Padding (meters)</label>
+                        <input type="text" name="constraintPadding" id="constraint-padding" value="" class="text ui-widget-content ui-corner-all">
+                        <label for="constraint-type">Type</label><br/>
+                        <select name="type" id="constraint-type" class="select ui-widget-content ui-corner-all">
+                            <option value="excludes">Excludes</option>
+                            <option value="includes">Includes</option>
+                            <option value="inside">Inside</option>
+                            <option value="matches">Matches</option>
+                        </select>
+                    </td>
+                    <td style="width:60%">
+                        <label for="worldmap_constraint_{{uniqueId}}" id="constraint-type-label">
+                            Specify
+                            <select name="constraintGeometryType" id="constraint-geometry-type" class="select ui-widget-content ui-corner-all">
+                                <option value="point">Point</option>
+                                <option value="polyline">Polyline</option>
+                                <option value="polygon">Polygon</option>
+                            </select>
+                        </label>
+                        <iframe class='frame' id="worldmap_constraint_{{uniqueId}}"
+                            src="{{url}}{{delimiter}}xblockId=worldmap_constraint_{{uniqueId}}"
+                            frameborder='0' width='400' height='300'
+                            debug="false"
+                            >
+                        </iframe>
+                    </td>
+                </tr>
+            </table>
+        </fieldset>
+    </form>
+</div>
+
+<!-- SPECIFYING QUESTION DETAILS -->
+<div id="dialog-question-detail" title="Question details">
+    <form>
+        <fieldset>
+            <table style="width:100%">
+                <tr>
+                    <td colspan="2">
+                        <label for="explanation">Question (html)</label>
+                        <input type="text" name="explanation" id="explanation" class="text ui-widget-content ui-corner-all">
+                        <hr/>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="width:275px">
+                        <label for="id">ID</label>
+                        <input type="text" name="id" id="question-id" value="" class="text ui-widget-content ui-corner-all">
+                        <label for="color">Tool button color</label>
+                        <input type="text" name="color" id="color" class="text ui-widget-content ui-corner-all">
+                        <label for="hintAfterAttempt"># Attempts before hint</label>
+                        <input type="text" name="hintAfterAttempt" id="hintAfterAttempt" class="text ui-widget-content ui-corner-all">
+                        <label for="hintDisplayTime"># Seconds to display hint</label>
+                        <input type="text" name="hintDisplayTime" id="hintDisplayTime" class="text ui-widget-content ui-corner-all">
+                        <label for="response-type">Type of response</label><br/>
+                        <select name="type" id="response-type" class="select ui-widget-content ui-corner-all">
+                            <option value="point">Point</option>
+                            <option value="polyline">Polyline</option>
+                            <option value="polygon">Polygon</option>
+                        </select>
+                    </td>
+                    <td style="width:100%">
+                        <div id="constraint-list-wrapper">
+                            <label style="width:50% !important" class="label setting-label" for="constraint-list">Constraints:</label>
+                            <span style="width:40%; text-align:right" class="tip setting-help"><button id="add-constraint">New constraint</button></span>
+                            <ul id="constraint-list" style="width:100%"/>
+                        </div>
+                    </td>
+                </tr>
+        </fieldset>
+    </form>
+</div>
+<div id="dialog-confirm"/>
+<div id="dialog-inquire"/>
