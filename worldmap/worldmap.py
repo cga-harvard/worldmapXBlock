@@ -131,9 +131,7 @@ class WorldMapXBlock(XBlock):
                        {
                           "id": "baz",
                           "color": "0000FF",
-
-
-                         "type": "polygon",
+                          "type": "polygon",
                           "explanation": "Draw a polygon around the land bridge that formed Nahant bay?",
                           "hintAfterAttempt": 2,
                           "hintDisplayTime": -1,
@@ -516,9 +514,10 @@ class WorldMapXBlock(XBlock):
 
     worldmapConfig = Dict(help="worldmap config data", scope=Scope.content, default=json.loads(worldmapConfigJson))
 
-    scores = Dict(help="scores", default=dict(), scope=Scope.user_state) #TODO: make this work
+    scores = Dict(help="score data", scope=Scope.user_state, default={})
 
     has_children = False
+    has_score = True
 
     @property
     def sliders(self):
@@ -591,14 +590,7 @@ class WorldMapXBlock(XBlock):
         The primary view of the WorldMapXBlock, shown to students
         when viewing courses.
         """
-        self.runtime.publish(self,'grade',
-            {
-                'value': 5,
-                'max_value': 10
-            }
-        )
-
-        delimiter = "?"
+        delimiter = "?"   #TODO:  ugly...need to figure out a better way!
         try:
             self.worldmapConfig.get("href",None).index("?")
             delimiter = "&"
@@ -727,6 +719,8 @@ class WorldMapXBlock(XBlock):
     def getLayerStates(self, data, suffix=''):
         return self.layerState
 
+
+    #IMPORTANT:  currently a point_response is adjudicated against only the first constraint (all others are ignored)
     @XBlock.json_handler
     def point_response(self, data, suffix=''):
         unsatisfiedConstraints = []
@@ -754,7 +748,7 @@ class WorldMapXBlock(XBlock):
             percentCorrect = 0
             unsatisfiedConstraints.append(data['question']['constraints'][0])
 
-        self.setScore(data['question']['id'], percentCorrect, 100)
+        self.setScore(data['question']['id'], percentCorrect, correctExplanation)
 
         return {
             'question':data['question'],
@@ -865,14 +859,15 @@ class WorldMapXBlock(XBlock):
 
         percentIncorrect = math.floor( 100 - totalCorrect*100/totalGradeValue);
 
-        self.setScore(data['question']['id'], 100-percentIncorrect, 100)
+        correctExplanation = "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
+        self.setScore(data['question']['id'], 100-percentIncorrect, correctExplanation)
 
         return {
             'question':data['question'],
             'unsatisfiedConstraints': unsatisfiedConstraints,
             'isHit': isHit,
             'percentCorrect': 100-percentIncorrect,
-            'correctExplanation': "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
+            'correctExplanation': correctExplanation
         }
 
     @XBlock.json_handler
@@ -936,21 +931,24 @@ class WorldMapXBlock(XBlock):
 
         percentIncorrect = math.floor( 100 - totalCorrect*100/totalGradeValue);
 
-        self.setScore(data['question']['id'], 100-percentIncorrect, 100)
+        correctExplanation = "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
+
+        self.setScore(data['question']['id'], 100-percentIncorrect, correctExplanation)
 
         return {
             'question':data['question'],
             'unsatisfiedConstraints': unsatisfiedConstraints,
             'isHit': isHit,
             'percentCorrect': 100-percentIncorrect,
-            'correctExplanation': "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
+            'correctExplanation': correctExplanation
         }
 
     @XBlock.json_handler
     def getQuestions(self, data, suffix=''):
         return {
+            'explanation': self.config.get('explanation',[]),
             'questions': self.config.get('questions',[]),
-            'explanation': self.config.get('explanation',[])
+            'scores': self.scores
         }
 
     @XBlock.json_handler
@@ -1025,11 +1023,17 @@ class WorldMapXBlock(XBlock):
         return self.config.get('questions',[])
 
 
-    #TODO: fix this - make it work
-    def setScore(self, id, value, max_value):
-        self.scores[id] = value/max_value
+    def setScore(self, questionId, score, explanation):
+        self.scores[questionId] = { 'score': score, 'explanation':explanation}
+
+        maxScore = 0;
+        myScore = 0;
         for question in self.config['questions']:
-            pass
+            maxScore += 100
+            if question['id'] in self.scores and 'score' in self.scores[question['id']]:
+                myScore += self.scores[question['id']]['score']
+
+        self.runtime.publish(self,'grade', { 'value': myScore, 'max_score': maxScore})
 
 
     @XBlock.json_handler

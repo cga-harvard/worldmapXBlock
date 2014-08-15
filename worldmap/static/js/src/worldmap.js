@@ -8,6 +8,8 @@ var myApp = myApp || {};
  * called once for each frag on the page
  */
 
+var CORRECT_HTML  ="<img src='/xblock/resource/worldmap/public/images/correct-icon.png'/>";
+var INCORRECT_HTML="<img src='/xblock/resource/worldmap/public/images/incorrect-icon.png'/>";
 
 myApp.WorldMapRegistry = Array();
 
@@ -264,6 +266,12 @@ function WorldMapXBlock(runtime, element) {
                                     new myApp.Message("set-answer-tool", e.data)
                                 );
                             });
+                            var score = result.scores[result.questions[i].id];
+                            if( score.score == 100 ) {
+                                $('#score-' + result.questions[i].id).html(CORRECT_HTML);
+                            } else if( score.score < 100) {
+                                $('#score-' + result.questions[i].id).html(INCORRECT_HTML+"&nbsp;"+score.explanation);
+                            }
                         }
                     }
                  },
@@ -299,11 +307,11 @@ function WorldMapXBlock(runtime, element) {
 
                     if( result.isHit ) {
                         //   "/resource/worldmap/public/images/correct-icon.png" seems to work for workbench
-                        div.html("<img src='/xblock/resource/worldmap/public/images/correct-icon.png'/>");
+                        div.html(CORRECT_HTML);
                         myApp.MESSAGING.getInstance().sendAll( new myApp.Message("reset-answer-tool",null));
                         info("Correct!", 1000,200);
                     } else {
-                        div.html("<img src='/xblock/resource/worldmap/public/images/incorrect-icon.png'/>&nbsp;"+result.correctExplanation);  //TODO: Fix url to point to local image
+                        div.html(INCORRECT_HTML+"&nbsp;"+result.correctExplanation);  //TODO: Fix url to point to local image
                         if( result.error != null ) {
                             error(result.error);
                         } else {
