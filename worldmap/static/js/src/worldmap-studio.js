@@ -5,8 +5,6 @@ var myApp = myApp || {};
 
 function WorldMapEditBlock(runtime, element) {
 
-    console.log("INITIALIZATION of WorldMapEditBlock *******************************************");
-
     //rewrite the json so it is formatted nicely.
     var config = JSON.parse($('#config').val());
     var worldmapConfig = JSON.parse($('#worldmapConfig').val());
@@ -19,7 +17,6 @@ function WorldMapEditBlock(runtime, element) {
     var htmlEditor           = CodeMirror.fromTextArea($('#prose')[0],          { mode: 'text/html', lineWrapping: true, htmlMode: true });
 
     $(element).find('.save-button').bind('click', function() {
-
 
         //cleanse all the add'l info after last ":" in layer-control node titles
         $('#layer-controls',element).dynatree("getRoot").visit( function( n ) {
@@ -42,8 +39,6 @@ function WorldMapEditBlock(runtime, element) {
             'height':     parseInt($("#map-height").val()),
             'baseLayer':  $("#map-baseLayer").val(),
             'debug':      $('#map-debug').attr('checked') === "checked"
-
-
         };
 
         $('.xblock-editor-error-message', element).html();
@@ -69,6 +64,17 @@ function WorldMapEditBlock(runtime, element) {
 
     refreshGeoList();
 
+    $('.map-tab .required').each(function() {
+        $(this).change(function() {
+            $(this).toggleClass('field-error', $(this).val() === "");
+        });
+    });
+    $('.map-tab .required-integer').each(function() {
+        $(this).change(function() {
+            $(this).toggleClass('field-error', !$(this).val().match(/^[-+]?\d+$/));
+        });
+    });
+
     $('#add-reference-geometry').click( function() {
         config['highlights'].push( {
             id: 'new reference',
@@ -78,6 +84,7 @@ function WorldMapEditBlock(runtime, element) {
             }
         } );
         refreshGeoList();
+       $('#prose-polygon-list').animate({scrollTop: 1000},{speed:'fast'});
     });
 
     //******************* Questions Tab ********************************
@@ -337,21 +344,32 @@ function WorldMapEditBlock(runtime, element) {
             {
                 text: "OK",
                 click: function() {
-                    var slider = $(this).data('slider');
-                    for( var i in worldmapConfig['sliders']) {
-                        if( worldmapConfig['sliders'][i]['id'] === slider.id) {
-                            worldmapConfig['sliders'][i]['title'] = $('#slider-title',this).val();
-                            worldmapConfig['sliders'][i]['param'] = $('#slider-param',this).val();
-                            worldmapConfig['sliders'][i]['max'] = parseInt($('#slider-max',this).val());
-                            worldmapConfig['sliders'][i]['min'] = parseInt($('#slider-min',this).val());
-                            worldmapConfig['sliders'][i]['increment'] = parseInt($('#slider-incr',this).val());
-                            worldmapConfig['sliders'][i]['help'] = $('#slider-html',this).val();
-                            worldmapConfig['sliders'][i]['position'] = $("#slider-position option:selected").val();
-                            break;
+                    var valid = true;
+                    $('#dialog-slider-form .required').each( function() {
+                        if( $(this).val() === "")valid = false;
+                    });
+                    $('#dialog-slider-form .required-number').change( function() {
+                        if( !$.isNumeric($(this).val())) valid = false;
+                    });
+                    if( valid ) {
+                        var slider = $(this).data('slider');
+                        for (var i in worldmapConfig['sliders']) {
+                            if (worldmapConfig['sliders'][i]['id'] === slider.id) {
+                                worldmapConfig['sliders'][i]['title'] = $('#slider-title', this).val();
+                                worldmapConfig['sliders'][i]['param'] = $('#slider-param', this).val();
+                                worldmapConfig['sliders'][i]['max'] = parseInt($('#slider-max', this).val());
+                                worldmapConfig['sliders'][i]['min'] = parseInt($('#slider-min', this).val());
+                                worldmapConfig['sliders'][i]['increment'] = parseInt($('#slider-incr', this).val());
+                                worldmapConfig['sliders'][i]['help'] = $('#slider-html', this).val();
+                                worldmapConfig['sliders'][i]['position'] = $("#slider-position option:selected").val();
+                                break;
+                            }
                         }
+                        refreshSliders();
+                        $(this).dialog("close");
+                    } else {
+                        window.alert("Validation problems:\n\nFix errors before closing.");
                     }
-                    refreshSliders();
-                    $(this).dialog("close");
                 }
             },
             {
@@ -362,6 +380,12 @@ function WorldMapEditBlock(runtime, element) {
             }
         ],
         create: function() {
+            $('#dialog-slider-form .required').change( function() {
+                $(this).toggleClass('field-error', $(this).val() === "");
+            });
+            $('#dialog-slider-form .required-number').change( function() {
+                $(this).toggleClass('field-error', !$.isNumeric($(this).val()));
+            });
         },
         open: function() {
             var slider = $(this).data('slider');
@@ -372,6 +396,12 @@ function WorldMapEditBlock(runtime, element) {
             $('#slider-incr',this).val(slider['increment']);
             $('#slider-html',this).val(slider['help']);
             $('#slider-position option[value='+slider['position']+']',this).attr('selected','selected');
+            $('#dialog-slider-form .required').each( function() {
+                $(this).toggleClass('field-error', $(this).val() === "");
+            });
+            $('#dialog-slider-form .required-number').each( function() {
+                $(this).toggleClass('field-error', !$.isNumeric($(this).val()));
+            });
         }
     });
 
@@ -402,23 +432,31 @@ function WorldMapEditBlock(runtime, element) {
             {
                 text: "OK",
                 click: function() {
-                    var node = $(this).data('node');
-                    var isRoot = !node.data.isFolder && node.data.children !== null;
-                    var isFolder = $('#layerControl-isFolder').attr('checked') === "checked";
-                    var key = $('#layerControl-key',this).val();
-                    if( !isRoot ) {
-                        node.data.title = $('#layerControl-title', this).val() + (isFolder ? ": (folder)" : ": (" + key + ")")
+                    var valid = true;
+                    $('#dialog-layerControl-form .required').each( function() {
+                        if($(this).is(':visible') && $(this).val() === "" ) valid = false;
+                    });
+                    if( !valid ) {
+                        window.alert("Validation problems:\n\nFix errors before closing.");
                     } else {
-                        node.data.title = $('#layerControl-title', this).val()
+                        var node = $(this).data('node');
+                        var isRoot = !node.data.isFolder && node.data.children !== null;
+                        var isFolder = $('#layerControl-isFolder').attr('checked') === "checked";
+                        var key = $('#layerControl-key', this).val();
+                        if (!isRoot) {
+                            node.data.title = $('#layerControl-title', this).val() + (isFolder ? ": (folder)" : ": (" + key + ")")
+                        } else {
+                            node.data.title = $('#layerControl-title', this).val()
+                        }
+                        if (!isRoot && !isFolder) node.data.key = key;
+                        node.data.isFolder = isRoot ? false : isFolder;
+                        if (!isRoot && !node.data.isFolder) {
+                            node.removeChildren();
+                            node.data.children = null;
+                        }
+                        node.render();
+                        $(this).dialog("close");
                     }
-                    if( !isFolder ) node.data.key = key;
-                    node.data.isFolder = isRoot ? false : isFolder;
-                    if( !node.data.isFolder && !$('#layerControl-isFolder',this).is(":disabled") ) {
-                        node.removeChildren();
-                        node.data.children = null;
-                    }
-                    node.render();
-                    $(this).dialog("close");
                 }
             },
             {
@@ -428,34 +466,52 @@ function WorldMapEditBlock(runtime, element) {
                 }
             }
         ],
+        create: function () {
+            $('#layerControl-isFolder').click(function() {
+                var checked = $('#layerControl-isFolder').attr('checked') === "checked";
+                if( !checked && layerControlDialog.data('node').data.children !== null ) {
+                    confirm("This will delete the folder's contents, continue?", function (b) {
+                        if (!b) {
+                           checked = true;
+                           $('#layerControl-isFolder').attr('checked',checked);
+                        }
+                        $('#layerControl-key-span').toggle(!checked);
+                    });
+                }
+                $('#layerControl-key-span').toggle(!checked);
+            });
+            $('#dialog-layerControl-form .required').change( function() {
+                $(this).toggleClass('field-error', $(this).val()==="");
+            });
+
+        },
         open: function() {
             var node = $(this).data('node');
             var title = node.data.title;
             var loc = title.lastIndexOf(":");
             title = title.substring(0, loc==-1?title.length:loc);
             $('#layerControl-title',this).val(title);
-            if( !node.data.isFolder || node.data.children === null) {
-                $('#layerControl-key',this).val(node.data.key);
-            } else {
+            if( !node.data.isFolder && node.data.children !== null ) {  //root node
+                $('#layerControl-key-span',this).hide();
+                $('#layerControl-isFolder-span',this).hide();
+            } else if( !node.data.isFolder ) { //leaf node
+                $('#layerControl-key', this).val(node.data.key);
+                $('#layerControl-key-span', this).show();
+                $('#layerControl-isFolder-span', this).show();
+            } else if( node.data.isFolder ) { //folder
                 $('#layerControl-key',this).val("");
+                $('#layerControl-key-span', this).hide();
+                $('#layerControl-isFolder-span', this).show();
+            } else { //????
+                debugger;
             }
-            $('#layerControl-isFolder',this).attr("checked", node.data.isFolder || (!node.data.isFolder && node.data.children !== null));
-            $('#layerControl-key-span').toggle($('#layerControl-isFolder').attr('checked') !== "checked");
-            $('#layerControl-isFolder',this).enable(node.data.isFolder || node.data.children === null );
-        }
-    });
-    $('#layerControl-isFolder').click(function() {
-       var checked = $('#layerControl-isFolder').attr('checked') === "checked";
-       if( !checked && layerControlDialog.data('node').data.children !== null ) {
-            confirm("This will delete the folder's contents, continue?", function (b) {
-                if (!b) {
-                   checked = true;
-                   $('#layerControl-isFolder').attr('checked',checked);
-                }
-                $('#layerControl-key-span').toggle(!checked);
+            $('#layerControl-isFolder',this).attr("checked", node.data.isFolder );
+            $('#dialog-layerControl-form .required').each( function() {
+                $(this).toggleClass('field-error',$(this).val()==="");
             });
-       }
-       $('#layerControl-key-span').toggle(!checked);
+//            $('#layerControl-key-span').toggle($('#layerControl-isFolder').attr('checked') !== "checked");
+//            $('#layerControl-isFolder',this).enable(node.data.isFolder || node.data.children === null );
+        }
     });
 
     var sliderLayerDialog = $('#dialog-sliderLayer-detail').dialog({
@@ -481,12 +537,16 @@ function WorldMapEditBlock(runtime, element) {
             {
                 text: "OK",
                 click: function() {
-                    worldmapConfig['layers'][sliderLayerDialog.data('idx')] = {
-                        id: $('#sliderLayer-id',this).val(),
-                        params: sliderLayerDialog.data('sliderLayer')['params']
-                    };
-                    refreshSliderLayers();
-                    $(this).dialog("close");
+                    if( $('#sliderLayer-id',this).val() != "" ) {
+                        worldmapConfig['layers'][sliderLayerDialog.data('idx')] = {
+                            id: $('#sliderLayer-id', this).val(),
+                            params: sliderLayerDialog.data('sliderLayer')['params']
+                        };
+                        refreshSliderLayers();
+                        $(this).dialog("close");
+                    } else {
+                        window.alert("Validation problems:\n\nFix errors before closing.");
+                    }
                 }
             },
             {
@@ -497,18 +557,24 @@ function WorldMapEditBlock(runtime, element) {
                 }
             }
         ],
+        create: function() {
+            $('#sliderLayer-id',this).change( function() {
+                $(this).toggleClass('field-error', $(this).val() == "");
+            });
+        },
         open: function() {
             var sliderLayer = $(this).data('sliderLayer');
             $('#sliderLayer-id',this).val(sliderLayer['id']);
             refreshSliderLayerParams();
+            $('#sliderLayer-id',this).toggleClass('field-error', $('#sliderLayer-id',this).val() == "");
         }
     });
 
     var paramDialog = $('#dialog-param-form').dialog({
         autoOpen: false,
-        height: 300,
+        height: 290,
         dialogClass: "no-close",
-        width: 330,
+        width: 390,
         modal: true,
         buttons: [
             {
@@ -527,20 +593,24 @@ function WorldMapEditBlock(runtime, element) {
             {
                 text: "OK",
                 click: function() {
-                    sliderLayerDialog.data('sliderLayer')['params'][paramDialog.data('idx')] =
-                        $('#param-type-range').is(":checked") ?
+                    if( paramDialog.validate() ) {
+                        sliderLayerDialog.data('sliderLayer')['params'][paramDialog.data('idx')] =
+                            $('#param-type-range').is(":checked") ?
                             {
                                 name: $('#param-name').val(),
                                 min: parseFloat($('#param-min').val()),
                                 max: parseFloat($('#param-max').val())
                             }
-                        :
+                                :
                             {
                                 name: $('#param-name').val(),
-                                value:parseFloat($('#param-value').val())
+                                value: parseFloat($('#param-value').val())
                             };
-                    refreshSliderLayerParams();
-                    $(this).dialog("close");
+                        refreshSliderLayerParams();
+                        $(this).dialog("close");
+                    } else {
+                        window.alert("Validation problems:\n\nFix errors before closing.");
+                    }
                 }
             },
             {
@@ -578,8 +648,28 @@ function WorldMapEditBlock(runtime, element) {
             }
             $('#param-min').val(param['min']);
             $('#param-max').val(param['max']);
+            paramDialog.validate();
         }
     });
+    paramDialog.validate = function() {
+        var result = true;
+        $('#dialog-param-form .required').each( function() {
+            $(this).toggleClass('field-error',$(this).val()=="");
+            if( $(this).is(':visible') && $(this).val()=="") {
+                result = false;
+            }
+        });
+        $('#dialog-param-form .required-number').each( function() {
+            $(this).toggleClass('field-error',!$.isNumeric($(this).val()));
+            if($(this).is(':visible') && !$.isNumeric($(this).val())){
+                result = false;
+            }
+        });
+        return result;
+    };
+    $('#dialog-param-form .required').change(paramDialog.validate);
+    $('#dialog-param-form .required-number').change(paramDialog.validate);
+
 
     var questionDialog = $('#dialog-question-detail').dialog({
         autoOpen: false,
@@ -656,38 +746,30 @@ function WorldMapEditBlock(runtime, element) {
         var msg = "";
         var required = false;
         $('#dialog-question-detail .required').each( function() {
+            $(this).toggleClass('field-error',$(this).val()=="");
             if( $(this).val()=="") {
                 required = true;
-                $(this).addClass('field-error');
-            } else {
-                $(this).removeClass('field-error');
             }
         });
         var requiredNumber = false;
         $('#dialog-question-detail .required-number').each( function() {
+            $(this).toggleClass('field-error',!$.isNumeric($(this).val()));
             if(!$.isNumeric($(this).val())){
                 requiredNumber = true;
-                $(this).addClass('field-error');
-            } else {
-                $(this).removeClass('field-error');
             }
         });
         var requiredInteger = false;
         $('#dialog-question-detail .required-integer').each( function() {
+            $(this).toggleClass('field-error',!$(this).val().match(/^[-+]?\d+$/));
             if(!$(this).val().match(/^[-+]?\d+$/)){
                 requiredInteger = true;
-                $(this).addClass('field-error');
-            } else {
-                $(this).removeClass('field-error');
             }
         });
         var requiredColor = false;
         $('#dialog-question-detail .required-color').each( function() {
+            $(this).toggleClass('field-error', !$(this).val().match(/^[0-9a-fA-F]{6}$/));
             if(!$(this).val().match(/^[0-9a-fA-F]{6}$/)){
                 requiredColor = true;
-                $(this).addClass('field-error');
-            } else {
-                $(this).removeClass('field-error');
             }
         });
         if( required ) {
@@ -711,7 +793,7 @@ function WorldMapEditBlock(runtime, element) {
     }
     var geoDialog = $("#dialog-geo-form").dialog({
         autoOpen: false,
-        height: 550,
+        height: 575,
         dialogClass: "no-close",
         width: 570,
         modal: true,
@@ -719,9 +801,9 @@ function WorldMapEditBlock(runtime, element) {
             {
                 text: "Delete",
                 click: function() {
-                    confirm("Are you sure you wish to delete?", function(b) {
-                        if( b ) {
-                            config['highlights'].splice(geoDialog.data('idx'),1);
+                    confirm("Are you sure you wish to delete?", function (b) {
+                        if (b) {
+                            config['highlights'].splice(geoDialog.data('idx'), 1);
                             geoDialog.dialog("close");
                             refreshGeoList();
                         }
@@ -732,10 +814,14 @@ function WorldMapEditBlock(runtime, element) {
             {
                 text: "OK",
                 click: function() {
-                    config['highlights'][geoDialog.data('idx')] = geoDialog.data('highlight');
-                    config['highlights'][geoDialog.data('idx')]['id'] = $('#id',geoDialog).val();
-                    refreshGeoList();
-                    geoDialog.dialog("close");
+                    if( geoDialog.validate() ) {
+                        config['highlights'][geoDialog.data('idx')] = geoDialog.data('highlight');
+                        config['highlights'][geoDialog.data('idx')]['id'] = $('#reference-id',geoDialog).val();
+                        refreshGeoList();
+                        geoDialog.dialog("close");
+                    } else {
+                        window.alert("Validation problems:\n\nFix errors before closing.");
+                    }
 
                 }
             },
@@ -743,7 +829,6 @@ function WorldMapEditBlock(runtime, element) {
                 text: "Cancel",
                 click: function() {
                     refreshGeoList();
-
                     geoDialog.dialog( "close" );
                 }
             }
@@ -754,11 +839,16 @@ function WorldMapEditBlock(runtime, element) {
         create: function(event, ui) {
             console.log("geoDialog.create() called");
             $("#geo-boundary-type").change(onChangeGeoTool);
+            $('#dialog-geo-form .required').each( function() {
+                $(this).change(function() {
+                    geoDialog.validate();
+                });
+            });
         },
         open: function() {
-            $('#id',this).val(geoDialog.data('highlight')['id']);
+            $('#reference-id',this).val(geoDialog.data('highlight')['id']);
 
-            $("input[name=geo-boundary-type]").val([geoDialog.data('highlight')['geometry']['type']]);
+            $("#dialog-geo-form input[name=geo-boundary-type]").val([geoDialog.data('highlight')['geometry']['type']]);
 
             if( myApp.MESSAGING.getInstance().isPortalReady(getUniqueId('#dialog-geo-form')) ) {
                 initGeoMap();
@@ -767,6 +857,24 @@ function WorldMapEditBlock(runtime, element) {
             }
         }
     });
+
+    geoDialog.validate = function() {
+        var result = true;
+        var msg = "";
+        $('#reference-id').toggleClass('field-error', $('#reference-id').val() == "");
+        if( $('#reference-id').val() == "") {
+            result = false;
+        }
+        $("#dialog-geo-form #specify-geo").toggleClass('field-error', geoDialog.data('highlight')['geometry']['type'] == 'unknown');
+        if( geoDialog.data('highlight')['geometry']['type'] == 'unknown' ) {
+            result = false;
+        }
+        if( !result ) {
+            msg += "Required fields must have values<br/>";
+        }
+        $('#dialog-geo-form-validation-msg').html(msg);
+        return result;
+    };
 
     var constraintDialog = $("#dialog-constraint-form").dialog({
         autoOpen: false,
@@ -871,15 +979,13 @@ function WorldMapEditBlock(runtime, element) {
             var result = true;
             var msg = "";
             if( responseType == 'polyline' ) {
-                if( (constraintType == 'matches' && constraintGeoType == 'polyline')
+                var compatible = (constraintType == 'matches' && constraintGeoType == 'polyline')
                   ||(constraintType == 'inside'  && constraintGeoType == 'polygon')
                   ||(constraintType == 'includes'&& constraintGeoType == 'point')
-                  ||(constraintType == 'excludes'&& constraintGeoType == 'polygon')) {
-                   $('#constraint-type').removeClass('field-error');
-                   $('#constraint-geometry-type').removeClass('field-error');
-                } else {
-                   $('#constraint-type').addClass('field-error');
-                   $('#constraint-geometry-type').addClass('field-error');
+                  ||(constraintType == 'excludes'&& constraintGeoType == 'polygon');
+                $('#constraint-type').toggleClass('field-error', !compatible);
+                $('#constraint-geometry-type').toggleClass('field-error', !compatible);
+                if( !compatible) {
                    msg += "Constraint type: "+$('#constraint-type').val()+"("+$('#constraint-geometry-type').val()+") is incompatible for a polyline user response<br/>";
                    result = false;
                 }
@@ -894,29 +1000,24 @@ function WorldMapEditBlock(runtime, element) {
             } else {
                 $('#constraint-percentMatch').removeClass('field-error');
             }
+            $('#constraint-percentOfGrade').toggleClass('field-error', $('#constraint-percentOfGrade').val() === "" );
             if( $('#constraint-percentOfGrade').val() === "" ) {
-                $('#constraint-percentOfGrade').addClass('field-error');
                 requiredEmpty = true;
-            } else {
-                $('#constraint-percentOfGrade').removeClass('field-error');
             }
+            $('#constraint-padding').toggleClass('field-error',$('#constraint-padding').val() === "" );
             if( $('#constraint-padding').val() === "" ) {
-                $('#constraint-padding').addClass('field-error');
                 requiredEmpty = true;
-            } else {
-                $('#constraint-padding').removeClass('field-error');
             }
+            $('#constraint-explanation').addClass('field-error', $('#constraint-explanation').val() === "");
             if( $('#constraint-explanation').val() === "" ) {
-                $('#constraint-explanation').addClass('field-error');
                 requiredEmpty = true;
-            } else {
-                $('#constraint-explanation').removeClass('field-error');
             }
 
             var requiredNumber = false;
             $('#dialog-constraint-form .required-number').each( function() {
-                if(!$.isNumeric($(this).val())) {
-                    $(this).addClass('field-error');
+                var err = $(this).is(':visible') && !$.isNumeric($(this).val());
+                $(this).toggleClass('field-error',err);
+                if(err) {
                     requiredNumber = true;
                 }
             });

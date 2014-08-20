@@ -684,21 +684,20 @@ class WorldMapXBlock(XBlock):
 
     @XBlock.json_handler
     def studio_submit(self, submissions, suffix=''):
+      #   try:
+      #      config =  json.loads(submissions['config'])
+      #   except ValueError as e:
+      #       return {'result': 'error', 'message': e.message, 'tab':'Questions'}
+      #
+      #   try:
+      #       worldmapConfig =  json.loads(submissions['worldmapConfig'])
+      #   except ValueError as e:
+      #       return {'result': 'error', 'message':e.message, 'tab':'Map config'}
+      #
+      #   self.config = config
+      #   self.worldmapConfig = worldmapConfig
+
         self.display_name = submissions['display_name']
-      #  self.url =   self.worldmapConfig.get("href",None) + delimiter + "xblockId=worldmap_" + uniqueId
-        try:
-           config =  json.loads(submissions['config'])
-        except ValueError as e:
-            return {'result': 'error', 'message': e.message, 'tab':'Questions'}
-
-        try:
-            worldmapConfig =  json.loads(submissions['worldmapConfig'])
-        except ValueError as e:
-            return {'result': 'error', 'message':e.message, 'tab':'Map config'}
-
-        self.config = config
-        self.worldmapConfig = worldmapConfig
-
         self.config['explanation'] = submissions['prose']
         self.config['highlights']  = submissions['highlights']
         self.config['questions']   = submissions['questions']

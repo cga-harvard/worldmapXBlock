@@ -14,13 +14,13 @@
 
           <div id="tabs">
               <ul>
-                <li><a href="#tabs-1">Questions</a></li>
-                <li><a href="#tabs-2">Map config</a></li>
                 <li><a href="#tabs-3">General</a></li>
                 <li><a href="#tabs-4">Questions</a></li>
                 <li><a href="#tabs-5">Map</a></li>
+                <li class="dev-only" ><a href="#questions-json">Config JSON</a></li>
+                <li class="dev-only" ><a href="#map-json">Map config JSON</a></li>
               </ul>
-              <div id="tabs-1">
+              <div class="dev-only" id="questions-json">
                   <div class="wrapper-comp-setting">
 <!--                    <label class="label setting-label" for="edit_data">Questions</label>
                         <span class="tip setting-help">The JSON definition for the questions configuration</span>
@@ -30,7 +30,7 @@
                     </div>
                   </div>
               </div>
-              <div id="tabs-2">
+              <div class="dev-only" id="map-json">
                   <div class="wrapper-comp-setting">
 <!--                    <label class="label setting-label" for="edit_data">Questions</label>
                         <span class="tip setting-help">The JSON definition for the questions configuration</span>
@@ -65,13 +65,13 @@
                      <tr>
                          <td colspan="2">
                             <label style="margin-left:0px !important;" class="label setting-label" for="map-url">Map URL</label>
-                            <input type="text" id="map-url" style="width:100% !important; padding: 6px;" class="text ui-widget-content ui-corner-all">
+                            <input type="text" id="map-url" style="width:100% !important; padding: 6px;" placeholder="required" class="required text ui-widget-content ui-corner-all">
                             <label class="dependent-property label setting-label" for="map-width">Width</label>
-                            <input type="text" id="map-width" style="width:60px !important;" class="dependent-property text ui-widget-content ui-corner-all">
+                            <input type="text" id="map-width" style="width:70px !important;" placeholder="required" class="required-integer dependent-property text ui-widget-content ui-corner-all">
                             <label class="dependent-property label setting-label" for="map-height">Height</label>
-                            <input type="text" id="map-height" style="width:60px !important;" class="dependent-property text ui-widget-content ui-corner-all">
+                            <input type="text" id="map-height" style="width:70px !important;" placeholder="required" class="required-integer dependent-property text ui-widget-content ui-corner-all">
                             <label class="dependent-property label setting-label" for="map-baseLayer">Base Layer</label>
-                            <input type="text" id="map-baseLayer" style="width:300px !important" class="dependent-property text ui-widget-content ui-corner-all">
+                            <input type="text" id="map-baseLayer" style="width:300px !important" placeholder="specify if needed" class="dependent-property text ui-widget-content ui-corner-all">
                             <label class="dependent-property label setting-label" for="map-debug">Debug</label>
                             <input type="checkbox" id="map-debug" class="checkbox"/>
                             <hr/>
@@ -119,22 +119,25 @@
 <div id="dialog-geo-form" class="dialog-form" title="Specify Reference Geometry">
     <form>
         <fieldset>
-            <label for="id">Unique ID</label>
-            <input type="text" name="id" id="id" value="" class="text ui-widget-content ui-corner-all">
+            <label for="reference-id">Unique ID</label>
+            <input type="text" name="id" id="reference-id" value="" class="required text ui-widget-content ui-corner-all">
 
-            <label for="worldmap_config_{{uniqueId}}" id="geometry-type-label">Specify polygon</label>
-            <iframe class='frame' id="worldmap_config_{{uniqueId}}"
-                    src="{{url}}{{delimiter}}xblockId=worldmap_config_{{uniqueId}}"
-                    frameborder='0' width='400' height='300'
-                    debug="false"
-                    style="display:inline;"
-                    >
-            </iframe>
-            <div id="geo-boundary-type">
-                <input type="radio" id="geo-boundary-type-point" name="geo-boundary-type" value="point"/><label for="geo-boundary-type-point">Point</label><br/>
-                <input type="radio" id="geo-boundary-type-polyline" name="geo-boundary-type" value="polyline"/><label for="geo-boundary-type-polyline">Polyline</label><br/>
-                <input type="radio" id="geo-boundary-type-polygon" name="geo-boundary-type" value="polygon"/><label for="geo-boundary-type-polygon">Polygon</label>
+            <div id="specify-geo">
+                <label for="worldmap_config_{{uniqueId}}" id="geometry-type-label">Specify polygon</label>
+                <iframe class='frame' id="worldmap_config_{{uniqueId}}"
+                        src="{{url}}{{delimiter}}xblockId=worldmap_config_{{uniqueId}}"
+                        frameborder='0' width='400' height='300'
+                        debug="false"
+                        style="display:inline;"
+                        >
+                </iframe>
+                <div id="geo-boundary-type">
+                    <input type="radio" id="geo-boundary-type-point" class="required" name="geo-boundary-type" value="point"/><label for="geo-boundary-type-point">Point</label><br/>
+                    <input type="radio" id="geo-boundary-type-polyline" class="required" name="geo-boundary-type" value="polyline"/><label for="geo-boundary-type-polyline">Polyline</label><br/>
+                    <input type="radio" id="geo-boundary-type-polygon" class="required" name="geo-boundary-type" value="polygon"/><label for="geo-boundary-type-polygon">Polygon</label>
+                </div>
             </div>
+            <div id="dialog-geo-form-validation-msg" style="font-size:smaller; color:red;"/>
         </fieldset>
     </form>
 </div>
@@ -145,7 +148,7 @@
 <div id="dialog-sliderLayer-detail" class="dialog-form" title="Slider layer details">
     <form>
         <fieldset>
-            <label>ID<input type="text" id="sliderLayer-id" class="text ui-widget-content ui-corner-all"></label>
+            <label>ID<input type="text" id="sliderLayer-id" placeholder="   required" class="required text ui-widget-content ui-corner-all"></label>
             <label id="sliderLayer-params-label" style="display:inline;" class="label setting-label" for="sliderLayer-params">Parameters</label>
             <span class="tip setting-help"><button id="new-param" style="float:right; font-size:80%;">New parameter</button></span>
             <ul id="sliderLayer-params" class="scroll"/>
@@ -156,9 +159,9 @@
 <div id="dialog-layerControl-form" class="dialog-form" title="Layer control details">
     <form>
         <fieldset>
-            <label>Title<input type="text" id="layerControl-title" class="text ui-widget-content ui-corner-all"></label>
-            <span id="layerControl-key-span"><label>Layer ID<input type="text" id="layerControl-key" class="text ui-widget-content ui-corner-all"></label></span>
-            <label id="layerControl-isFolder-label">Folder: <input type="checkbox" id="layerControl-isFolder"></label>
+            <label>Title<input type="text" id="layerControl-title" class="required text ui-widget-content ui-corner-all" placeholder="   user visible name (required)"></label>
+            <span id="layerControl-key-span"><label>Layer ID<input type="text" id="layerControl-key" placeholder="   map's layer name (required)" class="required text ui-widget-content ui-corner-all"></label></span>
+            <span id="layerControl-isFolder-span"><label id="layerControl-isFolder-label">Folder: <input type="checkbox" class="checkbox" id="layerControl-isFolder"></label></span>
         </fieldset>
     </form>
 </div>
@@ -166,15 +169,15 @@
 <div id="dialog-param-form" class="dialog-form" title="Parameter details">
     <form>
         <fieldset>
-            <label>Name<input type="text" id="param-name" class="text ui-widget-content ui-corner-all"></label>
+            <label>Name<input type="text" id="param-name" class="required text ui-widget-content ui-corner-all"></label>
             <input id="param-type-value" type="radio" class="radio" value="value" name="param-type">Value</input>
             <span id="param-value-span">
-               <input type="text" id="param-value" class="text ui-widget-content ui-corner-all">
+               <input type="text" id="param-value" class="required-number text ui-widget-content ui-corner-all" placeholder="required">
             </span><br/>
             <input id="param-type-range" type="radio" class="radio" value="range" name="param-type">Range</input>
             <span id="param-range-span">
-               <input type="text" id="param-min" class="text ui-widget-content ui-corner-all" placeholder="min"> to
-               <input type="text" id="param-max" class="text ui-widget-content ui-corner-all" placeholder="max">
+               <input type="text" id="param-min" class="required-number text ui-widget-content ui-corner-all" placeholder="min (required)"> to
+               <input type="text" id="param-max" class="required-number text ui-widget-content ui-corner-all" placeholder="max (required)">
             </span>
         </fieldset>
     </form>
@@ -187,10 +190,10 @@
             <table>
                 <tr>
                     <td>
-                        <label>Title<input type="text" id="slider-title" class="text ui-widget-content ui-corner-all"></label>
+                        <label>Title<input type="text" id="slider-title" placeholder="   required" class="required text ui-widget-content ui-corner-all"></label>
                     </td>
                     <td>
-                        <label>Parameter<input type="text" id="slider-param" class="text ui-widget-content ui-corner-all"></label>
+                        <label>Parameter<input type="text" id="slider-param" placeholder="   required" class="required text ui-widget-content ui-corner-all"></label>
                     </td>
                     <td>
                         <label>Position
@@ -205,13 +208,13 @@
                 </tr>
                 <tr>
                     <td>
-                        <label>Minimum<input type="text" id="slider-min" class="text ui-widget-content ui-corner-all"></label>
+                        <label>Minimum<input type="text" id="slider-min" placeholder="   required" class="required-number text ui-widget-content ui-corner-all"></label>
                     </td>
                     <td>
-                        <label>Maximum<input type="text" id="slider-max" class="text ui-widget-content ui-corner-all"></label>
+                        <label>Maximum<input type="text" id="slider-max" placeholder="   required" class="required-number text ui-widget-content ui-corner-all"></label>
                     </td>
                     <td>
-                        <label>Increment<input type="text" id="slider-incr" class="text ui-widget-content ui-corner-all"></label>
+                        <label>Increment<input type="text" id="slider-incr" placeholder="   required" class="required-number text ui-widget-content ui-corner-all"></label>
                     </td>
                 </tr>
                 <tr>
