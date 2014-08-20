@@ -267,9 +267,9 @@ function WorldMapXBlock(runtime, element) {
                                 );
                             });
                             var score = result.scores[result.questions[i].id];
-                            if( score.score == 100 ) {
+                            if( score && score.score == 100 ) {
                                 $('#score-' + result.questions[i].id).html(CORRECT_HTML);
-                            } else if( score.score < 100) {
+                            } else if( score && score.score < 100) {
                                 $('#score-' + result.questions[i].id).html(INCORRECT_HTML+"&nbsp;"+score.explanation);
                             }
                         }
@@ -395,6 +395,7 @@ function WorldMapXBlock(runtime, element) {
         if( legendData ) {
             legendUrl = legendData.url+"?TRANSPARENT=TRUE&EXCEPTIONS=application%2Fvnd.ogc.se_xml&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetLegendGraphic&TILED=true&LAYER="
                                     + legendData.name+"&STYLE="+legendData.styles+"&transparent=true&format=image%2Fpng&legend_options=fontAntiAliasing%3Atrue";
+            debug("legendUrl: "+legendUrl);
         }
 
         $(".layerControls",element).dynatree("getRoot").visit( function(node) {
@@ -429,7 +430,7 @@ function WorldMapXBlock(runtime, element) {
 
     $(function ($) {
         $('.debugInfo',element).resizable();
-  //      $(document).tooltip();
+        $(document).tooltip();
         /* Here's where you'd do things on page load. */
     });
 

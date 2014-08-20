@@ -149,8 +149,8 @@
 .no-close .ui-dialog-titlebar-close {
   display: none;
 }
-ul.dynatree-container {
-    border: none
+.dynatree-container {
+    border: none !important;
 }
 
 .debugInfo {

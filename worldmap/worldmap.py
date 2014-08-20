@@ -59,6 +59,15 @@ def parse_contents(node):
 
 #***********************************************************************************************
 
+def fixupLayerTree(node):
+    node['expand'] = False
+    node['activate'] = False
+    if 'children' in node:
+        for n in node['children']:
+            fixupLayerTree(n)
+    return node
+
+
 class WorldMapXBlock(XBlock):
     """
     A testing block that checks the behavior of the container.
@@ -690,17 +699,18 @@ class WorldMapXBlock(XBlock):
         self.config = config
         self.worldmapConfig = worldmapConfig
 
-
         self.config['explanation'] = submissions['prose']
         self.config['highlights']  = submissions['highlights']
         self.config['questions']   = submissions['questions']
-        self.worldmapConfig['layer-controls'] = submissions['layer-controls'][0]
+        if 'layer-controls' in submissions:
+            self.worldmapConfig['layer-controls'] = fixupLayerTree(submissions['layer-controls'][0])
         self.worldmapConfig['href']  = submissions['href']
         self.worldmapConfig['height']= submissions['height']
         self.worldmapConfig['width']=  submissions['width']
         self.worldmapConfig['baseLayer'] = submissions['baseLayer']
         self.worldmapConfig['sliders']   = submissions['sliders']
         self.worldmapConfig['layers']    = submissions['layers']
+        self.worldmapConfig['debug']     = submissions['debug']
 
         return { 'result':'success' }
 
@@ -734,12 +744,16 @@ class WorldMapXBlock(XBlock):
         if correctGeometry['type'] == 'polygon':
             correctPolygon = makePolygon(correctGeometry['points']).buffer(padding*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS))
             hit = correctPolygon.contains(makePoint(userAnswer))
-        else:
+        elif correctGeometry['type'] == 'point':
             point = correctGeometry['points'][0]
             sinHalfDeltaLon = math.sin(math.pi * (point['lon']-longitude)/360)
             sinHalfDeltaLat = math.sin(math.pi * (point['lat']-latitude)/360)
             a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*point['lat']/180)
             hit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < padding
+        else:  #polyline
+            polylineArea = makeLineString(correctGeometry).buffer(padding*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS))
+            hit = polylineArea.contains(makePoint(userAnswer))
+
 
         correctExplanation = ""
         percentCorrect = 100
@@ -765,12 +779,12 @@ class WorldMapXBlock(XBlock):
         for pt in data['polygon']:
             arr.append((pt['lon']+360., pt['lat']))
 
-        answerPolygon = Polygon(arr)
-
-        additionalErrorInfo = ""
-
-        isHit = True
         try:
+            answerPolygon = Polygon(arr)
+
+            additionalErrorInfo = ""
+
+            isHit = True
 
             totalGradeValue = 0
             totalCorrect = 0
@@ -849,6 +863,12 @@ class WorldMapXBlock(XBlock):
                 'isHit': False,
                 'error': _('Invalid polygon topology')+'<br/><img src="'+self.runtime.local_resource_url(self,"public/images/InvalidTopology.png")+'"/>'
             }
+        except ValueError:
+            return {
+                'question': data['question'],
+                'isHit': False,
+                'error': _('Invalid polygon topology')+'<br/><img src="'+self.runtime.local_resource_url(self,"public/images/InvalidTopology.png")+'"/>'
+            }
         except:
             print _("Unexpected error: "), sys.exc_info()[0]
             return {
@@ -889,7 +909,7 @@ class WorldMapXBlock(XBlock):
             for constraint in data['question']['constraints']:
                 constraintSatisfied = True
 
-                if constraint['type'] == 'matches' :
+                if constraint['type'] == 'matches' : #polyline
                     percentMatch = constraint['percentMatch']
                     answerPolygon  = answerPolyline.buffer(constraint['padding'])
                     constraintPolyline = makeLineString(constraint['geometry']['points'])
@@ -906,17 +926,24 @@ class WorldMapXBlock(XBlock):
                             additionalErrorInfo = _(" - The line wasn't long enough")
                     else:
                         additionalErrorInfo = _(" - You missed the proper area")
-                elif constraint['type'] == "inside":
+
+                elif constraint['type'] == "inside": #polygon
                     constraintPolygon = makePolygon(constraint['geometry']['points']).buffer(buffer)
                     constraintSatisfied = constraintPolygon.contains(answerPolyline)
                     if not constraintSatisfied:
                         additionalErrorInfo = _(" - Outside permissible boundary")
-                elif constraint['type'] == 'excludes':
+                elif constraint['type'] == 'excludes': #polygon
                     buffer = constraint['padding']*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS)
                     constraintPolygon = makePolygon(constraint['geometry']['points']).buffer(buffer)
                     constraintSatisfied = not constraintPolygon.crosses(answerPolyline)
                     if not constraintSatisfied:
                         additionalErrorInfo = _(" - Must be outside of a certain boundary")
+                elif constraint['type'] == 'includes':  #point
+                    buffer = constraint['padding']*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS)
+                    constraintPointArea = makePoint(constraint['geometry'['points'][0]]).buffer(buffer)
+                    constraintSatisfied = constraintPointArea.crosses(answerPolyline)
+                    if not constraintSatisfied:
+                        additionalErrorInfo = _(" - Must include a particular point")
 
                 totalGradeValue += constraint['percentOfGrade']
                 if constraintSatisfied :

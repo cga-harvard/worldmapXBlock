@@ -30,6 +30,8 @@
     padding: 0px 2px !important;
 }
 
+
+
 #tabs {
     height: 324px;
 }
@@ -49,6 +51,13 @@
        font-size: 80%;
        font-family: "Trebuchet MS", "Helvetica", "Arial",  "Verdana", "sans-serif";
 }
+input.checkbox {
+    width: 20px !important;
+    min-width: 20px !important;
+    height: 20px !important;
+    vertical-align: bottom;
+}
+
 .dialog-form label,
 .dialog-form input { display:block; }
 .dialog-form input.text { margin-bottom:12px; width:95%; padding: .4em; }
@@ -66,7 +75,7 @@
 /*#dialog-layerControl-form fieldset { padding:0; border:0; margin-top:25px; }*/
 .layerControls .dynatree-container,
 #layer-control .dynatree-container {
-    border: none;
+    border: none !important
 }
 #layerControl-isFolder-label {
     font-family: Verdana,Arial,sans-serif;
@@ -178,13 +187,16 @@ li[role=tab] {
     font-size: 75%;
     margin-top: 5px;
 }
+.field-error {
+    border: 2px solid red !important;
+}
 
 #dialog-question-detail button {
     height: 20px;
     font-size:9pt;
 }
 
-#dialog-question-detail #add-constraint {
+#dialog-question-detail #new-constraint {
     float: right;
     margin-right:50px;
 }

@@ -20,6 +20,7 @@ function WorldMapEditBlock(runtime, element) {
 
     $(element).find('.save-button').bind('click', function() {
 
+
         //cleanse all the add'l info after last ":" in layer-control node titles
         $('#layer-controls',element).dynatree("getRoot").visit( function( n ) {
             var loc = n.data.title.lastIndexOf(":");
@@ -39,7 +40,9 @@ function WorldMapEditBlock(runtime, element) {
             'href':       $("#map-url").val(),
             'width':      parseInt($("#map-width").val()),
             'height':     parseInt($("#map-height").val()),
-            'baseLayer':  $("#map-baseLayer").val()
+            'baseLayer':  $("#map-baseLayer").val(),
+            'debug':      $('#map-debug').attr('checked') === "checked"
+
 
         };
 
@@ -103,6 +106,8 @@ function WorldMapEditBlock(runtime, element) {
            title:"New Slider"
        });
        refreshSliders();
+       $('#sliders').animate({scrollTop: 1000},{speed:'fast'});
+
     });
     $('#new-sliderLayer').click(function() {
        worldmapConfig['layers'].push({
@@ -112,6 +117,7 @@ function WorldMapEditBlock(runtime, element) {
            ]
        });
        refreshSliderLayers();
+       $('#slider-layers').animate({scrollTop: 1000},{speed:'fast'});
     });
 
     $('#new-question').click( function() {
@@ -123,14 +129,16 @@ function WorldMapEditBlock(runtime, element) {
                     color: "00FF00",
                     type: "point",
                     hintAfterAttempt: 3,
-                    hintDisplayTime: -1
+                    hintDisplayTime: -1,
+                    constraints:[]
                 });
                 refreshQuestions();
+                $('#sortable-questions').animate({scrollTop: 1000},{speed:'fast'});
             }
         });
     });
 
-    $('#add-constraint').click( function(e) {
+    $('#new-constraint').click( function(e) {
         questionDialog.data('question')['constraints'].push(
             {
                 "type": "unknown",
@@ -140,6 +148,7 @@ function WorldMapEditBlock(runtime, element) {
             }
         );
         refreshConstraints();
+        $('#constraint-list').animate({scrollTop: 1000},{speed:'fast'});
         e.preventDefault();
     });
     /******************* Map Tab ************************/
@@ -147,7 +156,7 @@ function WorldMapEditBlock(runtime, element) {
     $("#map-width").val(worldmapConfig['width']);
     $("#map-height").val(worldmapConfig['height']);
     $("#map-baseLayer").val(worldmapConfig['baseLayer']);
-
+    $("#map-debug").val(worldmapConfig['debug']);
 
     $('#layer-controls',element).dynatree({
         title: "LayerControls",
@@ -177,11 +186,6 @@ function WorldMapEditBlock(runtime, element) {
         },
         onDblClick: function(n,event) {
             layerControlDialog.data('node',n).dialog("open");
-        },
-        onPostInit: function() {
-            //now that the control is created, we need to update layer visibility based on state stored serverside
-            //after map is loaded.
-//            setupWorldmap();
         },
         onActivate: function(n) {
 //            $('#new-node').enable(n.data.isFolder || n.data.children == null);
@@ -253,26 +257,36 @@ function WorldMapEditBlock(runtime, element) {
     $('#layer-controls',element).dynatree("getRoot").visit( function( n ) {
         if(n.data.isFolder || n.data.children == null) { //don't process root
             n.data.title = n.data.title+": "+ (n.data.isFolder? "(folder)" : "("+n.data.key+")");
+            n.deactivate();
+            if(n.data.isFolder && n.data.children != null) {
+                n.expand(false);
+            }
+        } else {
+            n.expand(false);
         }
     });
 
     $('#new-node').click( function(e) {
         var n = $('#layer-controls',element).dynatree("getActiveNode");
-        var newNode = {title: "New Item", key: ""};
-        if( n.data.isFolder ) {
-            if(n.isExpanded()) {
+        if( n ) {
+            var newNode = {title: "New Item", key: ""};
+            if (n.data.isFolder) {
+                if (n.isExpanded()) {
+                    newNode = n.addChild(newNode);
+                } else {
+                    newNode = n.parent.addChild(newNode, n);
+                }
+            } else if (n.data.children != null) {  //ROOT
                 newNode = n.addChild(newNode);
+                n.expand(true);
             } else {
-                newNode = n.parent.addChild(newNode,n);
+                newNode = n.parent.addChild(newNode, n);
             }
-        } else if( n.data.children != null ) {  //ROOT
-            newNode = n.addChild(newNode);
-            n.expand(true);
+            newNode.activate();
+            $('#layer-control', element).animate({scrollTop: Math.max(0, newNode.span.offsetTop - 50)});
         } else {
-            newNode = n.parent.addChild(newNode, n);
+            window.alert("Please select a node or folder where you want the new node to appear.");
         }
-        newNode.activate();
-        $('#layer-control',element).animate({scrollTop: Math.max(0,newNode.span.offsetTop-50)});
         e.preventDefault();
     });
 
@@ -281,6 +295,7 @@ function WorldMapEditBlock(runtime, element) {
             { "name":"new param",  "value":0 }
         );
         refreshSliderLayerParams();
+        $('#sliderLayer-params').animate({scrollTop: 1000},{speed:'fast'});
     });
 
 
@@ -568,7 +583,7 @@ function WorldMapEditBlock(runtime, element) {
 
     var questionDialog = $('#dialog-question-detail').dialog({
         autoOpen: false,
-        height: 525,
+        height: 530,
         dialogClass: "no-close",
         width: 700,
         modal: true,
@@ -589,18 +604,27 @@ function WorldMapEditBlock(runtime, element) {
             {
                 text: "OK",
                 click: function() {
-                    config['questions'][questionDialog.data('idx')] = {
-                        explanation: $('#explanation',this).val(),
-                        id: $('#question-id',this).val(),
-                        color: $('#color',this).val(),
-                        type: $('#response-type',this).val(),
-                        hintAfterAttempt: parseInt($('#hintAfterAttempt',this).val()),
-                        hintDisplayTime:  parseInt($('#hintDisplayTime',this).val()),
-                        constraints: questionDialog.data('question')['constraints']
-                    };
-                    refreshQuestions();
-                    questionDialog.dialog("close");
+                    if( questionDialog.validate() ) {
+                        if ($('#response-type', questionDialog).val() == 'point' && questionDialog.data('question')['constraints'].length > 1) {
+                            window.alert("A point response can only be evaluated against a single constraint");
+                        } else {
+                            config['questions'][questionDialog.data('idx')] = {
+                                explanation: $('#explanation', this).val(),
+                                id: $('#question-id', this).val(),
+                                color: $('#color', this).val(),
+                                type: $('#response-type', this).val(),
+                                hintAfterAttempt: parseInt($('#hintAfterAttempt', this).val()),
+                                hintDisplayTime: parseInt($('#hintDisplayTime', this).val()),
+                                constraints: questionDialog.data('question')['constraints']
+                            };
+                            refreshQuestions();
+                            questionDialog.dialog("close");
+                        }
+                    } else {
+                        window.alert("Validation problems:\n\nFix errors before closing.");
+                    }
                 }
+
             },
             {
                 text: "Cancel",
@@ -610,6 +634,11 @@ function WorldMapEditBlock(runtime, element) {
                 }
             }
         ],
+        create: function() {
+            $('#dialog-question-detail .required').change( function() {
+                questionDialog.validate();
+            });
+        },
         open: function() {
             var q = questionDialog.data('question');
             $('#question-id',this).val(q['id']);
@@ -618,10 +647,68 @@ function WorldMapEditBlock(runtime, element) {
             $('#response-type option[value='+q['type']+']',this).attr('selected','selected');
             $('#hintAfterAttempt',this).val(q['hintAfterAttempt']);
             $('#hintDisplayTime',this).val(q['hintDisplayTime']);
+            questionDialog.validate();
             refreshConstraints();
         }
     });
-
+    questionDialog.validate = function() {
+        var result = true;
+        var msg = "";
+        var required = false;
+        $('#dialog-question-detail .required').each( function() {
+            if( $(this).val()=="") {
+                required = true;
+                $(this).addClass('field-error');
+            } else {
+                $(this).removeClass('field-error');
+            }
+        });
+        var requiredNumber = false;
+        $('#dialog-question-detail .required-number').each( function() {
+            if(!$.isNumeric($(this).val())){
+                requiredNumber = true;
+                $(this).addClass('field-error');
+            } else {
+                $(this).removeClass('field-error');
+            }
+        });
+        var requiredInteger = false;
+        $('#dialog-question-detail .required-integer').each( function() {
+            if(!$(this).val().match(/^[-+]?\d+$/)){
+                requiredInteger = true;
+                $(this).addClass('field-error');
+            } else {
+                $(this).removeClass('field-error');
+            }
+        });
+        var requiredColor = false;
+        $('#dialog-question-detail .required-color').each( function() {
+            if(!$(this).val().match(/^[0-9a-fA-F]{6}$/)){
+                requiredColor = true;
+                $(this).addClass('field-error');
+            } else {
+                $(this).removeClass('field-error');
+            }
+        });
+        if( required ) {
+            msg += "Required fields must not be empty<br/>";
+            result = false;
+        }
+        if( requiredNumber ) {
+            msg += "Field must be a number<br/>";
+            result = false;
+        }
+        if( requiredInteger ) {
+            msg += "Field must be an integer<br/>";
+            result = false;
+        }
+        if( requiredColor ) {
+            msg += "Field must be an color string (e.g. 00FF00 for green)<br/>";
+            result = false;
+        }
+        $('#question-dialog-error').html(msg);
+        return result;
+    }
     var geoDialog = $("#dialog-geo-form").dialog({
         autoOpen: false,
         height: 550,
@@ -704,17 +791,20 @@ function WorldMapEditBlock(runtime, element) {
             {
                 text: "OK",
                 click: function() {
-                    debugger;
-                    questionDialog.data('question')['constraints'][constraintDialog.data('idx')] = {
-                        explanation:     $('#constraint-explanation',constraintDialog).val(),
-                        percentOfGrade:  parseInt($('#constraint-percentOfGrade',constraintDialog).val()),
-                        percentMatch:    parseInt($('#constraint-percentMatch',constraintDialog).val()),
-                        padding:         parseInt($('#constraint-padding',constraintDialog).val()),
-                        type:            $('#constraint-type',constraintDialog).val(),
-                        geometry:        constraintDialog.data('constraint')['geometry']
-                    };
-                    refreshConstraints();
-                    constraintDialog.dialog("close");
+                    if( constraintDialog.validate() ) {
+                        questionDialog.data('question')['constraints'][constraintDialog.data('idx')] = {
+                            explanation: $('#constraint-explanation', constraintDialog).val(),
+                            percentOfGrade: parseInt($('#constraint-percentOfGrade', constraintDialog).val()),
+                            percentMatch: parseInt($('#constraint-percentMatch', constraintDialog).val()),
+                            padding: parseInt($('#constraint-padding', constraintDialog).val()),
+                            type: $('#constraint-type', constraintDialog).val(),
+                            geometry: constraintDialog.data('constraint')['geometry']
+                        };
+                        refreshConstraints();
+                        constraintDialog.dialog("close");
+                    } else {
+                        window.alert("Validation problems:\n\nFix errors before closing.");
+                    }
                 }
             },
             {
@@ -731,14 +821,40 @@ function WorldMapEditBlock(runtime, element) {
         create: function(event, ui) {
             console.log("constraintDialog.create() called");
             $("#constraint-geometry-type").change(onChangeConstraintTool);
+            $('#constraint-type').change(function() {
+                constraintDialog.validate();
+                if( $('#constraint-type',constraintDialog).val() === 'matches') {
+                    $('#constraint-percentMatch-span').show();
+                } else {
+                    $('#constraint-percentMatch-span').hide();
+                }
+            });
+            $('#dialog-constraint-form .required').change( function() {
+                constraintDialog.validate();
+            });
         },
         open: function() {
+
             $('#constraint-explanation',this).val(constraintDialog.data('constraint')['explanation']);
             $('#constraint-percentOfGrade',this).val(constraintDialog.data('constraint')['percentOfGrade']);
             $('#constraint-percentMatch',this).val(constraintDialog.data('constraint')['percentMatch']);
             $('#constraint-padding',this).val(constraintDialog.data('constraint')['padding']);
             $('#constraint-geometry-type option[value='+constraintDialog.data('constraint')['geometry']['type']+']',this).attr('selected','selected');
             $('#constraint-type option[value='+constraintDialog.data('constraint')['type']+']',this).attr('selected','selected');
+
+            var responseType = constraintDialog.data('responseType');
+            constraintDialog.dialog('option', 'title', 'Constraint on "'+responseType+'" user response');
+
+            if( responseType === 'point' || $('#constraint-type',constraintDialog).val() !== 'matches' ) $('#constraint-percentMatch-span').hide();
+            else $('#constraint-percentMatch-span').show();
+            $('#constraint-type option[value="includes"]').attr('disabled',responseType === 'point');
+            $('#constraint-type option[value="excludes"]').attr('disabled',responseType === 'point');
+            $('#constraint-type option[value="matches"]').attr('disabled',responseType === 'point');
+            if( responseType === 'point' ) {
+                $('#constraint-type option[value="inside"]').attr('selected', 'selected');
+            }
+
+            constraintDialog.validate();
 
             if( myApp.MESSAGING.getInstance().isPortalReady(getUniqueId('#dialog-constraint-form')) ) {
                 initConstraintMap();
@@ -747,6 +863,76 @@ function WorldMapEditBlock(runtime, element) {
             }
         }
     });
+
+    constraintDialog.validate = function() {
+            var constraintGeoType = $('#constraint-geometry-type').val();
+            var constraintType = $('#constraint-type').val();
+            var responseType = constraintDialog.data('responseType');
+            var result = true;
+            var msg = "";
+            if( responseType == 'polyline' ) {
+                if( (constraintType == 'matches' && constraintGeoType == 'polyline')
+                  ||(constraintType == 'inside'  && constraintGeoType == 'polygon')
+                  ||(constraintType == 'includes'&& constraintGeoType == 'point')
+                  ||(constraintType == 'excludes'&& constraintGeoType == 'polygon')) {
+                   $('#constraint-type').removeClass('field-error');
+                   $('#constraint-geometry-type').removeClass('field-error');
+                } else {
+                   $('#constraint-type').addClass('field-error');
+                   $('#constraint-geometry-type').addClass('field-error');
+                   msg += "Constraint type: "+$('#constraint-type').val()+"("+$('#constraint-geometry-type').val()+") is incompatible for a polyline user response<br/>";
+                   result = false;
+                }
+            } else if( responseType == 'point') {
+                $('#constraint-type').removeClass('field-error');
+                $('#constraint-geometry-type').removeClass('field-error');
+            }
+            var requiredEmpty = false;
+            if($('#constraint-type').val() === "matches" && $('#constraint-percentMatch').val() === "") {
+                $('#constraint-percentMatch').addClass('field-error');
+                requiredEmpty = true;
+            } else {
+                $('#constraint-percentMatch').removeClass('field-error');
+            }
+            if( $('#constraint-percentOfGrade').val() === "" ) {
+                $('#constraint-percentOfGrade').addClass('field-error');
+                requiredEmpty = true;
+            } else {
+                $('#constraint-percentOfGrade').removeClass('field-error');
+            }
+            if( $('#constraint-padding').val() === "" ) {
+                $('#constraint-padding').addClass('field-error');
+                requiredEmpty = true;
+            } else {
+                $('#constraint-padding').removeClass('field-error');
+            }
+            if( $('#constraint-explanation').val() === "" ) {
+                $('#constraint-explanation').addClass('field-error');
+                requiredEmpty = true;
+            } else {
+                $('#constraint-explanation').removeClass('field-error');
+            }
+
+            var requiredNumber = false;
+            $('#dialog-constraint-form .required-number').each( function() {
+                if(!$.isNumeric($(this).val())) {
+                    $(this).addClass('field-error');
+                    requiredNumber = true;
+                }
+            });
+
+            if( requiredEmpty ) {
+                result = false;
+                msg += "Required fields are empty<br/>";
+            }
+            if( requiredNumber ) {
+                result = false;
+                msg += "Field value must be numeric<br/>";
+            }
+            $('#constraint-dialog-error').html(msg);
+
+            return result;
+        };
 
     setupPortalReady(geoDialog, getUniqueId('#dialog-geo-form'), 'highlight');
     setupPortalReady(constraintDialog, getUniqueId('#dialog-constraint-form'), 'constraint');
@@ -858,6 +1044,7 @@ function WorldMapEditBlock(runtime, element) {
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("reset-answer-tool", null));
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("reset-highlights", null));
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("set-answer-tool", {type: type, color: '0000FF'}));
+        constraintDialog.validate();
     }
 
     function initGeoMap() {
@@ -906,7 +1093,11 @@ function WorldMapEditBlock(runtime, element) {
     function editConstraint(e) {
         var constraint = $(e.target).data('constraint');
         var idx = $(e.target).data('idx');
-        constraintDialog.data('constraint', $(e.target).data('constraint')).data('idx', $(e.target).data('idx')).dialog('open');
+        constraintDialog.data('constraint', $(e.target)
+            .data('constraint'))
+            .data('idx', $(e.target).data('idx'))
+            .data('responseType', $('#response-type').val())
+            .dialog('open');
     }
 
     function getUniqueId(id) {
