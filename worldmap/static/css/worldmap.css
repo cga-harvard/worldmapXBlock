@@ -175,3 +175,13 @@
     list-style-position: outside !important;
     margin-left: 20px;
 }
+
+.ui-tooltip-content {
+    position: relative;
+    padding: 0px;
+    overflow: hidden;
+    border: none;
+    text-align: left;
+    word-wrap: break-word;
+    overflow: hidden;
+}

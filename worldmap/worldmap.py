@@ -1056,7 +1056,7 @@ class WorldMapXBlock(XBlock):
         myScore = 0;
         for question in self.config['questions']:
             maxScore += 100
-            if question['id'] in self.scores and 'score' in self.scores[question['id']]:
+            if question['id'] in self.scores and type(self.scores[question['id']]) is dict and 'score' in self.scores[question['id']]:
                 myScore += self.scores[question['id']]['score']
 
         self.runtime.publish(self,'grade', { 'value': myScore, 'max_score': maxScore})

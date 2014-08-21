@@ -389,16 +389,15 @@ function WorldMapXBlock(runtime, element) {
 
     function on_changeLayer(json) {
         var layer = JSON.parse(json);
-
         var legendData = layer.legendData;
         var legendUrl = null;
         if( legendData ) {
             legendUrl = legendData.url+"?TRANSPARENT=TRUE&EXCEPTIONS=application%2Fvnd.ogc.se_xml&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetLegendGraphic&TILED=true&LAYER="
                                     + legendData.name+"&STYLE="+legendData.styles+"&transparent=true&format=image%2Fpng&legend_options=fontAntiAliasing%3Atrue";
-            debug("legendUrl: "+legendUrl);
         }
 
         $(".layerControls",element).dynatree("getRoot").visit( function(node) {
+//            node.data.addClass = "ui-tooltip-content";
             if( !node.isExpanded() ) { //if it isn't expanded, we need to expand/contract it so that all the children get loaded
                 node.expand(true);
                 node.expand(false);
@@ -406,7 +405,7 @@ function WorldMapXBlock(runtime, element) {
             if( node.data.key == layer.id ) {
                 node.select(layer.visibility);
                 if( legendUrl ) {
-                    $(node.span).tooltip( {items: "a", content: '<img src="'+legendUrl+'" />'});
+                    $(node.span).tooltip( {items:"a", content: '<img src="'+legendUrl+'" />'});
                 }
             }
         });
@@ -427,12 +426,6 @@ function WorldMapXBlock(runtime, element) {
         });
     }
 
-
-    $(function ($) {
-        $('.debugInfo',element).resizable();
-        $(document).tooltip();
-        /* Here's where you'd do things on page load. */
-    });
 
     function debug(str) {
        if( $('.frame',element).attr('debug') == 'True' ) {
