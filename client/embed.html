@@ -83,7 +83,7 @@ var CLICK_CONTROL = OpenLayers.Class(OpenLayers.Control, {
 function getLayerLegendInfo( layers, layer ) {
    for( var i=0; i<layers.length; i++ ) {
       if( layers[i].styles ) {
-         if( layers[i].title == layer.name ) {
+         if( layers[i].title === layer.name ) {
              return {
                         styles: layers[i].styles,
                         name:   layers[i].name,

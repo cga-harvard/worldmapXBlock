@@ -69,6 +69,14 @@ function WorldMapXBlock(runtime, element) {
         }
     });
 
+    // make sure everything is generated in the DOM
+//    $(".layerControls",element).dynatree("getRoot").visit( function(node) {
+//        if (!node.isExpanded()) { //if it isn't expanded, we need to expand/contract it so that all the children get loaded
+//            node.expand(true);
+//            node.expand(false);
+//        }
+//    });
+
 
 
     myApp.WorldMapRegistry[ getUniqueId()] = { runtime: runtime, element: element };
@@ -183,11 +191,6 @@ function WorldMapXBlock(runtime, element) {
                                             } else {
                                                 if( sliderSpec.param == layerSpecs[i].params[j].name ) {
                                                     var paramValue = layerSpecs[i].params[j].value;
-    //                                                var nFrac = 0;
-    //                                                if( paramValue != null ) {
-    //                                                    var loc = paramValue.indexOf(".");
-    //                                                    if( loc != -1 ) nFrac = paramValue.length - loc - 1;
-    //                                                }
                                                     var visible =  (paramValue != null && paramValue == Math.floor(ui.value)) // * Math.pow(10,nFrac))/Math.pow(10,nFrac))
                                                         || (ui.value >= layerSpecs[i].params[j].min && ui.value <= layerSpecs[i].params[j].max);
                                                     selectLayer(visible, layerSpecs[i].id);
@@ -209,20 +212,17 @@ function WorldMapXBlock(runtime, element) {
                                                 }
                                             });
 
-    //                    $('.ui-slider',ctrl).tooltip({content: sliderSpec.help});
-    //                    if( sliderSpec.help != null) {
-    //                        var html = "<div>";
-    //                        for( var i in sliderSpec.help ) html += sliderSpec.help[i];
-    //                        html += "</div>";
-    //                        debugger;
-    //                        $(title).tooltip({ items:"div",content: html, position: {my: 'left center', at: 'right+10 center'}});
-    //                    }
-                        $(title).mouseenter( function(e) {
-                            $(e.target).find(".slider-help").show();
+                        $(title).hover( function(e) {
+                            var help = $(e.target).find(".slider-help");
+                            if(e.type == "mouseenter")help.show();
+                            else if(e.type == "mouseleave") help.hide();
                         });
-                        $(title).mouseleave( function(e) {
-                            $(e.target).find(".slider-help").hide();
-                        });
+//                        $(title).mouseenter( function(e) {
+//                            $(e.target).find(".slider-help").show();
+//                        });
+//                        $(title).mouseleave( function(e) {
+//                            $(e.target).find(".slider-help").hide();
+//                        });
 
                         $(title).appendTo(ctrl);
 
@@ -397,15 +397,33 @@ function WorldMapXBlock(runtime, element) {
         }
 
         $(".layerControls",element).dynatree("getRoot").visit( function(node) {
-//            node.data.addClass = "ui-tooltip-content";
-            if( !node.isExpanded() ) { //if it isn't expanded, we need to expand/contract it so that all the children get loaded
-                node.expand(true);
-                node.expand(false);
-            }
-            if( node.data.key == layer.id ) {
+            if( node.data.key === layer.id ) {
+                if( node.data.key === "OpenLayers_Layer_WMS_122") debugger;
                 node.select(layer.visibility);
                 if( legendUrl ) {
-                    $(node.span).tooltip( {items:"a", content: '<img src="'+legendUrl+'" />'});
+                    node.makeVisible();
+
+                    var img = $(node.span).find('.legend-img');
+                    if( img.length === 0 ) {
+                        var position = $(node.span).position();
+                        var image = $('<img class="legend-img" src="'+legendUrl+'"/>').css({
+                            top: position.top,
+                            left: position.left+$(node.span).width()
+                        }).hide();
+                        image.appendTo($(node.span));
+                    }
+                    $(node.span).hover( function(e) {
+                        var img = $(node.span).find('.legend-img');
+                        if( img.length > 0 ) {
+                            var width = img[0].width;
+                            var height = img[0].height;
+                            if (e.type === "mouseenter") {
+                                img.width(width).height(height).show();
+                            } else if (e.type === "mouseleave") {
+                                img.hide();
+                            }
+                        }
+                    });
                 }
             }
         });

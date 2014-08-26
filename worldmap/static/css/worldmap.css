@@ -185,3 +185,14 @@
     word-wrap: break-word;
     overflow: hidden;
 }
+
+.legend-img {
+    position: absolute;
+    background-color: white;
+    margin: 5px !important;
+    padding: 8px !important;
+    border-top: 1px solid black !important;
+    border-left: 1px solid black !important;
+    border-bottom: 2px solid black !important;
+    border-right:  2px solid black !important;
+}
