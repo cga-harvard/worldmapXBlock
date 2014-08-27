@@ -163,7 +163,10 @@ function WorldMapEditBlock(runtime, element) {
     $("#map-width").val(worldmapConfig['width']);
     $("#map-height").val(worldmapConfig['height']);
     $("#map-baseLayer").val(worldmapConfig['baseLayer']);
-    $("#map-debug").val(worldmapConfig['debug']);
+    $("#map-debug").attr("checked",worldmapConfig['debug']);
+    if( worldmapConfig['debug']) {
+        $('.dev-only').removeClass('dev-only');
+    }
 
     $('#layer-controls',element).dynatree({
         title: "LayerControls",

@@ -726,6 +726,9 @@ class WorldMapXBlock(XBlock):
 
     @XBlock.json_handler
     def getLayerStates(self, data, suffix=''):
+        for id in self.layerState:
+            if self.layerState[id]['visibility'] == None:
+                self.layerState[id]['visibility'] = False
         return self.layerState
 
 
@@ -1093,7 +1096,10 @@ class WorldMapXBlock(XBlock):
         else:
             # we have a threading problem... need to behave in single-threaded mode here
           #  self.threadLock.acquire()
-            self.layerState[id] = { 'name':data.get('name'), 'opacity':data.get('opacity'), 'visibility':data.get('visibility')}
+            visibility = data.get('visibility')
+            if( visibility == None):
+                visibility = False
+            self.layerState[id] = { 'id': id, 'name':data.get('name'), 'opacity':data.get('opacity'), 'visibility':visibility}
           #  self.threadLock.release()
 
             pass

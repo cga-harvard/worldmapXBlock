@@ -271,7 +271,9 @@ Ext.onReady(function() {
         });
 
         app.mapPanel.map.events.register("changelayer", app.mapPanel.map, function(e) {
-            window.MESSAGING.getInstance().send(new Message("changelayer", {name: e.layer.name, id:e.layer.id, visibility:e.layer.visibility,opacity:e.layer.opacity, legendData: getLayerLegendInfo(app.config.map.layers, e.layer)}));
+            var msg = new Message("changelayer", {name: e.layer.name, id:e.layer.id, visibility:e.layer.visibility,opacity:e.layer.opacity, legendData: getLayerLegendInfo(app.config.map.layers, e.layer)});
+            console.log("sending changelayer back to master.  layer: "+JSON.stringify(msg.getMessage()));
+            window.MESSAGING.getInstance().send(msg);
         });
 
         window.MESSAGING.getInstance().registerHandler("setZoomLevel", function(m) { app.mapPanel.map.zoomTo(m.getMessage()); });
@@ -282,18 +284,33 @@ Ext.onReady(function() {
             app.mapPanel.map.setCenter([pt.x, pt.y],data.zoomLevel,false,false);
         });
         window.MESSAGING.getInstance().registerHandler("setLayers",function(m) {
+            console.log("slave recieved setLayers command, data = "+ m.getMessage());
             var data = JSON.parse(m.getMessage());
             for(var id in data){
-               var layer = app.mapPanel.map.getLayer(id);
-               if( layer != null ) {
-                 //  layer.setVisibility(data[id]['visibility']);
-                   var ctrl = Ext.getCmp("layer_menu_" + layer.id);
-                   layer.setOpacity(data[id]['opacity']);
-                   if( (ctrl.checked && !data[id]['visibility']) || (!ctrl.checked && data[id]['visibility']) ) {
-                       ctrl.setChecked( data[id]['visibility']);
+               try {
+                   if( id !== "OpenLayers_Layer_Vector_132") {
+                       var layer = app.mapPanel.map.getLayer(id);
+                       if (layer != null) {
+                           //  layer.setVisibility(data[id]['visibility']);
+                           var ctrl = Ext.getCmp("layer_menu_" + layer.id);
+                           layer.setOpacity(data[id]['opacity']);
+                           if ((ctrl.checked && !data[id]['visibility']) || (!ctrl.checked && data[id]['visibility'])) {
+                               console.log("turning layer: " + id + " to " + data[id]['visibility']);
+                               ctrl.setChecked(data[id]['visibility']);
+                           }
+                           else {
+                               console.log("didn't change visibility for layer: " + id + " currently: " + data[id]['visibility']);
+                               console.log("sending changelayer back to master.  layer: { name: " + data[id]['name'] + ", id: " + id + ", visibility: " + data[id]['visibility'] + ", opacity: " + data[id]['opacity'] + ",  legendData: " + JSON.stringify(getLayerLegendInfo(app.config.map.layers, data[id])) + "}");
+                               window.MESSAGING.getInstance().send(new Message("changelayer", {name: data[id]['name'], id: id, visibility: data[id]['visibility'], opacity: data[id]['opacity'], legendData: getLayerLegendInfo(app.config.map.layers, data[id])}));
+                           }
+                       } else {
+                           console.log("ERROR: could not find layer for id: " + id);
+                       }
+                   } else {
+                       console.log("setLayer was asked to deal with a bad layer: "+id);
                    }
-               } else {
-                   console.log("ERROR: could not find layer for id: "+id);
+               } catch(e) {
+                   console.log("slave caught exception during setLayers: "+e);
                }
             }
         });

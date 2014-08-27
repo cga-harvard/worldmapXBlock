@@ -94,7 +94,13 @@ function WorldMapXBlock(runtime, element) {
                data: "null",
                success: function(result) {
                    for (var id in result) {
+                       console.log("getLayerStates says "+id+": "+JSON.stringify(result[id]));
                        selectLayer(result[id]['visibility'], id);
+//                       $('.layerControls',element).dynatree("getRoot").visit( function(node) {
+//                           if( node.data.key == id ) {
+//                               node.select(result[id]['visibility']);
+//                           }
+//                       });
                    }
                }
             });
@@ -388,6 +394,7 @@ function WorldMapXBlock(runtime, element) {
     }
 
     function on_changeLayer(json) {
+        console.log("on_changeLayer("+json+") called");
         var layer = JSON.parse(json);
         var legendData = layer.legendData;
         var legendUrl = null;
@@ -398,7 +405,6 @@ function WorldMapXBlock(runtime, element) {
 
         $(".layerControls",element).dynatree("getRoot").visit( function(node) {
             if( node.data.key === layer.id ) {
-                if( node.data.key === "OpenLayers_Layer_WMS_122") debugger;
                 node.select(layer.visibility);
                 if( legendUrl ) {
                     node.makeVisible();
