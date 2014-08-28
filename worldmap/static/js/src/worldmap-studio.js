@@ -272,6 +272,10 @@ function WorldMapEditBlock(runtime, element) {
                 n.expand(false);
             }
         } else {
+            if( n.data.isVisible != undefined && n.data.isVisible == false) {
+                n.data.title = n.data.title+": (hidden)";
+                n.render();
+            }
             n.expand(false);
         }
     });
@@ -449,7 +453,8 @@ function WorldMapEditBlock(runtime, element) {
                         if (!isRoot) {
                             node.data.title = $('#layerControl-title', this).val() + (isFolder ? ": (folder)" : ": (" + key + ")")
                         } else {
-                            node.data.title = $('#layerControl-title', this).val()
+                            node.data.isVisible=$('#layerControl-isVisible', this).is(":checked");
+                            node.data.title = $('#layerControl-title', this).val() + (!node.data.isVisible ? ": (hidden)" : "")
                         }
                         if (!isRoot && !isFolder) node.data.key = key;
                         node.data.isFolder = isRoot ? false : isFolder;
@@ -494,17 +499,22 @@ function WorldMapEditBlock(runtime, element) {
             var loc = title.lastIndexOf(":");
             title = title.substring(0, loc==-1?title.length:loc);
             $('#layerControl-title',this).val(title);
-            if( !node.data.isFolder && node.data.children !== null ) {  //root node
+            var isRoot = !node.data.isFolder && node.data.children !== null;
+            if( isRoot ) {  //root node
                 $('#layerControl-key-span',this).hide();
                 $('#layerControl-isFolder-span',this).hide();
+                $('#layerControl-isVisible-span',this).show();
+                $('#layerControl-isVisible',this).attr("checked", node.data.isVisible );
             } else if( !node.data.isFolder ) { //leaf node
                 $('#layerControl-key', this).val(node.data.key);
                 $('#layerControl-key-span', this).show();
                 $('#layerControl-isFolder-span', this).show();
+                $('#layerControl-isVisible-span',this).hide();
             } else if( node.data.isFolder ) { //folder
                 $('#layerControl-key',this).val("");
                 $('#layerControl-key-span', this).hide();
                 $('#layerControl-isFolder-span', this).show();
+                $('#layerControl-isVisible-span',this).hide();
             } else { //????
                 debugger;
             }
@@ -512,8 +522,6 @@ function WorldMapEditBlock(runtime, element) {
             $('#dialog-layerControl-form .required').each( function() {
                 $(this).toggleClass('field-error',$(this).val()==="");
             });
-//            $('#layerControl-key-span').toggle($('#layerControl-isFolder').attr('checked') !== "checked");
-//            $('#layerControl-isFolder',this).enable(node.data.isFolder || node.data.children === null );
         }
     });
 

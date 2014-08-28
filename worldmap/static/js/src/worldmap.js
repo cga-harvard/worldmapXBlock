@@ -66,17 +66,9 @@ function WorldMapXBlock(runtime, element) {
             //now that the control is created, we need to update layer visibility based on state stored serverside
             //after map is loaded.
             setupWorldmap();
+            setupLayerTree();
         }
     });
-
-    // make sure everything is generated in the DOM
-//    $(".layerControls",element).dynatree("getRoot").visit( function(node) {
-//        if (!node.isExpanded()) { //if it isn't expanded, we need to expand/contract it so that all the children get loaded
-//            node.expand(true);
-//            node.expand(false);
-//        }
-//    });
-
 
 
     myApp.WorldMapRegistry[ getUniqueId()] = { runtime: runtime, element: element };
@@ -86,6 +78,8 @@ function WorldMapXBlock(runtime, element) {
         myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"zoomend", function(m) { on_setZoomLevel(m.getMessage()); });
         myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"moveend", function(m) { on_setCenter(m.getMessage()); });
         myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"changelayer", function(m) { on_changeLayer(m.getMessage()); });
+
+        myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"postLegends", function(m) { postLegends(m.getMessage()); })
 
         myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"portalReady", function(m) {
             $.ajax({
@@ -393,50 +387,60 @@ function WorldMapXBlock(runtime, element) {
         });
     }
 
+    function postLegends(json) {
+        var layerInfo = JSON.parse(json);
+        for( var i=0; i<layerInfo.length; i++) {
+            var legendData = layerInfo[i].legendData;
+            if( legendData ) {
+                var legendUrl = legendData.url+"?TRANSPARENT=TRUE&EXCEPTIONS=application%2Fvnd.ogc.se_xml&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetLegendGraphic&TILED=true&LAYER="
+                                        + legendData.name+"&STYLE="+legendData.styles+"&transparent=true&format=image%2Fpng&legend_options=fontAntiAliasing%3Atrue";
+                $(".layerControls",element).dynatree("getRoot").visit( function(node) {
+                    if( node.data.key === layerInfo[i].id ) {
+                        node.makeVisible();
+                        node.data.legendImage = $('<img class="legend-img" src="'+legendUrl+'"/>');
+                        $(node.span).mousemove( function(e) {
+                            var img = $(node.span).find('.legend-img');
+                            if ( node.isSelected() ) {
+                                if (img.length == 0) {
+                                    var position = $(node.span).position();
+                                    var image = node.data.legendImage.css({
+                                        top: position.top,
+                                        left: position.left + $(node.span).width()
+                                    });
+                                    image.appendTo($(node.span));
+                                    img = $(node.span).find('.legend-img');
+                                }
+                                img.width(img[0].width).height(img[0].height).show();
+                            } else if ( img.length > 0) {
+                                img.hide();
+                            }
+                        });
+                        $(node.span).mouseleave( function(e) {
+                            $(node.span).find('.legend-img').hide();
+                        });
+                    }
+                });
+            }
+        }
+        //collapse entire tree
+        $('.layerControls').dynatree("getRoot").visit(function(node) {
+            if( !node.data.isFolder && node.data.children !== null ) { //found root node
+                node.expand(false);
+            }
+        });
+    }
     function on_changeLayer(json) {
         console.log("on_changeLayer("+json+") called");
         var layer = JSON.parse(json);
-        var legendData = layer.legendData;
-        var legendUrl = null;
-        if( legendData ) {
-            legendUrl = legendData.url+"?TRANSPARENT=TRUE&EXCEPTIONS=application%2Fvnd.ogc.se_xml&VERSION=1.1.1&SERVICE=WMS&REQUEST=GetLegendGraphic&TILED=true&LAYER="
-                                    + legendData.name+"&STYLE="+legendData.styles+"&transparent=true&format=image%2Fpng&legend_options=fontAntiAliasing%3Atrue";
-        }
-
         $(".layerControls",element).dynatree("getRoot").visit( function(node) {
             if( node.data.key === layer.id ) {
                 node.select(layer.visibility);
-                if( legendUrl ) {
-                    node.makeVisible();
-
-                    var img = $(node.span).find('.legend-img');
-                    if( img.length === 0 ) {
-                        var position = $(node.span).position();
-                        var image = $('<img class="legend-img" src="'+legendUrl+'"/>').css({
-                            top: position.top,
-                            left: position.left+$(node.span).width()
-                        }).hide();
-                        image.appendTo($(node.span));
-                    }
-                    $(node.span).hover( function(e) {
-                        var img = $(node.span).find('.legend-img');
-                        if( img.length > 0 ) {
-                            var width = img[0].width;
-                            var height = img[0].height;
-                            if (e.type === "mouseenter") {
-                                img.width(width).height(height).show();
-                            } else if (e.type === "mouseleave") {
-                                img.hide();
-                            }
-                        }
-                    });
-                }
             }
         });
 
-        if( layer.visibility ) {
-            debug("layer id: "+layer.id);
-        }
+//        if( layer.visibility ) {
+//            debug("layer id: "+layer.id);
+//        }
 
         $.ajax({
             type: "POST",
@@ -445,6 +449,18 @@ function WorldMapXBlock(runtime, element) {
             success: function(result) {
                 if( !result ) {
                     debug("Failed to change layer for map: "+$('.frame', element).attr('id'));
+                }
+            }
+        });
+
+    }
+
+    function setupLayerTree() {
+        $('.layerControls').dynatree("getRoot").visit(function(node) {
+            if( !node.data.isFolder && node.data.children !== null ) { //found root node
+                if( node.data.isVisible !== undefined && node.data.isVisible == false ) {
+                    $('.layerControls').hide();
+                    return false;
                 }
             }
         });
@@ -521,6 +537,20 @@ function WorldMapXBlock(runtime, element) {
     console.log("WorldMapXBlock initialization ended");
 
 }
+
+//var timeoutID = null;
+//function deferredCollapseLayerTree() {
+//    if( timeoutID != null ) clearTimeout(timeoutID);
+//    timeoutID = setTimeout(function() {
+//          $('.layerControls').dynatree("getTree").redraw();
+//        $('.layerControls').dynatree("getRoot").visit(function(node) {
+//            if( !node.data.isFolder && node.data.children !== null ) { //found root node
+//                node.expand(false);
+//                $('.layerControls').dynatree("getTree").redraw();
+//            }
+//        });
+//    },1000);
+//}
 
 function addUniqIdToArguments( uniqId, str) {
     return str.replace(/highlight\(/g,"highlight(\""+uniqId+"\",").replace(/highlightLayer\(/g,"highlightLayer(\""+uniqId+"\",")

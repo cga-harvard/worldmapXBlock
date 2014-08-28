@@ -288,7 +288,7 @@ Ext.onReady(function() {
             var data = JSON.parse(m.getMessage());
             for(var id in data){
                try {
-                   if( id !== "OpenLayers_Layer_Vector_132") {
+                   if( id !== "OpenLayers_Layer_Vector_132") {  //TODO: REMOVE THIS
                        var layer = app.mapPanel.map.getLayer(id);
                        if (layer != null) {
                            //  layer.setVisibility(data[id]['visibility']);
@@ -529,6 +529,21 @@ Ext.onReady(function() {
 
         console.log("sending portalReady to master from embed.html at end of app.on('ready') processing");
         window.MESSAGING.getInstance().send(new Message("portalReady", {}));
+
+        var legendInfo = [];
+        for( var i=0; i < app.mapPanel.map.layers.length; i++ ) {
+            var layer = app.mapPanel.map.layers[i];
+            legendInfo.push(
+                    {
+                        name: layer.name,
+                        id: layer.id,
+                        visibility: layer.visibility,
+                        opacity: layer.opacity,
+                        legendData: getLayerLegendInfo(app.config.map.layers, layer)
+                    }
+            );
+        }
+        window.MESSAGING.getInstance().send(new Message("postLegends",legendInfo));
 
         //**************************************** END - XBLOCK RELATED CODE ****************************************
     });
