@@ -1,4 +1,7 @@
 /* CSS for WorldMapXBlock */
+.xblock-student_view {
+    padding: 15px  10px 5px 5px !important;
+}
 
 .worldmap_block .count {
     font-weight: bold;
@@ -174,6 +177,10 @@
     list-style-type: lower-alpha !important;
     list-style-position: outside !important;
     margin-left: 20px;
+}
+
+.question-text {
+    font-size:smaller;
 }
 
 .ui-tooltip-content {

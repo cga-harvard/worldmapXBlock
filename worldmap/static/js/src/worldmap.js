@@ -249,10 +249,11 @@ function WorldMapXBlock(runtime, element) {
                  success: function(result) {
                     //window.alert(JSON.stringify(result));
                     if( result != null ) {
-                        var html = "<ol class='questions-list'>"+result.explanation;
+                        $('.prose-area',element).html(addUniqIdToArguments(getUniqueId(),result.explanation));
+                        var html = "<ol class='questions-list'>";
                         for(var i in result.questions) {
                             //result.answers[i].padding = result.padding;  //TODO: should be done on xml read, not here!
-                            html += "<li><span id='question-"+result.questions[i].id+"'><span>"+result.questions[i].explanation+"</span><br/><span class='"+result.questions[i].type+"-tool'/><span id='score-"+result.questions[i].id+"'/><div id='dialog-"+result.questions[i].id+"'/></span></li>";
+                            html += "<li><span class='question-text' id='question-"+result.questions[i].id+"'><span>"+result.questions[i].explanation+"</span><br/><span class='"+result.questions[i].type+"-tool question-tool'/><span class='question-score question-text' id='score-"+result.questions[i].id+"'/><div id='dialog-"+result.questions[i].id+"'/></span></li>";
                         }
                         html += "</ol>";
                         $('.auxArea',element).html(addUniqIdToArguments(getUniqueId(), html));

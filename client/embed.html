@@ -288,7 +288,7 @@ Ext.onReady(function() {
             var data = JSON.parse(m.getMessage());
             for(var id in data){
                try {
-                   if( id !== "OpenLayers_Layer_Vector_132") {  //TODO: REMOVE THIS
+                   if( id !== "OpenLayers_Layer_Vector_132") {  //TODO: REMOVE THIS - it causes an exception that we can't seem to handle
                        var layer = app.mapPanel.map.getLayer(id);
                        if (layer != null) {
                            //  layer.setVisibility(data[id]['visibility']);
