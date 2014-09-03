@@ -31,7 +31,7 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
     var _instance = null;
     var _constructor = function() {
         this.referringHost = getHost(document.referrer);
-        this.handlers = [];
+        this.handlers = {};
         this.uniqueId = CryptoJS.MD5(" "+location.href+(Math.random()*(new Date().getTime()))).toString(CryptoJS.enc.Base64);
         this.isMasterSlave = false;
     };

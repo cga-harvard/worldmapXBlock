@@ -18,6 +18,8 @@ function WorldMapEditBlock(runtime, element) {
 
     $(element).find('.save-button').bind('click', function() {
 
+        //TODO:  add validation here
+
         //cleanse all the add'l info after last ":" in layer-control node titles
         $('#layer-controls',element).dynatree("getRoot").visit( function( n ) {
             var loc = n.data.title.lastIndexOf(":");
@@ -35,6 +37,9 @@ function WorldMapEditBlock(runtime, element) {
             'layers':     worldmapConfig['layers'],
             'layer-controls': $('#layer-controls').dynatree("getTree").toDict(false),
             'href':       $("#map-url").val(),
+            'lat':        parseFloat($("#center-lat").val()),
+            'lon':        parseFloat($("#center-lon").val()),
+            'zoom':       parseInt($("#zoom").val()),
             'width':      parseInt($("#map-width").val()),
             'height':     parseInt($("#map-height").val()),
             'baseLayer':  $("#map-baseLayer").val(),
@@ -72,6 +77,11 @@ function WorldMapEditBlock(runtime, element) {
     $('.map-tab .required-integer').each(function() {
         $(this).change(function() {
             $(this).toggleClass('field-error', !$(this).val().match(/^[-+]?\d+$/));
+        });
+    });
+    $('.map-tab .required-number').each(function() {
+        $(this).change(function() {
+            $(this).toggleClass('field-error', !$(this).val().match(/^[-+]?\d+\.?\d*$/));
         });
     });
 
@@ -164,8 +174,12 @@ function WorldMapEditBlock(runtime, element) {
     $("#map-height").val(worldmapConfig['height']);
     $("#map-baseLayer").val(worldmapConfig['baseLayer']);
     $("#map-debug").attr("checked",worldmapConfig['debug']);
+    $("#center-lon").val(worldmapConfig['lon']);
+    $("#center-lat").val(worldmapConfig['lat']);
+    $("#zoom").val(worldmapConfig['zoom']);
+
     if( worldmapConfig['debug']) {
-        $('.dev-only').removeClass('dev-only');
+        $('.dev-only').removeClass('dev-only');  //removes the JSON tabs from the tabset
     }
 
     $('#layer-controls',element).dynatree({
@@ -403,12 +417,12 @@ function WorldMapEditBlock(runtime, element) {
             $('#slider-incr',this).val(slider['increment']);
             $('#slider-html',this).val(slider['help']);
             $('#slider-position option[value='+slider['position']+']',this).attr('selected','selected');
-            $('#dialog-slider-form .required').each( function() {
-                $(this).toggleClass('field-error', $(this).val() === "");
-            });
-            $('#dialog-slider-form .required-number').each( function() {
-                $(this).toggleClass('field-error', !$.isNumeric($(this).val()));
-            });
+//            $('#dialog-slider-form .required').each( function() {
+//                $(this).toggleClass('field-error', $(this).val() === "");
+//            });
+//            $('#dialog-slider-form .required-number').each( function() {
+//                $(this).toggleClass('field-error', !$.isNumeric($(this).val()));
+//            });
         }
     });
 
@@ -802,6 +816,61 @@ function WorldMapEditBlock(runtime, element) {
         $('#question-dialog-error').html(msg);
         return result;
     }
+
+    var geoViewDialog = $("#dialog-geo-view-form").dialog({
+        autoOpen: false,
+        height: 500,
+        dialogClass: "no-close",
+        width: 500,
+        modal: true,
+        buttons: [
+            {
+                text: "OK",
+                click: function() {
+                    $('#center-lat').val(precision(4,geoViewDialog.data('centerLat')));
+                    $('#center-lon').val(precision(4,geoViewDialog.data('centerLon')));
+                    $('#zoom').val(geoViewDialog.data('zoom'));
+                    geoViewDialog.dialog("close");
+                }
+            },
+            {
+                text: "Cancel",
+                click: function() {
+                    geoViewDialog.dialog( "close" );
+                }
+            }
+        ],
+        close: function() {
+        },
+        create: function(event, ui) {
+            console.log("creating geoViewDialog - setting up portalReady for dialog");
+
+            myApp.MESSAGING.getInstance().addHandler(getUniqueId('#dialog-geo-view-form'),"zoomend", function(m) {
+                geoViewDialog.data('zoom', m.getMessage());
+            });
+            myApp.MESSAGING.getInstance().addHandler(getUniqueId('#dialog-geo-view-form'),"moveend", function(m) {
+                var center = JSON.parse(m.getMessage())['center'];
+                geoViewDialog.data('centerLat', center['y']);
+                geoViewDialog.data('centerLon', center['x']);
+            });
+
+        },
+        open: function() {
+            console.log("setting up portalReady for geo-view-dialog");
+            if( myApp.MESSAGING.getInstance().isPortalReady(getUniqueId('#dialog-geo-view-form')) ) {
+                initGeoViewMap();
+            } else {
+                myApp.MESSAGING.getInstance().addHandler(getUniqueId('#dialog-geo-view-form'),"portalReady", initGeoViewMap);
+            }
+        }
+    });
+
+
+    $('#map-view-helper').on("click", "img", function () {
+        geoViewDialog.dialog("open");
+    });
+
+
     var geoDialog = $("#dialog-geo-form").dialog({
         autoOpen: false,
         height: 575,
@@ -983,6 +1052,8 @@ function WorldMapEditBlock(runtime, element) {
         }
     });
 
+
+
     constraintDialog.validate = function() {
             var constraintGeoType = $('#constraint-geometry-type').val();
             var constraintType = $('#constraint-type').val();
@@ -1005,30 +1076,27 @@ function WorldMapEditBlock(runtime, element) {
                 $('#constraint-geometry-type').removeClass('field-error');
             }
             var requiredEmpty = false;
-            if($('#constraint-type').val() === "matches" && $('#constraint-percentMatch').val() === "") {
-                $('#constraint-percentMatch').addClass('field-error');
-                requiredEmpty = true;
-            } else {
-                $('#constraint-percentMatch').removeClass('field-error');
-            }
-            $('#constraint-percentOfGrade').toggleClass('field-error', $('#constraint-percentOfGrade').val() === "" );
-            if( $('#constraint-percentOfGrade').val() === "" ) {
+            if( $('#constraint-percentMatch').toggleClass('field-error', $('#constraint-type').val() === "matches" && $('#constraint-percentMatch').val() === "")
+                .hasClass('field-error')) {
                 requiredEmpty = true;
             }
-            $('#constraint-padding').toggleClass('field-error',$('#constraint-padding').val() === "" );
-            if( $('#constraint-padding').val() === "" ) {
+            if( $('#constraint-percentOfGrade').toggleClass('field-error', $('#constraint-percentOfGrade').val() === "" )
+                .hasClass('field-error') ) {
                 requiredEmpty = true;
             }
-            $('#constraint-explanation').addClass('field-error', $('#constraint-explanation').val() === "");
-            if( $('#constraint-explanation').val() === "" ) {
+            if( $('#constraint-padding').toggleClass('field-error',$('#constraint-padding').val() === "" )
+                .hasClass('field-error') ) {
+                requiredEmpty = true;
+            }
+            if( $('#constraint-explanation').toggleClass('field-error', $('#constraint-explanation').val() === "")
+                .hasClass('field-error')) {
                 requiredEmpty = true;
             }
 
             var requiredNumber = false;
             $('#dialog-constraint-form .required-number').each( function() {
-                var err = $(this).is(':visible') && !$.isNumeric($(this).val());
-                $(this).toggleClass('field-error',err);
-                if(err) {
+                if( $(this).toggleClass('field-error',$(this).is(':visible') && !$.isNumeric($(this).val()))
+                    .hasClass('field-error')) {
                     requiredNumber = true;
                 }
             });
@@ -1159,6 +1227,19 @@ function WorldMapEditBlock(runtime, element) {
         constraintDialog.validate();
     }
 
+    function initGeoViewMap() {
+        myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new myApp.Message("reset-highlights", null));
+        if( $('#center-lon').val() != "" && $('#center-lat').val() != "") {
+            var lon = parseFloat($('#center-lon').val());
+            var lat = parseFloat($('#center-lat').val());
+            myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new myApp.Message("setCenter",{centerLat: lat, centerLon: lon}));
+        }
+        if( $('#zoom').val() != "") {
+            var zoom = parseInt($('#zoom').val());
+            myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new myApp.Message("setZoomLevel",zoom));
+        }
+    }
+
     function initGeoMap() {
         console.log("initGeoMap() called");
         var data = geoDialog.data('highlight')['geometry'];
@@ -1176,6 +1257,9 @@ function WorldMapEditBlock(runtime, element) {
     }
 
     function initConstraintMap() {
+        if( constraintDialog.data('constraint') == undefined ) {
+            debugger;
+        }
         var data = constraintDialog.data('constraint')['geometry'];
         data['relativeZoom'] = -2;
         data['duration'] = -1;
@@ -1261,6 +1345,16 @@ function WorldMapEditBlock(runtime, element) {
                 }
             }
         });
+    }
+}
+
+function precision( nDigits, val) {
+    var str = val+" ";
+    var loc = str.indexOf(".");
+    if( loc != -1 ) {
+        return str.substring(0,loc+nDigits);
+    } else {
+        return val;
     }
 }
 

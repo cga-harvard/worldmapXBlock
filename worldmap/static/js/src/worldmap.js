@@ -71,17 +71,17 @@ function WorldMapXBlock(runtime, element) {
     });
 
 
-    myApp.WorldMapRegistry[ getUniqueId()] = { runtime: runtime, element: element };
+    myApp.WorldMapRegistry[ getUniqueId('.worldmap_block')] = { runtime: runtime, element: element };
 
     function setupWorldmap() {
-        myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"info", function(m) { alert("info: "+m.getMessage()); });
-        myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"zoomend", function(m) { on_setZoomLevel(m.getMessage()); });
-        myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"moveend", function(m) { on_setCenter(m.getMessage()); });
-        myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"changelayer", function(m) { on_changeLayer(m.getMessage()); });
+        myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"info", function(m) { alert("info: "+m.getMessage()); });
+        myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"zoomend", function(m) { on_setZoomLevel(m.getMessage()); });
+        myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"moveend", function(m) { on_setCenter(m.getMessage()); });
+        myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"changelayer", function(m) { on_changeLayer(m.getMessage()); });
 
-        myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"postLegends", function(m) { postLegends(m.getMessage()); })
+        myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"postLegends", function(m) { postLegends(m.getMessage()); })
 
-        myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"portalReady", function(m) {
+        myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"portalReady", function(m) {
             $.ajax({
                type: "POST",
                url:  runtime.handlerUrl(element,"getLayerStates"),
@@ -105,7 +105,7 @@ function WorldMapXBlock(runtime, element) {
                  success: function(result) {
                     if( result ) {
                        myApp.MESSAGING.getInstance().send(
-                           getUniqueId(),
+                           getUniqueId('.worldmap_block'),
                            new myApp.Message("setCenter", {
                                zoomLevel: result.zoomLevel,
                                centerLat: result.centerLat,
@@ -182,7 +182,7 @@ function WorldMapXBlock(runtime, element) {
                             slide: function(e, ui) {
                                 $(this).find(".ui-slider-handle .slider-thumb-value").text(ui.value);
 
-                                var layerSpecs = myApp.worldmapLayerSpecs[getUniqueId()];
+                                var layerSpecs = myApp.worldmapLayerSpecs[getUniqueId('.worldmap_block')];
                                 for (var i=0; i<layerSpecs.length; i++) {
                                     if( layerSpecs[i].params != undefined ) {
                                         for( var j=0; j<layerSpecs[i].params.length; j++) {
@@ -237,7 +237,7 @@ function WorldMapXBlock(runtime, element) {
                  data: "null",
                  success: function(result) {
                     if( typeof myApp.worldmapLayerSpecs == "undefined" ) myApp.worldmapLayerSpecs = [];
-                    myApp.worldmapLayerSpecs[getUniqueId()] = result;
+                    myApp.worldmapLayerSpecs[getUniqueId('.worldmap_block')] = result;
                  }
             });
 
@@ -249,21 +249,21 @@ function WorldMapXBlock(runtime, element) {
                  success: function(result) {
                     //window.alert(JSON.stringify(result));
                     if( result != null ) {
-                        $('.prose-area',element).html(addUniqIdToArguments(getUniqueId(),result.explanation));
+                        $('.prose-area',element).html(addUniqIdToArguments(getUniqueId('.worldmap_block'),result.explanation));
                         var html = "<ol class='questions-list'>";
                         for(var i in result.questions) {
                             //result.answers[i].padding = result.padding;  //TODO: should be done on xml read, not here!
                             html += "<li><span class='question-text' id='question-"+result.questions[i].id+"'><span>"+result.questions[i].explanation+"</span><br/><span class='"+result.questions[i].type+"-tool question-tool'/><span class='question-score question-text' id='score-"+result.questions[i].id+"'/><div id='dialog-"+result.questions[i].id+"'/></span></li>";
                         }
                         html += "</ol>";
-                        $('.auxArea',element).html(addUniqIdToArguments(getUniqueId(), html));
+                        $('.auxArea',element).html(addUniqIdToArguments(getUniqueId('.worldmap_block'), html));
                         for(var i in result.questions) {
                             var tool = $('.auxArea',element).find('#question-'+result.questions[i].id).find('.'+result.questions[i].type+'-tool');
                             tool.css('background-color','#'+result.questions[i].color);
                             tool.click( result.questions[i], function(e) {
                                 myApp.MESSAGING.getInstance().sendAll( new myApp.Message("reset-answer-tool",null));
                                 myApp.MESSAGING.getInstance().send(
-                                    getUniqueId(),
+                                    getUniqueId('.worldmap_block'),
                                     new myApp.Message("set-answer-tool", e.data)
                                 );
                             });
@@ -281,9 +281,9 @@ function WorldMapXBlock(runtime, element) {
                  }
             });
 
-            myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"point_response", responseHandler );
-            myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"polygon_response", responseHandler);
-            myApp.MESSAGING.getInstance().addHandler(getUniqueId(),"polyline_response", responseHandler);
+            myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"point_response", responseHandler );
+            myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"polygon_response", responseHandler);
+            myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"polyline_response", responseHandler);
         });
 
         //finally cause the worldmap to load
@@ -323,7 +323,7 @@ function WorldMapXBlock(runtime, element) {
                             var hintAfterAttempt = result.question.hintAfterAttempt;
                             if( hintAfterAttempt != null ) {
                                 if( nAttempt % hintAfterAttempt == 0) {
-                                    var uniqId = getUniqueId();
+                                    var uniqId = getUniqueId('.worldmap_block');
                                     var html = "<ul>";
                                     myApp.HintManager.getInstance().reset();
                                     for( var i=0;i<result.unsatisfiedConstraints.length; i++) {
@@ -344,7 +344,7 @@ function WorldMapXBlock(runtime, element) {
 
     var layerVisibilityCache = [];
     function selectLayer(select,layerid,moveTo) {
-        var uniqId = getUniqueId();
+        var uniqId = getUniqueId('.worldmap_block');
         var cachedValue = layerVisibilityCache[uniqId+layerid];
         if( moveTo == undefined ) moveTo = false;
         if( typeof cachedValue == "undefined" || cachedValue != select || moveTo ) {
@@ -358,9 +358,8 @@ function WorldMapXBlock(runtime, element) {
             layerVisibilityCache[uniqId+layerid] = select;
         }
     }
-
-    function getUniqueId() {
-        return $('.frame', element).attr('id');
+    function getUniqueId(id) {
+        return $(id).find('.frame').attr('id');
     }
 
     function on_setZoomLevel(level) {

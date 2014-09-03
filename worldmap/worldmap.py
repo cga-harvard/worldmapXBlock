@@ -365,7 +365,10 @@ class WorldMapXBlock(XBlock):
     worldmapConfigJson = """
                 {
                     "href": "http://23.21.172.243/maps/bostoncensus/embed",
-                    "debug": true,
+                    "lat": 42.365,
+                    "lon": -70.9,
+                    "zoom": 9,
+                    "debug": false,
                     "width": 600,
                     "height": 400,
                     "baseLayer":"OpenLayers_Layer_Google_116",
@@ -615,6 +618,13 @@ class WorldMapXBlock(XBlock):
         self.debug = self.worldmapConfig.get("debug",False)
         self.baseLayer = self.worldmapConfig.get("baseLayer",None)
 
+        if self.zoomLevel == None:
+            self.zoomLevel = self.worldmapConfig.get("zoom",None)
+        if self.centerLat == None:
+            self.centerLat = self.worldmapConfig.get("lat",None)
+        if self.centerLon == None:
+            self.centerLon = self.worldmapConfig.get("lon",None)
+
 
         frag = Fragment(self.resource_string("static/html/worldmap.html").format(self=self, uniqueId=uniqueId))
         template = Template(self.resource_string("static/css/worldmap.css"))
@@ -664,7 +674,8 @@ class WorldMapXBlock(XBlock):
                 'worldmapConfig_json': json.dumps(self.worldmapConfig),
                 'url': self.worldmapConfig.get("href",None),
                 'delimiter': delimiter,
-                'uniqueId': uniqueId
+                'uniqueId': uniqueId,
+                'imagesRoot': self.runtime.local_resource_url(self,"public/images")
             }))
         fragment.add_css_url(self.runtime.local_resource_url(self,"public/css/worldmap-studio.css"))
         fragment.add_css_url(self.runtime.local_resource_url(self,"public/css/jquery-ui.css"))
@@ -704,12 +715,20 @@ class WorldMapXBlock(XBlock):
         if 'layer-controls' in submissions:
             self.worldmapConfig['layer-controls'] = fixupLayerTree(submissions['layer-controls'][0])
         self.worldmapConfig['href']  = submissions['href']
+        self.worldmapConfig['lat']  = submissions['lat']
+        self.worldmapConfig['lon']  = submissions['lon']
+        self.worldmapConfig['zoom']  = submissions['zoom']
         self.worldmapConfig['height']= submissions['height']
         self.worldmapConfig['width']=  submissions['width']
         self.worldmapConfig['baseLayer'] = submissions['baseLayer']
         self.worldmapConfig['sliders']   = submissions['sliders']
         self.worldmapConfig['layers']    = submissions['layers']
         self.worldmapConfig['debug']     = submissions['debug']
+
+        # reset view info so view is generated from worldmapConfig and not from the last position
+        # self.centerLat = None
+        # self.centerLon = None
+        # self.zoomLevel = None
 
         return { 'result':'success' }
 
@@ -744,7 +763,7 @@ class WorldMapXBlock(XBlock):
         hit = True
 
         if correctGeometry['type'] == 'polygon':
-            correctPolygon = makePolygon(correctGeometry['points']).buffer(padding*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS))
+            correctPolygon = makePolygon(correctGeometry['points']).buffer(self.scale(padding))
             hit = correctPolygon.contains(makePoint(userAnswer))
         elif correctGeometry['type'] == 'point':
             point = correctGeometry['points'][0]
@@ -753,7 +772,7 @@ class WorldMapXBlock(XBlock):
             a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*point['lat']/180)
             hit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < padding
         else:  #polyline
-            polylineArea = makeLineString(correctGeometry).buffer(padding*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS))
+            polylineArea = makeLineString(correctGeometry).buffer(self.scale(padding))
             hit = polylineArea.contains(makePoint(userAnswer))
 
 
@@ -835,7 +854,7 @@ class WorldMapXBlock(XBlock):
                             constraintSatisfied = answerPolygon.contains(constraintPt)
 
                             if constraintSatisfied and constraint.get('maxAreaFactor',None) != None :
-                                constraintSatisfied = answerPolygon.area/constraintPt.buffer(180*constraint['padding']/(self.SPHERICAL_DEFAULT_RADIUS*math.pi)).area < constraint['maxAreaFactor']
+                                constraintSatisfied = answerPolygon.area/constraintPt.buffer(self.scale(constraint['padding'])).area < constraint['maxAreaFactor']
                                 if not constraintSatisfied :
                                     additionalErrorInfo = _(" (polygon too big)")
                         else:
@@ -845,7 +864,7 @@ class WorldMapXBlock(XBlock):
                         if( constraint['type'] == 'includes' ) :
                             constraintSatisfied = answerPolygon.contains( constraintLine )
                             if constraintSatisfied and constraint.get('maxAreaFactor',None) != None :
-                                constraintSatisfied = answerPolygon.area/constraintLine.buffer(180*constraint['padding']/(self.SPHERICAL_DEFAULT_RADIUS*math.pi)).area < constraint['maxAreaFactor']
+                                constraintSatisfied = answerPolygon.area/constraintLine.buffer(self.scale(constraint['padding'])).area < constraint['maxAreaFactor']
                                 if not constraintSatisfied :
                                     additionalErrorInfo = _(" (polygon too big)")
                         else:
@@ -913,10 +932,10 @@ class WorldMapXBlock(XBlock):
 
                 if constraint['type'] == 'matches' : #polyline
                     percentMatch = constraint['percentMatch']
-                    answerPolygon  = answerPolyline.buffer(constraint['padding'])
+                    answerPolygon  = answerPolyline.buffer(self.scale(constraint['padding']))
                     constraintPolyline = makeLineString(constraint['geometry']['points'])
 
-                    buffer = max(constraintPolyline.length*0.2, constraint['padding']*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS))
+                    buffer = max(constraintPolyline.length*0.2, self.scale(constraint['padding']))
 
                     constraintPolygon = constraintPolyline.buffer(buffer)
 
@@ -925,23 +944,27 @@ class WorldMapXBlock(XBlock):
                     if constraintSatisfied:
                         constraintSatisfied = abs(constraintPolyline.length - answerPolyline.length)/constraintPolyline.length < (100-percentMatch)/100.
                         if not constraintSatisfied:
-                            additionalErrorInfo = _(" - The line wasn't long enough")
+                            if (constraintPolyline.length - answerPolyline.length > 0) :
+                                additionalErrorInfo =  _(" - The polyline wasn't long enough")
+                            else:
+                                additionalErrorInfo =  _(" - The polyline was too long")
                     else:
                         additionalErrorInfo = _(" - You missed the proper area")
 
                 elif constraint['type'] == "inside": #polygon
+                    buffer = self.scale(constraint['padding'])
                     constraintPolygon = makePolygon(constraint['geometry']['points']).buffer(buffer)
                     constraintSatisfied = constraintPolygon.contains(answerPolyline)
                     if not constraintSatisfied:
                         additionalErrorInfo = _(" - Outside permissible boundary")
                 elif constraint['type'] == 'excludes': #polygon
-                    buffer = constraint['padding']*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS)
+                    buffer = self.scale(constraint['padding'])
                     constraintPolygon = makePolygon(constraint['geometry']['points']).buffer(buffer)
                     constraintSatisfied = not constraintPolygon.crosses(answerPolyline)
                     if not constraintSatisfied:
                         additionalErrorInfo = _(" - Must be outside of a certain boundary")
                 elif constraint['type'] == 'includes':  #point
-                    buffer = constraint['padding']*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS)
+                    buffer = self.scale(constraint['padding'])
                     constraintPointArea = makePoint(constraint['geometry'['points'][0]]).buffer(buffer)
                     constraintSatisfied = constraintPointArea.crosses(answerPolyline)
                     if not constraintSatisfied:
@@ -972,6 +995,9 @@ class WorldMapXBlock(XBlock):
             'correctExplanation': correctExplanation
         }
 
+    def scale(self, val):
+        return val*180/(math.pi*self.SPHERICAL_DEFAULT_RADIUS)
+
     @XBlock.json_handler
     def getQuestions(self, data, suffix=''):
         return {
@@ -989,7 +1015,7 @@ class WorldMapXBlock(XBlock):
 
     @XBlock.json_handler
     def getFuzzyGeometry(self, data, suffix=''):
-        buffer = data['buffer']*180./(self.SPHERICAL_DEFAULT_RADIUS*math.pi)
+        buffer = self.scale(data['buffer'])
 
         # create a bunch of polygons that are more/less the shape of our original geometry
         geometryArr = []

@@ -7,9 +7,9 @@ var myApp = myApp || {};
 myApp.MESSAGING = (function Messaging() { // declare 'Singleton' as the return value of a self-executing anonymous function
     var _instance = null;
     var _constructor = function() {
-        this.host = location.protocol+"//"+location.host+":"+(location.port ? location.port : "80")+"/";
-        this.clientCredentials = [];
-        this.handlers = [];
+        this.host = location.protocol+"//"+location.host+(location.host.indexOf(":") != -1 ? "" : (":"+(location.port ? location.port : "80")))+"/";
+        this.clientCredentials = {};
+        this.handlers = {};
         this.portalReady = [];
     };
     _constructor.prototype = { // *** prototypes will be "public" methods available to the instance
@@ -21,14 +21,14 @@ myApp.MESSAGING = (function Messaging() { // declare 'Singleton' as the return v
             this.portalReady.push(id);
         },
         isPortalReady: function(id) {
-            for( var i in this.portalReady ) {
+            for( var i=0; i< this.portalReady.length; i++ ) {
                 if( this.portalReady[i] == id ) return true;
             }
             return false;
         },
         addHandler: function(id, type, h) {
            if( ! (id in this.handlers) ) {
-              this.handlers[id] = [];
+              this.handlers[id] = {};
            }
            if( ! (type in this.handlers[id]) ) {
                this.handlers[id][type] = [];

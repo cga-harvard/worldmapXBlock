@@ -61,19 +61,43 @@
                  <div style="width:95%; text-align:right" class="tip setting-help"><button id="new-question">New question</button></div>
               </div>
               <div id="tabs-5" class="map-tab">
-                 <table>
+                 <table style="width:900px">
                      <tr>
                          <td colspan="2">
-                            <label style="margin-left:0px !important;" class="label setting-label" for="map-url">Map URL</label>
-                            <input type="text" id="map-url" style="width:100% !important; padding: 6px;" placeholder="required" class="required text ui-widget-content ui-corner-all">
-                            <label class="dependent-property label setting-label" for="map-width">Width</label>
-                            <input type="text" id="map-width" style="width:70px !important;" placeholder="required" class="required-integer dependent-property text ui-widget-content ui-corner-all">
-                            <label class="dependent-property label setting-label" for="map-height">Height</label>
-                            <input type="text" id="map-height" style="width:70px !important;" placeholder="required" class="required-integer dependent-property text ui-widget-content ui-corner-all">
-                            <label class="dependent-property label setting-label" for="map-baseLayer">Base Layer</label>
-                            <input type="text" id="map-baseLayer" style="width:300px !important" placeholder="specify if needed" class="dependent-property text ui-widget-content ui-corner-all">
-                            <label class="dependent-property label setting-label" for="map-debug">Debug</label>
-                            <input type="checkbox" id="map-debug" class="checkbox"/>
+                            <section>
+                                <div style="float:left;margin-right:10px;width:510px">
+                                    <label for="map-url" style="margin-left:0px !important;width:100%;" class="label setting-label">Map URL</label>
+                                    <input type="text" id="map-url" style="width:100% !important;padding:0px;" placeholder="required" class="required text ui-widget-content ui-corner-all"/>
+                                </div>
+                                <div style="float:left;margin:3px 3px 0px 3px; padding:3px;border:1px solid darkgray" class="ui-corner-all">
+                                    <div style="float:left;margin-right:10px;width:120px">
+                                        <label for="center-lon" style="margin-left:0px !important;width:100%;" class="label setting-label">Center(longitude)</label>
+                                        <input type="text" id="center-lon" style="width:100% !important;padding:0px;" placeholder="required" class="required-number text ui-widget-content ui-corner-all"/>
+                                    </div>
+                                    <div style="float:left;margin-right:10px;width:120px">
+                                        <label for="center-lat" style="margin-left:0px !important;width:100%;" class="label setting-label">Center(latitude)</label>
+                                        <input type="text" id="center-lat" style="width:100% !important;padding:0px;" placeholder="required" class="required-number text ui-widget-content ui-corner-all"/>
+                                    </div>
+                                    <div style="float:left;margin-right:10px;width:50px;">
+                                        <label for="zoom" style="margin-left:0px !important;width:100%;min-width:10px;" class="label setting-label">Zoom</label>
+                                        <input type="text" id="zoom" style="width:100% !important;min-width:10px;padding:0px;" placeholder="req'd" class="required-integer text ui-widget-content ui-corner-all">
+                                    </div>
+                                    <div style="float:left;cursor:pointer;" id="map-view-helper">
+                                        <img title="map center/zoom helper" src="{{imagesRoot}}/globe-40x40.png"/>
+                                    </div>
+                                </div>
+                            </section>
+                             <br style="clear:both;"/>
+                            <section>
+                                <label class="dependent-property label setting-label" for="map-width">Width</label>
+                                <input type="text" id="map-width" style="width:70px !important;" placeholder="required" class="required-integer dependent-property text ui-widget-content ui-corner-all">
+                                <label class="dependent-property label setting-label" for="map-height">Height</label>
+                                <input type="text" id="map-height" style="width:70px !important;" placeholder="required" class="required-integer dependent-property text ui-widget-content ui-corner-all">
+                                <label class="dependent-property label setting-label" for="map-baseLayer">Base Layer</label>
+                                <input type="text" id="map-baseLayer" style="width:290px !important" placeholder="specify if needed" class="dependent-property text ui-widget-content ui-corner-all">
+                                <label class="dependent-property label setting-label" for="map-debug">Debug</label>
+                                <input type="checkbox" id="map-debug" class="checkbox"/>
+                            </section>
                             <hr/>
                          </td>
                      </tr>
@@ -86,10 +110,10 @@
                             </div>
                          </td>
                          <td style="width:35%;">
-                             <label class="label setting-label" style="width:49% !important;margin-right:0px;" for="sliders">Sliders</label>
+                             <label class="label setting-label" style="width:40% !important;margin-right:0px;" for="sliders">Sliders</label>
                              <span style="width:49% !important; min-width:inherit; text-align:right" class="tip setting-help"><button id="new-slider">New slider</button></span>
                              <ul id="sliders" class="scroll" />
-                             <label class="label setting-label" style="width:49% !important; margin-right:0px; min-width:inherit;" for="slider-layers">Slider layers</label>
+                             <label class="label setting-label" style="width:45% !important; margin-right:0px; min-width:inherit;" for="slider-layers">Slider layers</label>
                              <span style="width:49% !important; min-width:inherit; text-align:right" class="tip setting-help"><button id="new-sliderLayer">New slider layer</button></span>
                              <ul id="slider-layers" class="scroll" />
                          </td>
@@ -142,6 +166,23 @@
     </form>
 </div>
 
+<!-- SPECIFYING MAP POSITION & ZOOM -->
+<div id="dialog-geo-view-form" class="dialog-form" title="Specify Map Position & Zoom">
+    <form>
+        <fieldset>
+            <div id="specify-geo-view">
+                <label for="worldmap_config_geo_view-{{uniqueId}}" style="width:95%;">Specify map position and zoom</label>
+                <iframe class='frame' id="worldmap_config_geo_view-{{uniqueId}}"
+                        src="{{url}}{{delimiter}}xblockId=worldmap_config_geo_view-{{uniqueId}}"
+                        frameborder='0' width='400' height='300'
+                        debug="false"
+                        style="display:inline;"
+                        >
+                </iframe>
+            </div>
+        </fieldset>
+    </form>
+</div>
 
 
 <!-- sliderLayer details -->
@@ -300,7 +341,7 @@
                 </tr>
                 <tr>
                     <td style="width:275px">
-                        <label for="id">Unique ID</label>
+                        <label for="question-id">Unique ID</label>
                         <input type="text" name="id" id="question-id" value="" class="required text ui-widget-content ui-corner-all">
                         <label for="color">Tool button color</label>
                         <input type="text" name="color" id="color" class="required required-color text ui-widget-content ui-corner-all">
