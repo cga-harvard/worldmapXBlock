@@ -368,6 +368,7 @@ class WorldMapXBlock(XBlock):
                     "lat": 42.365,
                     "lon": -70.9,
                     "zoom": 9,
+                    "stickyMap": true,
                     "debug": false,
                     "width": 600,
                     "height": 400,
@@ -618,11 +619,9 @@ class WorldMapXBlock(XBlock):
         self.debug = self.worldmapConfig.get("debug",False)
         self.baseLayer = self.worldmapConfig.get("baseLayer",None)
 
-        if self.zoomLevel == None:
+        if not self.worldmapConfig['stickyMap']:
             self.zoomLevel = self.worldmapConfig.get("zoom",None)
-        if self.centerLat == None:
             self.centerLat = self.worldmapConfig.get("lat",None)
-        if self.centerLon == None:
             self.centerLon = self.worldmapConfig.get("lon",None)
 
 
@@ -724,11 +723,7 @@ class WorldMapXBlock(XBlock):
         self.worldmapConfig['sliders']   = submissions['sliders']
         self.worldmapConfig['layers']    = submissions['layers']
         self.worldmapConfig['debug']     = submissions['debug']
-
-        # reset view info so view is generated from worldmapConfig and not from the last position
-        # self.centerLat = None
-        # self.centerLon = None
-        # self.zoomLevel = None
+        self.worldmapConfig['stickyMap'] = submissions['stickyMap']
 
         return { 'result':'success' }
 

@@ -43,7 +43,8 @@ function WorldMapEditBlock(runtime, element) {
             'width':      parseInt($("#map-width").val()),
             'height':     parseInt($("#map-height").val()),
             'baseLayer':  $("#map-baseLayer").val(),
-            'debug':      $('#map-debug').attr('checked') === "checked"
+            'debug':      $('#map-debug').attr('checked') === "checked",
+            'stickyMap':  $('#map-sticky').attr('checked') === "checked"
         };
 
         $('.xblock-editor-error-message', element).html();
@@ -177,6 +178,7 @@ function WorldMapEditBlock(runtime, element) {
     $("#center-lon").val(worldmapConfig['lon']);
     $("#center-lat").val(worldmapConfig['lat']);
     $("#zoom").val(worldmapConfig['zoom']);
+    $("#map-sticky").attr("checked", worldmapConfig['stickyMap']);
 
     if( worldmapConfig['debug']) {
         $('.dev-only').removeClass('dev-only');  //removes the JSON tabs from the tabset
@@ -1352,7 +1354,7 @@ function precision( nDigits, val) {
     var str = val+" ";
     var loc = str.indexOf(".");
     if( loc != -1 ) {
-        return str.substring(0,loc+nDigits);
+        return str.substring(0,loc+nDigits+1);
     } else {
         return val;
     }

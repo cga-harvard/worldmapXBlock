@@ -219,7 +219,7 @@ li[role=tab] {
 input.dependent-property {
     width: inherit !important;
     min-width: inherit !important;
-    margin-right: 10px !important;
+    margin-right: 5px !important;
     margin-left: 0px !important;
     margin-top: 5px !important;
     padding: 0px !important;
@@ -230,8 +230,8 @@ label.dependent-property {
     width: inherit !important;
     min-width: inherit !important;
     margin-right: 0px !important;
-    margin-left: 20px !important;
-    margin-top: 5px !important;
+    margin-left: 0px !important;
+    margin-top: 0px !important;
     padding: 0px !important;
 }
 
