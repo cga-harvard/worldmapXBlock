@@ -2,6 +2,12 @@
     display:none !important;
 }
 
+/*.modal-type-worldmap {*/
+    /*top:50px !important,*/
+    /*left:200px;*/
+    /*width:940px;*/
+    /*height:500px;*/
+/*}*/
 .CodeMirror {
     height:270px !important;
 }
@@ -106,6 +112,10 @@ input.checkbox {
 }
 #param-value, #param-min, #param-max {
     width:30%;
+}
+
+.ui-dialog-title {
+    color: white;
 }
 .ui-dialog {
     padding: .3em;

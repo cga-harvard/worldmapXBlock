@@ -175,9 +175,6 @@
 
     <!-- SPECIFYING MAP POSITION & ZOOM -->
     <div id="dialog-geo-view-form" class="dialog-form" title="Specify Map Viewport">
-        <form>
-            <fieldset>
-                    <input type="hidden" name="dummy"/>
                     <label for="worldmap_geo_view_{{uniqueId}}">Specify map position and zoom</label>
                     <iframe class='frame' id="worldmap_geo_view_{{uniqueId}}"
                             src="{{url}}{{delimiter}}xblockId=worldmap_geo_view_{{uniqueId}}"
@@ -186,9 +183,6 @@
                             style="display:inline;"
                             >
                     </iframe>
-            </fieldset>
-        </form>
-
     </div>
 
 
@@ -299,13 +293,15 @@
                             </span>
                             <label for="constraint-padding">Padding (meters)</label>
                             <input type="text" name="constraintPadding" id="constraint-padding" value="" class="required required-number text ui-widget-content ui-corner-all">
-                            <label for="constraint-type">Type</label><br/>
+                            <BR/><BR/>
+                            <label>Type
                             <select name="type" id="constraint-type" class="select ui-widget-content ui-corner-all">
                                 <option value="excludes">Excludes</option>
                                 <option value="includes">Includes</option>
                                 <option value="inside">Inside</option>
                                 <option value="matches">Matches</option>
                             </select>
+                            </label>
                         </td>
                         <td style="width:60%">
                             <label for="worldmap_constraint_{{uniqueId}}" id="constraint-type-label">

@@ -16,6 +16,8 @@ function WorldMapEditBlock(runtime, element) {
     var worldmapConfigEditor = CodeMirror.fromTextArea($('#worldmapConfig')[0], { mode: 'json', json: true, lineWrapping: true, lineNumbers:true });
     var htmlEditor           = CodeMirror.fromTextArea($('#prose')[0],          { mode: 'text/html', lineWrapping: true, htmlMode: true });
 
+    window.scrollTo(0,0);  //otherwise, the dialogs can't be dragged properly
+
     $(element).find('.save-button').bind('click', function() {
 
         //TODO:  add validation here
@@ -58,7 +60,6 @@ function WorldMapEditBlock(runtime, element) {
                 $('.xblock-editor-error-message', element).css('display', 'block');
             }
         });
-//        $('#worldmap-edit-dialogs').remove();
         geoDialog.empty().remove();
         constraintDialog.empty().remove();
         questionDialog.empty().remove();
@@ -66,16 +67,10 @@ function WorldMapEditBlock(runtime, element) {
     });
     $(element).find('.cancel-button').bind('click', function() {
        //TODO:  this is a hack to get around the fact that Studio doesn't remove these DOM objects
-//        $('#worldmap-edit-dialogs,.dialog-form').each( function(i,o) {
-//            console.log("-----------------------------------------------------");
-//            console.log("removing from DOM: "+o['id']);
-//            $('#'+o['id']).dialog().empty().remove();
-//        })
        geoDialog.empty().remove();
        constraintDialog.empty().remove();
        questionDialog.empty().remove();
        geoViewDialog.empty().remove();
-//        $('#worldmap-edit-dialogs').remove();
     });
 
     refreshGeoList();
@@ -153,7 +148,7 @@ function WorldMapEditBlock(runtime, element) {
             if( b ) {
                 config['questions'].push( {
                     explanation: v,
-                    id: "temp-"+$.now()/1000,
+                    id: "temp-"+Math.floor($.now()/1000),
                     color: "00FF00",
                     type: "point",
                     hintAfterAttempt: 3,
@@ -335,6 +330,9 @@ function WorldMapEditBlock(runtime, element) {
     });
 
     $('#new-param').click( function() {
+        if( !sliderLayerDialog.data('sliderLayer')['params']) {
+            sliderLayerDialog.data('sliderLayer')['params'] = [];
+        }
         sliderLayerDialog.data('sliderLayer')['params'].push(
             { "name":"new param",  "value":0 }
         );
@@ -358,6 +356,7 @@ function WorldMapEditBlock(runtime, element) {
         dialogClass: "no-close",
         width: 575,
         modal: true,
+        //appendTo: $('.wrapper-comp-settings'),
         buttons: [
             {
                 text: "Delete",
@@ -448,6 +447,7 @@ function WorldMapEditBlock(runtime, element) {
         dialogClass: "no-close",
         width: 460,
         modal: true,
+        //appendTo: $('.wrapper-comp-settings'),
         buttons: [
             {
                 text: "Delete",
@@ -561,6 +561,7 @@ function WorldMapEditBlock(runtime, element) {
         dialogClass: "no-close",
         width: 370,
         modal: true,
+        //appendTo: $('.wrapper-comp-settings'),
         buttons: [
             {
                 text: "Delete",
@@ -617,6 +618,7 @@ function WorldMapEditBlock(runtime, element) {
         dialogClass: "no-close",
         width: 390,
         modal: true,
+        //appendTo: $('.wrapper-comp-settings'),
         buttons: [
             {
                 text: "Delete",
@@ -714,10 +716,11 @@ function WorldMapEditBlock(runtime, element) {
 
     var questionDialog = $('#dialog-question-detail').dialog({
         autoOpen: false,
-        height: 530,
+        height: 545,
         dialogClass: "no-close",
         width: 700,
         modal: true,
+        //appendTo: $('.wrapper-comp-settings'),
         buttons: [
             {
                 text: "Delete",
@@ -833,16 +836,13 @@ function WorldMapEditBlock(runtime, element) {
         return result;
     }
 
-    if( $('#dialog-geo-view-form').length !== 1 ) {
-        debugger;
-    }
-
     var geoViewDialog = $("#dialog-geo-view-form").dialog({
         autoOpen: false,
         height: 500,
         dialogClass: "no-close",
         width: 500,
         modal: true,
+        //appendTo: $('.wrapper-comp-settings'),
         buttons: [
             {
                 text: "OK",
@@ -885,6 +885,7 @@ function WorldMapEditBlock(runtime, element) {
         dialogClass: "no-close",
         width: 570,
         modal: true,
+        //appendTo: $('.wrapper-comp-settings'),
         buttons: [
             {
                 text: "Delete",
@@ -968,6 +969,7 @@ function WorldMapEditBlock(runtime, element) {
         dialogClass: "no-close",
         width: 725,
         modal: true,
+        //appendTo: $('.wrapper-comp-settings'),
         buttons: [
             {
                 text: "Delete",
@@ -1056,8 +1058,6 @@ function WorldMapEditBlock(runtime, element) {
         }
     });
 
-
-
     constraintDialog.validate = function() {
             var constraintGeoType = $('#constraint-geometry-type').val();
             var constraintType = $('#constraint-type').val();
@@ -1126,7 +1126,7 @@ function WorldMapEditBlock(runtime, element) {
 
 
 
-    function setupPortalReady(dlg, uniqueId, item) {
+    function setupPortalReady(dlg, item) {
         var id = dlg.attr('id');
         var uniqueId = getUniqueId('#'+id);
         if( !myApp.MESSAGING.getInstance().isPortalReady(uniqueId) ) {
@@ -1328,6 +1328,7 @@ function WorldMapEditBlock(runtime, element) {
             title: "Confirm",
             height: 250,
             width: 400,
+            //appendTo: $('.wrapper-comp-settings'),
             buttons: {
                 "Yes": function () {
                     $(this).dialog('close');
@@ -1352,6 +1353,7 @@ function WorldMapEditBlock(runtime, element) {
             title: "Inquire",
             height: 400,
             width: 600,
+            //appendTo: $('.wrapper-comp-settings'),
             buttons: {
                 "OK": function () {
                     $(this).dialog('close');
