@@ -88,13 +88,7 @@ function WorldMapXBlock(runtime, element) {
                data: "null",
                success: function(result) {
                    for (var id in result) {
-                       console.log("getLayerStates says "+id+": "+JSON.stringify(result[id]));
                        selectLayer(result[id]['visibility'], id);
-//                       $('.layerControls',element).dynatree("getRoot").visit( function(node) {
-//                           if( node.data.key == id ) {
-//                               node.select(result[id]['visibility']);
-//                           }
-//                       });
                    }
                }
             });
@@ -430,17 +424,12 @@ function WorldMapXBlock(runtime, element) {
         });
     }
     function on_changeLayer(json) {
-        console.log("on_changeLayer("+json+") called");
         var layer = JSON.parse(json);
         $(".layerControls",element).dynatree("getRoot").visit( function(node) {
             if( node.data.key === layer.id ) {
                 node.select(layer.visibility);
             }
         });
-
-//        if( layer.visibility ) {
-//            debug("layer id: "+layer.id);
-//        }
 
         $.ajax({
             type: "POST",

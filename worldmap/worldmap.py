@@ -665,7 +665,7 @@ class WorldMapXBlock(XBlock):
 
         print "creating worldmap-studio.html uniqueid="+uniqueId
 
-        fragment.add_content(render_template('templates/html/worldmap-studio.html',
+        html = render_template('templates/html/worldmap-studio.html',
             {
                 'display_name': self.display_name,
                 'config_json': json.dumps(self.config),
@@ -675,7 +675,10 @@ class WorldMapXBlock(XBlock):
                 'delimiter': delimiter,
                 'uniqueId': uniqueId,
                 'imagesRoot': self.runtime.local_resource_url(self,"public/images")
-            }))
+            })
+
+        fragment.add_content(html)
+
         fragment.add_css_url(self.runtime.local_resource_url(self,"public/css/worldmap-studio.css"))
         fragment.add_css_url(self.runtime.local_resource_url(self,"public/css/jquery-ui.css"))
 

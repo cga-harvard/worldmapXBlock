@@ -1,4 +1,4 @@
-console.log("worldmap.js loaded and executing....");
+console.log("worldmap-studio.js loaded and executing....");
 
 var myApp = myApp || {};
 
@@ -58,14 +58,24 @@ function WorldMapEditBlock(runtime, element) {
                 $('.xblock-editor-error-message', element).css('display', 'block');
             }
         });
+//        $('#worldmap-edit-dialogs').remove();
         geoDialog.empty().remove();
         constraintDialog.empty().remove();
         questionDialog.empty().remove();
+        geoViewDialog.empty().remove();
     });
     $(element).find('.cancel-button').bind('click', function() {
+       //TODO:  this is a hack to get around the fact that Studio doesn't remove these DOM objects
+//        $('#worldmap-edit-dialogs,.dialog-form').each( function(i,o) {
+//            console.log("-----------------------------------------------------");
+//            console.log("removing from DOM: "+o['id']);
+//            $('#'+o['id']).dialog().empty().remove();
+//        })
        geoDialog.empty().remove();
        constraintDialog.empty().remove();
        questionDialog.empty().remove();
+       geoViewDialog.empty().remove();
+//        $('#worldmap-edit-dialogs').remove();
     });
 
     refreshGeoList();
@@ -198,7 +208,7 @@ function WorldMapEditBlock(runtime, element) {
         selectMode: 1,
 //            fx: null, // or  {height: "toggle", duration:200 }
 //            noLink: true,
-        debugLevel: 2, // 0:quiet, 1:normal, 2:debug
+        debugLevel: 0, // 0:quiet, 1:normal, 2:debug
         onRender: function(node, nodeSpan) {
             $(nodeSpan).find('.dynatree-icon').remove();
         },
@@ -255,8 +265,12 @@ function WorldMapEditBlock(runtime, element) {
               return false;
             }
             // Prohibit creating childs in non-folders (only sorting allowed)
-            if( !node.data.isFolder && hitMode === "over" ){
-              return "after";
+            if( !node.data.isFolder ) {
+                if( hitMode === "over" ) {
+                    return "after";
+                } else if ( node.data.children !== null ) { //don't allow dropping on root node
+                    return false;
+                }
             }
           },
           onDrop: function(node, sourceNode, hitMode, ui, draggable) {
@@ -264,13 +278,13 @@ function WorldMapEditBlock(runtime, element) {
              * the tree.
              */
             logMsg("tree.onDrop(%o, %o, %s)", node, sourceNode, hitMode);
-            sourceNode.move(node, hitMode);
-//            if( node.data.isFolder) {
-//                sourceNode.select(false);
-//                $('#new-node').enable(false);
-//            }
-            // expand the drop target
-            sourceNode.expand(true);
+            if( node.data.isFolder && !node.isExpanded()) {
+                sourceNode.move(node, "after");
+            } else {
+                sourceNode.move(node, hitMode);
+                // expand the drop target
+                sourceNode.expand(true);
+            }
           },
           onDragLeave: function(node, sourceNode) {
             /** Always called if onDragEnter was called.
@@ -819,6 +833,10 @@ function WorldMapEditBlock(runtime, element) {
         return result;
     }
 
+    if( $('#dialog-geo-view-form').length !== 1 ) {
+        debugger;
+    }
+
     var geoViewDialog = $("#dialog-geo-view-form").dialog({
         autoOpen: false,
         height: 500,
@@ -845,20 +863,8 @@ function WorldMapEditBlock(runtime, element) {
         close: function() {
         },
         create: function(event, ui) {
-            console.log("creating geoViewDialog - setting up portalReady for dialog");
-
-            myApp.MESSAGING.getInstance().addHandler(getUniqueId('#dialog-geo-view-form'),"zoomend", function(m) {
-                geoViewDialog.data('zoom', m.getMessage());
-            });
-            myApp.MESSAGING.getInstance().addHandler(getUniqueId('#dialog-geo-view-form'),"moveend", function(m) {
-                var center = JSON.parse(m.getMessage())['center'];
-                geoViewDialog.data('centerLat', center['y']);
-                geoViewDialog.data('centerLon', center['x']);
-            });
-
         },
         open: function() {
-            console.log("setting up portalReady for geo-view-dialog");
             if( myApp.MESSAGING.getInstance().isPortalReady(getUniqueId('#dialog-geo-view-form')) ) {
                 initGeoViewMap();
             } else {
@@ -916,10 +922,8 @@ function WorldMapEditBlock(runtime, element) {
             }
         ],
         close: function() {
-            console.log("geoDialog.close() called");
         },
         create: function(event, ui) {
-            console.log("geoDialog.create() called");
             $("#geo-boundary-type").change(onChangeGeoTool);
             $('#dialog-geo-form .required').each( function() {
                 $(this).change(function() {
@@ -1006,10 +1010,8 @@ function WorldMapEditBlock(runtime, element) {
             }
         ],
         close: function() {
-            console.log("constraintDialog.close() called");
         },
         create: function(event, ui) {
-            console.log("constraintDialog.create() called");
             $("#constraint-geometry-type").change(onChangeConstraintTool);
             $('#constraint-type').change(function() {
                 constraintDialog.validate();
@@ -1116,26 +1118,42 @@ function WorldMapEditBlock(runtime, element) {
             return result;
         };
 
-    setupPortalReady(geoDialog, getUniqueId('#dialog-geo-form'), 'highlight');
-    setupPortalReady(constraintDialog, getUniqueId('#dialog-constraint-form'), 'constraint');
+//    setupPortalReady(geoDialog, '#dialog-geo-form', 'highlight');
+//    setupPortalReady(constraintDialog, '#dialog-constraint-form', 'constraint');
+    setupPortalReady(geoDialog, 'highlight');
+    setupPortalReady(constraintDialog, 'constraint');
+    setupPortalReady(geoViewDialog);
+
+
 
     function setupPortalReady(dlg, uniqueId, item) {
+        var id = dlg.attr('id');
+        var uniqueId = getUniqueId('#'+id);
         if( !myApp.MESSAGING.getInstance().isPortalReady(uniqueId) ) {
-            console.log("portal NOT READY - setup portalReady handler that will eventually setup xyz_response handlers for id: "+uniqueId);
             myApp.MESSAGING.getInstance().addHandler(uniqueId,"portalReady", function(m) {
-                console.log("portalReady message received, setting up xyz_response handlers for id: "+uniqueId);
-                myApp.MESSAGING.getInstance().addHandler(uniqueId,"polygon_response", function(msg) {
-                    var data = JSON.parse(JSON.parse(msg.message));
-                    dlg.data(item)['geometry'] = {type:'polygon', points: data['polygon']};
-                });
-                myApp.MESSAGING.getInstance().addHandler(uniqueId,"polyline_response", function(msg) {
-                    var data = JSON.parse(JSON.parse(msg.message));
-                    dlg.data(item)['geometry'] = {type:'polyline', points: data['polyline']};
-                });
-                myApp.MESSAGING.getInstance().addHandler(uniqueId,"point_response", function(msg) {
-                    var data = JSON.parse(JSON.parse(msg.message));
-                    dlg.data(item)['geometry'] = {type:'point', points: [data['point']]};
-                });
+                if( id == geoViewDialog.attr('id')) {
+                    myApp.MESSAGING.getInstance().addHandler(uniqueId, "zoomend", function (m) {
+                        dlg.data('zoom', m.getMessage());
+                    });
+                    myApp.MESSAGING.getInstance().addHandler(uniqueId, "moveend", function (m) {
+                        var center = JSON.parse(m.getMessage())['center'];
+                        dlg.data('centerLat', center['y']);
+                        dlg.data('centerLon', center['x']);
+                    });
+                } else {
+                    myApp.MESSAGING.getInstance().addHandler(uniqueId, "polygon_response", function (msg) {
+                        var data = JSON.parse(JSON.parse(msg.message));
+                        dlg.data(item)['geometry'] = {type: 'polygon', points: data['polygon']};
+                    });
+                    myApp.MESSAGING.getInstance().addHandler(uniqueId, "polyline_response", function (msg) {
+                        var data = JSON.parse(JSON.parse(msg.message));
+                        dlg.data(item)['geometry'] = {type: 'polyline', points: data['polyline']};
+                    });
+                    myApp.MESSAGING.getInstance().addHandler(uniqueId, "point_response", function (msg) {
+                        var data = JSON.parse(JSON.parse(msg.message));
+                        dlg.data(item)['geometry'] = {type: 'point', points: [data['point']]};
+                    });
+                }
             });
         }
 
@@ -1213,7 +1231,6 @@ function WorldMapEditBlock(runtime, element) {
         $('#slider-layers').fadeIn('fast');
     }
     function onChangeGeoTool(e) {
-        console.log("onChangeGeoTool() called");
         var type = $(e.target).val();
         $("#geometry-type-label").text("Specify "+type);
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new myApp.Message("reset-answer-tool", null));
@@ -1221,7 +1238,6 @@ function WorldMapEditBlock(runtime, element) {
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new myApp.Message("set-answer-tool", {type: type, color: '0000FF'}));
     }
     function onChangeConstraintTool(e) {
-        console.log("onChangeConstraintTool() called");
         var type = $(e.target).val();
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("reset-answer-tool", null));
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("reset-highlights", null));
@@ -1234,16 +1250,19 @@ function WorldMapEditBlock(runtime, element) {
         if( $('#center-lon').val() != "" && $('#center-lat').val() != "") {
             var lon = parseFloat($('#center-lon').val());
             var lat = parseFloat($('#center-lat').val());
-            myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new myApp.Message("setCenter",{centerLat: lat, centerLon: lon}));
+            setTimeout(function() {
+                myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new myApp.Message("setCenter", {centerLat: lat, centerLon: lon}));
+            },750);
         }
         if( $('#zoom').val() != "") {
             var zoom = parseInt($('#zoom').val());
-            myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new myApp.Message("setZoomLevel",zoom));
+            setTimeout(function() {
+                myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new myApp.Message("setZoomLevel",zoom));
+            }, 750);
         }
     }
 
     function initGeoMap() {
-        console.log("initGeoMap() called");
         var data = geoDialog.data('highlight')['geometry'];
         data['relativeZoom'] = -2;
         data['duration'] = -1;
@@ -1259,9 +1278,6 @@ function WorldMapEditBlock(runtime, element) {
     }
 
     function initConstraintMap() {
-        if( constraintDialog.data('constraint') == undefined ) {
-            debugger;
-        }
         var data = constraintDialog.data('constraint')['geometry'];
         data['relativeZoom'] = -2;
         data['duration'] = -1;

@@ -118,7 +118,7 @@ window.addEventListener('message',
            e.source.postMessage(JSON.stringify( new myApp.Message("master-acknowledge",e.data.uniqueClientId)),e.origin);
         } else {
            if(e.data.message.type == "portalReady" ) {
-               console.log("portalReady received at master code");
+               console.log("portalReady received at master code for id: "+ e.data.xblockId);
                myApp.MESSAGING.getInstance().setPortalReady(e.data.xblockId);
            }
            var msg = new myApp.Message(e.data.message.type, e.data.message.message);
