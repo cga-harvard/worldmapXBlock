@@ -384,7 +384,7 @@ function WorldMapEditBlock(runtime, element) {
                     $('#dialog-slider-form .required').each( function() {
                         if( $(this).val() === "")valid = false;
                     });
-                    $('#dialog-slider-form .required-number').change( function() {
+                    $('#dialog-slider-form .required-number').each( function() {
                         if( !$.isNumeric($(this).val())) valid = false;
                     });
                     if( valid ) {
@@ -1015,14 +1015,7 @@ function WorldMapEditBlock(runtime, element) {
         },
         create: function(event, ui) {
             $("#constraint-geometry-type").change(onChangeConstraintTool);
-            $('#constraint-type').change(function() {
-                constraintDialog.validate();
-                if( $('#constraint-type',constraintDialog).val() === 'matches') {
-                    $('#constraint-percentMatch-span').show();
-                } else {
-                    $('#constraint-percentMatch-span').hide();
-                }
-            });
+            $('#constraint-type').change(onChangeConstraintType);
             $('#dialog-constraint-form .required').change( function() {
                 constraintDialog.validate();
             });
@@ -1236,6 +1229,15 @@ function WorldMapEditBlock(runtime, element) {
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new myApp.Message("reset-answer-tool", null));
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new myApp.Message("reset-highlights", null));
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new myApp.Message("set-answer-tool", {type: type, color: '0000FF'}));
+    }
+
+    function onChangeConstraintType() {
+        constraintDialog.validate();
+        if( $('#constraint-type',constraintDialog).val() === 'matches') {
+            $('#constraint-percentMatch-span').show();
+        } else {
+            $('#constraint-percentMatch-span').hide();
+        }
     }
     function onChangeConstraintTool(e) {
         var type = $(e.target).val();

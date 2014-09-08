@@ -174,6 +174,8 @@ function WorldMapXBlock(runtime, element) {
                             orientation: orientation,
                             animate: "fast",
                             slide: function(e, ui) {
+                                clearTimeout(postLayerTimer);
+                                setPostLayerStatusToHost(false);
                                 $(this).find(".ui-slider-handle .slider-thumb-value").text(ui.value);
 
                                 var layerSpecs = myApp.worldmapLayerSpecs[getUniqueId('.worldmap_block')];
@@ -193,6 +195,7 @@ function WorldMapXBlock(runtime, element) {
                                         }
                                     }
                                 }
+                                postLayerTimer = setTimeout( function(){ setPostLayerStatusToHost(true)},500);
                             }
                         }).css(orientation == "vertical" ? {height:250} : {width:250})
                           .find(".ui-slider-handle")
@@ -256,6 +259,7 @@ function WorldMapXBlock(runtime, element) {
                             tool.css('background-color','#'+result.questions[i].color);
                             tool.click( result.questions[i], function(e) {
                                 myApp.MESSAGING.getInstance().sendAll( new myApp.Message("reset-answer-tool",null));
+                                myApp.MESSAGING.getInstance().sendAll( new myApp.Message("reset-highlights",null));
                                 myApp.MESSAGING.getInstance().send(
                                     getUniqueId('.worldmap_block'),
                                     new myApp.Message("set-answer-tool", e.data)
@@ -336,15 +340,19 @@ function WorldMapXBlock(runtime, element) {
         });
     }
 
-    var layerVisibilityCache = [];
+    var layerVisibilityCache = {};
     function selectLayer(select,layerid,moveTo) {
+//        console.log("selectLayer("+select+",'"+layerid+"') called");
         var uniqId = getUniqueId('.worldmap_block');
         var cachedValue = layerVisibilityCache[uniqId+layerid];
+//        console.log("cachedValue = "+cachedValue);
         if( moveTo == undefined ) moveTo = false;
         if( typeof cachedValue == "undefined" || cachedValue != select || moveTo ) {
+
             var layer = {opacity:1.0, visibility:select, moveTo: moveTo};
             var layerData = JSON.stringify(JSON.parse("{\""+layerid+"\":"+JSON.stringify(layer)+"}"));
 
+//            console.log("layer: "+layer+"  layerData: "+layerData+"  sent to slave");
             myApp.MESSAGING.getInstance().send(
                 uniqId,
                 new myApp.Message('setLayers', layerData)
@@ -423,24 +431,36 @@ function WorldMapXBlock(runtime, element) {
             }
         });
     }
+
+    /*
+     Sometimes, like during slider movements, we don't want to continually post layer changes to the host
+     */
+    function setPostLayerStatusToHost(b) {
+        postLayerStatusToHost = b;
+    }
+    var postLayerTimer;
+    var postLayerStatusToHost = false;
     function on_changeLayer(json) {
         var layer = JSON.parse(json);
+        debug("Layer: "+layer.id+"   visible: "+layer.visibility);
         $(".layerControls",element).dynatree("getRoot").visit( function(node) {
             if( node.data.key === layer.id ) {
                 node.select(layer.visibility);
             }
         });
 
-        $.ajax({
-            type: "POST",
-            url: runtime.handlerUrl(element, 'change_layer_properties'),
-            data: json,
-            success: function(result) {
-                if( !result ) {
-                    debug("Failed to change layer for map: "+$('.frame', element).attr('id'));
+        if( postLayerStatusToHost ) {
+            $.ajax({
+                type: "POST",
+                url: runtime.handlerUrl(element, 'change_layer_properties'),
+                data: json,
+                success: function (result) {
+                    if (!result) {
+                        debug("Failed to change layer for map: " + $('.frame', element).attr('id'));
+                    }
                 }
-            }
-        });
+            });
+        }
 
     }
 
