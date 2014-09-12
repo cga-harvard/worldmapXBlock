@@ -14,9 +14,10 @@
 
           <div id="tabs">
               <ul>
-                <li><a href="#tabs-3">General</a></li>
-                <li><a href="#tabs-4">Questions</a></li>
-                <li><a href="#tabs-5">Map</a></li>
+                <li><a href="#general-tab">General</a></li>
+                <li><a href="#questions-tab">Questions</a></li>
+                <li><a href="#map-tab">Map</a></li>
+                <li><a href="#stylesheet-tab">Style</a></li>
                 <li class="dev-only" ><a href="#questions-json">Config JSON</a></li>
                 <li class="dev-only" ><a href="#map-json">Map config JSON</a></li>
               </ul>
@@ -26,7 +27,7 @@
                         <span class="tip setting-help">The JSON definition for the questions configuration</span>
 -->
                     <div class='codemirror-editor-wrapper'>
-                      <textarea id="config" class="block-json-editor edit-data">{{ config_json}}</textarea>
+                      <textarea id="config" class="edit-data">{{ config_json}}</textarea>
                     </div>
                   </div>
               </div>
@@ -36,31 +37,36 @@
                         <span class="tip setting-help">The JSON definition for the questions configuration</span>
 -->
                     <div class='codemirror-editor-wrapper'>
-                      <textarea id="worldmapConfig" class="block-json-editor2 edit-data">{{ worldmapConfig_json}}</textarea>
+                      <textarea id="worldmapConfig" class="edit-data">{{ worldmapConfig_json}}</textarea>
                     </div>
                   </div>
               </div>
-              <div id="tabs-3">
+              <div id="general-tab">
                   <table width="100%" cellpadding="5px" style="margin-top:25px"><tr><td nowrap>
                       <div class="wrapper-comp-setting prose-area ">
-                        <label class="label setting-label" for="prose">Prose</label>
-                        <span class="tip setting-help">(html description of this module)</span>
+                        <label class="label setting-label" for="prose">{% trans "Prose"%}</label>
+                        <span class="tip setting-help">{% trans "(html description of this module)"%}</span>
                         <div class='codemirror-editor-wrapper'>
                           <textarea id="prose" class="block-html-editor edit-data">{{prose}}</textarea>
                         </div>
                       </div>
                    </td><td nowrap>
-                      <label style="width:50% !important" class="label setting-label" for="prose-polygon-list">Referenced Geometry</label>
-                      <span style="width:150px; min-width:150px; text-align:right" class="tip setting-help"><button id="add-reference-geometry">Add a reference</button></span>
+                      <label style="width:50% !important" class="label setting-label" for="prose-polygon-list">{% trans "Referenced Geometry"%}</label>
+                      <span style="width:150px; min-width:150px; text-align:right" class="tip setting-help"><button id="add-reference-geometry">{% trans "Add a reference"%}</button></span>
                       <ul id="prose-polygon-list"></ul>
                   </td></tr></table>
               </div>
-              <div id="tabs-4">
-                 <label id="sortable-questions-label" class="label setting-label" for="sortable-questions">Drag to re-order.</label>
+              <div id="questions-tab">
+                 <label id="sortable-questions-label" class="label setting-label" for="sortable-questions">{% trans "Drag to re-order"%}.</label>
                  <ul id="sortable-questions" class="scroll"/>
-                 <div style="width:95%; text-align:right" class="tip setting-help"><button id="new-question">New question</button></div>
+                 <div style="width:95%; text-align:right" class="tip setting-help"><button id="new-question">{% trans "New question"%}</button></div>
               </div>
-              <div id="tabs-5" class="map-tab">
+              <div id="stylesheet-tab">
+                  <div class='codemirror-editor-wrapper'>
+                      <textarea id="stylesheet" class="edit-data">{{worldmapConfig_stylesheet}}</textarea>
+                  </div>
+              </div>
+              <div id="map-tab">
                  <table style="width:900px">
                      <tr>
                          <td colspan="2">
@@ -117,11 +123,11 @@
                             </div>
                          </td>
                          <td style="padding:15px 15px 0px 0px;width:35%;">
-                             <label class="label setting-label" style="width:40% !important;margin-right:0px;" for="sliders">Sliders</label>
-                             <span style="width:49% !important; min-width:inherit; text-align:right" class="tip setting-help"><button id="new-slider">New slider</button></span>
+                             <label class="label setting-label" style="width:40% !important;margin-right:0px;" for="sliders">{% trans "Sliders"%}</label>
+                             <span style="width:49% !important; min-width:inherit; text-align:right" class="tip setting-help"><button id="new-slider">{% trans "New slider"%}</button></span>
                              <ul id="sliders" class="scroll" />
-                             <label class="label setting-label" style="width:45% !important; margin-right:0px; min-width:inherit;" for="slider-layers">Slider layers</label>
-                             <span style="width:49% !important; min-width:inherit; text-align:right" class="tip setting-help"><button id="new-sliderLayer">New slider layer</button></span>
+                             <label class="label setting-label" style="width:45% !important; margin-right:0px; min-width:inherit;" for="slider-layers">{% trans "Slider layers"%}</label>
+                             <span style="width:49% !important; min-width:inherit; text-align:right" class="tip setting-help"><button id="new-sliderLayer">{% trans "New slider layer"%}</button></span>
                              <ul id="slider-layers" class="scroll" />
                          </td>
                      </tr>

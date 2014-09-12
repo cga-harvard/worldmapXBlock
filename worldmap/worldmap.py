@@ -18,7 +18,8 @@ import time
 
 from string import Template
 from xblock.core import XBlock
-from xblock.fields import Reference, ReferenceList, Field, Scope, Integer, Any, String, Float, Dict, Boolean,List
+from xblock.fields import Reference, ReferenceList, Field, Scope, Integer, Any, String, Float, Dict, Boolean,List, \
+    UserScope, BlockScope
 from xblock.fragment import Fragment
 from lxml import etree
 from shapely.geometry.polygon import Polygon
@@ -628,6 +629,7 @@ class WorldMapXBlock(XBlock):
         frag = Fragment(self.resource_string("static/html/worldmap.html").format(self=self, uniqueId=uniqueId))
         template = Template(self.resource_string("static/css/worldmap.css"))
         frag.add_css(template.substitute(imagesRoot=self.runtime.local_resource_url(self,"public/images")))
+        frag.add_css(self.worldmapConfig.get('stylesheet',""))
 
         frag.add_javascript(unicode(pkg_resources.resource_string(__name__, "static/js/src/xBlockCom-master.js")))
         frag.add_javascript(self.resource_string("static/js/src/worldmap.js"))
@@ -669,8 +671,9 @@ class WorldMapXBlock(XBlock):
             {
                 'display_name': self.display_name,
                 'config_json': json.dumps(self.config),
-                'prose': self.config.get("explanation"),
                 'worldmapConfig_json': json.dumps(self.worldmapConfig),
+                'worldmapConfig_stylesheet': self.worldmapConfig.get('stylesheet',''),
+                'prose': self.config.get("explanation"),
                 'url': self.worldmapConfig.get("href",None),
                 'delimiter': delimiter,
                 'uniqueId': uniqueId,
@@ -727,11 +730,23 @@ class WorldMapXBlock(XBlock):
         self.worldmapConfig['layers']    = submissions['layers']
         self.worldmapConfig['debug']     = submissions['debug']
         self.worldmapConfig['stickyMap'] = submissions['stickyMap']
+        self.worldmapConfig['stylesheet']= submissions['stylesheet']
 
         return { 'result':'success' }
 
     #Radius of earth:
     SPHERICAL_DEFAULT_RADIUS = 6378137    #Meters
+
+    @XBlock.json_handler
+    def getStyleSheets(self, data, suffix=''):
+        return {
+            'globalStyleSheets' : self.globalStyleSheets,
+            'usedStyleSheets'   : self.usedStyleSheets
+        }
+
+    @XBlock.json_handler
+    def setGlobalStyleSheet(self, data, suffix=''):
+        self.globalStyleSheets[data['name']] = data['data']
 
     @XBlock.json_handler
     def getSliderSetup(self, data, suffix=''):

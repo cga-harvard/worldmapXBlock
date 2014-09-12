@@ -8,12 +8,15 @@ function WorldMapEditBlock(runtime, element) {
     //rewrite the json so it is formatted nicely.
     var config = JSON.parse($('#config').val());
     var worldmapConfig = JSON.parse($('#worldmapConfig').val());
+    var stylesheet = $('#stylesheet').val();
 
     $('#config' ).val(JSON.stringify(config,null, '\t'));
     $('#worldmapConfig' ).val(JSON.stringify(worldmapConfig,null, '\t'));
+//    $('#stylesheet').val(JSON.stringify(stylesheet,null,'\t'));
 
     var configEditor         = CodeMirror.fromTextArea($('#config')[0],         { mode: 'json', json: true, lineWrapping: true, lineNumbers:true});
     var worldmapConfigEditor = CodeMirror.fromTextArea($('#worldmapConfig')[0], { mode: 'json', json: true, lineWrapping: true, lineNumbers:true });
+    var stylesheetEditor     = CodeMirror.fromTextArea($('#stylesheet')[0],     { mode: 'text/css',  matchBrackets:true,  lineWrapping:  false, lineNumbers:true });
     var htmlEditor           = CodeMirror.fromTextArea($('#prose')[0],          { mode: 'text/html', lineWrapping: true, htmlMode: true });
 
     window.scrollTo(0,0);  //otherwise, the dialogs can't be dragged properly
@@ -32,7 +35,8 @@ function WorldMapEditBlock(runtime, element) {
             'display_name': $(element).find('.edit-display-name').val(),
             'config': configEditor.getValue(),
             'worldmapConfig': worldmapConfigEditor.getValue(),
-            'prose': htmlEditor.getValue(),
+            'stylesheet': stylesheetEditor.getValue(),
+            'prose':      htmlEditor.getValue(),
             'highlights': config['highlights'],
             'questions':  config['questions'],
             'sliders':    worldmapConfig['sliders'],
@@ -75,17 +79,17 @@ function WorldMapEditBlock(runtime, element) {
 
     refreshGeoList();
 
-    $('.map-tab .required').each(function() {
+    $('#map-tab .required').each(function() {
         $(this).change(function() {
             $(this).toggleClass('field-error', $(this).val() === "");
         });
     });
-    $('.map-tab .required-integer').each(function() {
+    $('#map-tab .required-integer').each(function() {
         $(this).change(function() {
             $(this).toggleClass('field-error', !$(this).val().match(/^[-+]?\d+$/));
         });
     });
-    $('.map-tab .required-number').each(function() {
+    $('#map-tab .required-number').each(function() {
         $(this).change(function() {
             $(this).toggleClass('field-error', !$(this).val().match(/^[-+]?\d+\.?\d*$/));
         });
