@@ -1,0 +1,31 @@
+Setting up my AWS image
+
+use:  m2.medium.server
+image: 20140630-johnnycake-release-public - ami-0d393848
+region:  US-West (N.California)
+
+after gaining access to your AWS running server:
+
+# sudo /edx/bin/update configuration release
+# sudo /edx/bin/update edx-platform release
+
+on the AWS control panel - go to the security group for the server and allow access to ports 80, 18010
+
+
+To get Studio to work, I had to apply the following patch to jonnycake (ami-0d393848)
+
+    https://github.com/edx/edx-platform/pull/4259/files
+
+
+Installing worldmapXblock
+download the zip file from github:
+    https://github.com/cga-harvard/worldmapXBlock/archive/master.zip
+
+Unzip worldmapXBlock-master.zip
+
+sudo -u edxapp /edx/bin/pip.edxapp install /path/to/your/block
+
+In /edx/app/edxapp/edx-platform/cms/envs/common.py   set:
+   'ALLOW_ALL_ADVANCED_COMPONENTS': True,
+
+pip install affinity

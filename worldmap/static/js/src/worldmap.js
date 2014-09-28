@@ -327,7 +327,7 @@ function WorldMapXBlock(runtime, element) {
                                     for( var i=0;i<result.unsatisfiedConstraints.length; i++) {
                                         var constraint = result.unsatisfiedConstraints[i];
                                         myApp.HintManager.getInstance().addConstraint(i,constraint);
-                                        html += "<li>"+constraint.explanation+" (<a href='#' onclick='return myApp.HintManager.getInstance().flashHint(\""+uniqId+"\","+i+")'>hint</a>)</li>";
+                                        html += "<li>"+constraint.explanation+" <a href='#' title='click to show a hint on the map' onclick='return myApp.HintManager.getInstance().flashHint(\""+uniqId+"\","+i+")'><img src='/xblock/resource/worldmap/public/images/flashlight.png'/></a></li>";
                                     }
                                     html += "</ul>";
                                     info(html,result.question.hintDisplayTime);

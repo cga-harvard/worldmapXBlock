@@ -1,0 +1,80 @@
+<html>
+<body>
+<center><h1>Getting started<br/>with the <br/>Worldmap Edx Beta Test</h1></center>
+<center>- Bob Light (<a href='mailto:light@alum.mit.edu'>light@alum.mit.edu</a>)</center>
+<br/>
+<br/>
+<h2>Reaching the server</h2>
+The server is currently running on an Amazon AWS server at the following address:
+
+<a href="http://54.164.39.36:18010/">http://54.164.39.36:18010/</a>
+<P>
+The first thing you will be presented with is a simple authentication window:
+<br/>
+<P style='text-indent: 150px;'>
+<img src="images/login.png"/>
+</p>
+
+<br/>
+Use the following:<br/>
+<blockquote>
+   username: edx<br/>  
+   password: edx
+</blockquote>
+<br/>
+<h2>Sign up for an account</h2>
+Click on the button <img src='images/signup.png'/> and create an account as normal - when you get the validation email it will contain a link that looks like:
+<p>
+  http://localhost/activate/d0649a021e484c3fa04e460c6424f59b
+<p>
+
+You should then strip off the first part ('http://localhost') and change it to 'http://54.164.39.36:18010' 
+<br/>
+ie: given the example above...
+<p>
+you would go to:
+<br/>
+<blockquote>
+   http://54.164.39.36:18010/activate/d0649a021e484c3fa04e460c6424f59b
+</blockquote>
+ 
+<h2>Configure your account settings</h2>
+<P>
+We need to make your edX Studio account know about the WorldMap connector.  To do this, you need to pull down the "Settings" menu and choose "Advanced Settings..."
+<p>
+<p style='text-indent: 160px'>
+<img src='images/settingsMenu.png'/>
+</p>
+
+Then enter the key name "worldmap" as shown below (be sure to include the double-quotes and make all-lowercase):
+<p style='text-indent:200px'>
+<img src='images/advancedModules.png'/>
+</p>
+<h2>Creating your first unit</h2>
+<p>
+At this point, you should be able to click the button:
+<p style='text-indent:150px'>
+<img 'images/newCourseBtn.png'/>
+</p>
+<p>
+and begin the process of creating your first course.  When you get to the point where you create your first "New Unit", you will see that you have the following choices:
+
+You should pick "Advanced" when you create a new unit to create a worldmap unit.
+<p style='text-indent:150px'>
+<img src='images/addNewUnit.png'/>
+</p>
+<p>
+Pick the "Advanced" button and you will get a list of the advanced modules (NOTE: there will be only one choice).
+<p>  Pick "WorldMap".
+<p style='text-indent:150px'>
+<img src='images/newUnit.png'/>
+</p>
+<h2>Experimenting</h2>
+<p>
+It will first come up with a simplified demo setup (like the one that used in the demo video) - you can play with that or clean it out and start over with something else.
+<p>
+ 
+
+Note:  you will only be able to use the boston census map url that is with the demo, one of my next tasks is to instrument the chinaX map so that it can be used by the WorldMap edX plugin.
+
+

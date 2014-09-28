@@ -12,6 +12,7 @@ from hashlib import md5
 import pkg_resources
 import logging
 import math
+import shapely
 import sys
 import json
 import time
@@ -26,7 +27,6 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry import LineString
 from shapely.geometry.point import Point
 from shapely.geos import TopologicalError
-from shapely import affinity
 from shapely import ops
 from random import randrange
 from django.utils.translation import ugettext as _    #see - https://docs.djangoproject.com/en/1.3/topics/i18n/internationalization/
@@ -87,7 +87,7 @@ class WorldMapXBlock(XBlock):
 
     configJson = """
                 {
-                    "explanation": "A quiz about the Boston area... particularly <B><a href='#' onclick='return highlight(\\"backbay\\", 5000, -2)'>Back Bay</a></B>",
+                    "explanation": "General HTML prose goes here.  Delete it if not needed. Include an anchor like '<a href='#' onclick='return highlight(\\"backbay\\", 5000, -2)'>Back Bay</a>' to highlight areas on the map",
                     "highlights": [
                        {
                           "id": "backbay",
@@ -116,245 +116,23 @@ class WorldMapXBlock(XBlock):
                     ],
                     "questions": [
                        {
-                          "id": "foobar",
+                          "id": "question-id-1",
                           "color": "00FF00",
                           "type": "point",
-                          "explanation": "Where is the biggest island in Boston harbor?",
-                          "hintAfterAttempt": 0,
+                          "explanation": "Add questions if desired e.g. Where is the biggest island in Boston harbor?",
+                          "hintAfterAttempt": 3,
                           "hintDisplayTime": -1,
 
                           "constraints": [
                              {
                                 "type": "matches",
                                 "padding": 1000,
-                                "explanation": "<B> Look at boston harbor - pick the biggest island </B>",
+                                "explanation": "This is a hint that gets displayed after 3 failed attempts<br/>Look at boston harbor - pick the biggest island.",
                                 "percentOfGrade": 100,
                                 "geometry": {
                                    "type": "point",
                                    "points": [
                                       {"lon": -70.9657058456866, "lat": 42.32011232390349}
-                                   ]
-                                }
-                             }
-                          ]
-                       },
-                       {
-                          "id": "baz",
-                          "color": "0000FF",
-                          "type": "polygon",
-                          "explanation": "Draw a polygon around the land bridge that formed Nahant bay?",
-                          "hintAfterAttempt": 2,
-                          "hintDisplayTime": -1,
-
-                          "constraints": [
-                             {
-                                "type": "includes",
-                                "explanation": "<B>'Hint':</B> Look for Nahant Bay on the map",
-                                "percentOfGrade": 100,
-                                "padding": 500,
-                                "geometry": {
-                                   "type": "point",
-                                   "points": [
-                                      {"lon": -70.93824002537393, "lat": 42.445896458204764}
-                                   ]
-                                }
-                             }
-                          ]
-                       },
-                       {
-                          "id": "area",
-                          "color": "FF00FF",
-                          "type": "polygon",
-                          "explanation": "Draw a polygon around 'back bay'?",
-                          "hintAfterAttempt": 2,
-                          "hintDisplayTime": -1,
-
-                          "constraints": [
-                             {
-                                "type": "matches",
-                                "explanation": "<B>'Hint':</B> Back bay was a land fill into the Charles River basin",
-                                "percentOfGrade": 20,
-                                "geometry": {
-                                   "type": "polygon",
-                                   "points": [
-                                         {"lon": -71.09350774082822, "lat": 42.35148683512319},
-                                         {"lon": -71.09275672230382, "lat": 42.34706235935522},
-                                         {"lon": -71.08775708470029, "lat": 42.3471733715164},
-                                         {"lon": -71.08567569050435, "lat": 42.34328782922443},
-                                         {"lon": -71.08329388889936, "lat": 42.34140047917672},
-                                         {"lon": -71.07614848408352, "lat": 42.347379536438645},
-                                         {"lon": -71.07640597614892, "lat": 42.3480456031057},
-                                         {"lon": -71.07282254490510, "lat": 42.34785529906382},
-                                         {"lon": -71.07200715336435, "lat": 42.34863237027516},
-                                         {"lon": -71.07228610310248, "lat": 42.34942529018035},
-                                         {"lon": -71.07011887821837, "lat": 42.35004376076278},
-                                         {"lon": -71.07080552372640, "lat": 42.351835705270716},
-                                         {"lon": -71.07325169834775, "lat": 42.35616470553563},
-                                         {"lon": -71.07408854756031, "lat": 42.35600613935877},
-                                         {"lon": -71.07483956608469, "lat": 42.357131950552244},
-                                         {"lon": -71.09331462177917, "lat": 42.35166127043902}
-                                   ]
-                                },
-                                "percentMatch": 60,
-                                "percentOfGrade": 25,
-                                "padding": 1000
-                             },
-                             {
-                                "type": "includes",
-                                "explanation": "<B>Must</B> include the esplanade",
-                                "percentOfGrade": 20,
-                                "geometry": {
-                                   "type": "polygon",
-                                   "points": [
-                                        {"lon": -71.07466790470745, "lat": 42.35719537593463},
-                                        {"lon": -71.08492467197995, "lat": 42.35399231410341},
-                                        {"lon": -71.08543965611076, "lat": 42.35335802506911},
-                                        {"lon": -71.08822915348655, "lat": 42.35250172471913},
-                                        {"lon": -71.08814332279839, "lat": 42.352279719020736},
-                                        {"lon": -71.08689877781501, "lat": 42.35253343975517},
-                                        {"lon": -71.07411000523211, "lat": 42.355958569427614},
-                                        {"lon": -71.07466790470745, "lat": 42.35719537593463}
-                                   ]
-                                },
-                                "percentMatch": 60,
-                                "percentOfGrade": 25,
-                                "padding": 100
-                             },
-                             {
-                                "type": "excludes",
-                                "explanation": "Must <B>not</B> include intersection of Boylston and Arlington Streets",
-                                "percentOfGrade": 20,
-                                "geometry": {
-                                   "type": "point",
-                                   "points": [
-                                      {"lon": -71.07071969303735, "lat": 42.351962566661165}
-                                   ]
-                                },
-                                "percentOfGrade": 25,
-                                "padding": 25
-                             },
-                             {
-                                "type": "excludes",
-                                "explanation": "Must <b>not</b> include <i>Bay Village</i>",
-                                "percentOfGrade": 20,
-                                "geometry": {
-                                   "type": "polygon",
-                                   "points": [
-                                       {"lon": -71.06994721684204, "lat": 42.349520439895464},
-                                       {"lon": -71.06874558720320, "lat": 42.34856893624958},
-                                       {"lon": -71.07140633854628, "lat": 42.34863237027384}
-                                   ]
-                                },
-                                "percentOfGrade": 10,
-                                "padding": 150
-                             },
-                             {
-                                "type": "includes",
-                                "explanation": "<B>Must</B> include corner of <i>Mass ave.</i> and <i>SW Corridor Park</i>",
-                                "percentOfGrade": 20,
-                                "geometry": {
-                                   "type": "point",
-                                   "points": [
-                                      {"lon": -71.08303639683305, "lat": 42.341527361626746}
-                                   ]
-                                },
-                                "percentOfGrade": 25,
-                                "padding": 50
-                             }
-                          ]
-                        },
-                       {
-                          "id": "esplanade",
-                          "color": "00FF00",
-                          "type": "polygon",
-                          "explanation": "Where is the biggest island in Boston harbor?",
-                          "hintAfterAttempt": 2,
-                          "hintDisplayTime": -1,
-
-                          "constraints": [
-                             {
-                                "type": "matches",
-                                "percentMatch": 50,
-                                "percentOfGrade": 25,
-                                "padding": 0,
-                                "explanation": "<B>Must</B> include the esplanade",
-                                "geometry": {
-                                   "type": "polygon",
-                                   "points": [
-                                    {"lon": -71.07466790470745, "lat": 42.35719537593463},
-                                    {"lon": -71.08492467197995, "lat": 42.35399231410341},
-                                    {"lon": -71.08543965611076, "lat": 42.35335802506911},
-                                    {"lon": -71.08822915348655, "lat": 42.35250172471913},
-                                    {"lon": -71.08814332279839, "lat": 42.352279719020736},
-                                    {"lon": -71.08689877781501, "lat": 42.35253343975517},
-                                    {"lon": -71.07411000523211, "lat": 42.355958569427614},
-                                    {"lon": -71.07466790470745, "lat": 42.35719537593463}
-                                   ]
-                                }
-                             }
-                          ]
-                       },
-                       {
-                          "id": "boffo",
-                          "color": "00FFFF",
-                          "type": "polyline",
-                          "explanation": "Draw a polyline on the land bridge that formed Nahant bay?",
-                          "hintAfterAttempt": 2,
-                          "hintDisplayTime": -1,
-
-                          "constraints": [
-                             {
-                                "type": "matches",
-                                "percentOfGrade": 50,
-                                "padding": 500,
-                                "percentMatch": 80,
-                                "explanation": "<B>'Hint':</B> Look for Nahant Bay on the map - draw a polyline on the land bridge out to Nahant Island",
-                                "geometry": {
-                                   "type": "polyline",
-                                   "points": [
-                                     {"lon": -70.93703839573509, "lat": 42.455142795067786},
-                                     {"lon": -70.93978497776635, "lat": 42.44146279890606},
-                                     {"lon": -70.93360516819578, "lat": 42.43082073646349}
-                                   ]
-                                }
-                             },
-                             {
-                                "type": "inside",
-                                "percentOfGrade": 25,
-                                "percentMatch": 70,
-                                "padding": 1,
-                                "explanation": "The land bridge is somewhere inside this polygon",
-                                "geometry": {
-                                   "type": "polygon",
-                                   "points": [
-                                     {"lon": -70.9210738876792, "lat": 42.47325152648776},
-                                     {"lon": -70.95746609959279, "lat": 42.471732113995365},
-                                     {"lon": -70.93686673435874, "lat": 42.42005014321707},
-                                     {"lon": -70.91901395115596, "lat": 42.433734814183005}
-                                   ]
-                                }
-                             },
-                             {
-                                "type": "excludes",
-                                "percentOfGrade": 25,
-                                "percentMatch": 80,
-                                "padding": 1,
-                                "explanation": "Must not include Nahant Island",
-                                "geometry": {
-                                   "type": "polygon",
-                                   "points": [
-                                    {"lon": -70.9252795914228, "lat": 42.42955370389016},
-                                    {"lon": -70.93763921056394, "lat": 42.42581580857819},
-                                    {"lon": -70.93652341161325, "lat": 42.416438412427965},
-                                    {"lon": -70.92828366551946, "lat": 42.41795916653644},
-                                    {"lon": -70.92905614171568, "lat": 42.42112728581168},
-                                    {"lon": -70.91978642736025, "lat": 42.424105171979036},
-                                    {"lon": -70.91789815221426, "lat": 42.420683758749576},
-                                    {"lon": -70.90983006749771, "lat": 42.416375046873334},
-                                    {"lon": -70.90536687169678, "lat": 42.416628508708406},
-                                    {"lon": -70.90227696691106, "lat": 42.41992341934355},
-                                    {"lon": -70.91060254369391, "lat": 42.42708291670639},
-                                    {"lon": -70.91927144322945, "lat": 42.42949035158941}
                                    ]
                                 }
                              }
@@ -375,9 +153,6 @@ class WorldMapXBlock(XBlock):
                     "height": 400,
                     "baseLayer":"OpenLayers_Layer_Google_116",
                     "layers": [
-                        {
-                            "id":"geonode:qing_charity_v1_mzg"
-                        },
                         {
                             "id":"OpenLayers_Layer_WMS_122",
                             "params": [
@@ -410,7 +185,7 @@ class WorldMapXBlock(XBlock):
                         }
                     ],
                     "layer-controls": {
-                        "title":"Census Data",
+                        "title":"Layers - delete if not needed",
                         "expand": false,
                         "children": [
                             {
@@ -462,33 +237,6 @@ class WorldMapXBlock(XBlock):
                                                 "title": "layerF.1"
                                             }
                                         ]
-                                    },
-                                    {
-                                        "title":"Another sub sub group of layers",
-                                        "visible": false,
-                                        "isFolder": true,
-                                        "children": [
-                                            {
-                                                "key":"OpenLayers_Layer_WMS_118",
-                                                "visible": true,
-                                                "title": "layerE.2"
-                                            },
-                                            {
-                                                "key":"OpenLayers_Layer_Vector_132",
-                                                "visible": true,
-                                                "title": "layerF.2"
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        "key":"OpenLayers_Layer_WMS_122",
-                                        "visible": true,
-                                        "title": "layerA.1"
-                                    },
-                                    {
-                                        "key":"OpenLayers_Layer_WMS_124",
-                                        "visible": true,
-                                        "title": "layerB.1"
                                     }
                                 ]
                             }
@@ -496,8 +244,8 @@ class WorldMapXBlock(XBlock):
                     },
                     "sliders": [
                        {
-                            "id":"timeSlider1",
-                            "title":"slider: 原典資料",
+                            "id":"timeSlider",
+                            "title":"test-slider: delete if not needed",
                             "param":"CensusYear",
                             "min":1972,
                             "max":1980,
@@ -672,7 +420,7 @@ class WorldMapXBlock(XBlock):
                 'display_name': self.display_name,
                 'config_json': json.dumps(self.config),
                 'worldmapConfig_json': json.dumps(self.worldmapConfig),
-                'worldmapConfig_stylesheet': self.worldmapConfig.get('stylesheet',''),
+                'worldmapConfig_stylesheet': self.worldmapConfig.get('stylesheet','/* be careful, you can override edX styles here too */'),
                 'prose': self.config.get("explanation"),
                 'url': self.worldmapConfig.get("href",None),
                 'delimiter': delimiter,
@@ -769,24 +517,13 @@ class WorldMapXBlock(XBlock):
     def point_response(self, data, suffix=''):
         unsatisfiedConstraints = []
         correctGeometry = data['question']['constraints'][0]['geometry']
-        padding = data['question']['constraints'][0].get('padding',1000)
         userAnswer = data['point']
         latitude = userAnswer['lat']
         longitude= userAnswer['lon']
         hit = True
 
         if correctGeometry['type'] == 'polygon':
-            correctPolygon = makePolygon(correctGeometry['points']).buffer(self.scale(padding))
-            hit = correctPolygon.contains(makePoint(userAnswer))
-        elif correctGeometry['type'] == 'point':
-            point = correctGeometry['points'][0]
-            sinHalfDeltaLon = math.sin(math.pi * (point['lon']-longitude)/360)
-            sinHalfDeltaLat = math.sin(math.pi * (point['lat']-latitude)/360)
-            a = sinHalfDeltaLat * sinHalfDeltaLat + sinHalfDeltaLon*sinHalfDeltaLon * math.cos(math.pi*latitude/180)*math.cos(math.pi*point['lat']/180)
-            hit = 2*self.SPHERICAL_DEFAULT_RADIUS*math.atan2(math.sqrt(a), math.sqrt(1-a)) < padding
-        else:  #polyline
-            polylineArea = makeLineString(correctGeometry).buffer(self.scale(padding))
-            hit = polylineArea.contains(makePoint(userAnswer))
+            hit = makePolygon(correctGeometry['points']).contains(makePoint(userAnswer))
 
 
         correctExplanation = ""
@@ -862,26 +599,22 @@ class WorldMapXBlock(XBlock):
                             constraintSatisfied = constraintPolygon.difference(answerPolygon).area/constraintPolygon.area > 0.95 #allow for 5% slop
                     elif( constraint['geometry']['type'] == 'point' ):
                         if( constraint['type'] == 'includes' ):
-                            constraintPt = makePoint(constraint['geometry']['points'][0])
+                            constraintSatisfied = answerPolygon.contains(makePoint(constraint['geometry']['points'][0]))
 
-                            constraintSatisfied = answerPolygon.contains(constraintPt)
-
-                            if constraintSatisfied and constraint.get('maxAreaFactor',None) != None :
-                                constraintSatisfied = answerPolygon.area/constraintPt.buffer(self.scale(constraint['padding'])).area < constraint['maxAreaFactor']
-                                if not constraintSatisfied :
-                                    additionalErrorInfo = _(" (polygon too big)")
+                            if not constraintSatisfied :
+                               additionalErrorInfo = _(" (polygon missed a key location)")
                         else:
                             constraintSatisfied = answerPolygon.disjoint(makePoint(constraint['geometry']['points'][0]))
                     elif( constraint['geometry']['type'] == 'polyline' ):
-                        constraintLine = makeLineString(constraint['geometry'])
+                        constraintLine = makeLineString(constraint['geometry']['points'])
                         if( constraint['type'] == 'includes' ) :
                             constraintSatisfied = answerPolygon.contains( constraintLine )
-                            if constraintSatisfied and constraint.get('maxAreaFactor',None) != None :
-                                constraintSatisfied = answerPolygon.area/constraintLine.buffer(self.scale(constraint['padding'])).area < constraint['maxAreaFactor']
-                                if not constraintSatisfied :
-                                    additionalErrorInfo = _(" (polygon too big)")
+                            if not constraintSatisfied :
+                               additionalErrorInfo = _(" (polygon does not include a key polyline)")
                         else:
                             constraintSatisfied = not answerPolygon.disjoint( constraintLine )
+                            if not constraintSatisfied :
+                               additionalErrorInfo = _(" (polygon includes a key polyline that it should not include)")
 
                 totalGradeValue += constraint['percentOfGrade']
                 if constraintSatisfied :
@@ -945,10 +678,10 @@ class WorldMapXBlock(XBlock):
 
                 if constraint['type'] == 'matches' : #polyline
                     percentMatch = constraint['percentMatch']
-                    answerPolygon  = answerPolyline.buffer(self.scale(constraint['padding']))
+                    # answerPolygon  = answerPolyline.buffer(self.scale(constraint['padding']))
                     constraintPolyline = makeLineString(constraint['geometry']['points'])
 
-                    buffer = max(constraintPolyline.length*0.2, self.scale(constraint['padding']))
+                    buffer = constraintPolyline.length*0.2
 
                     constraintPolygon = constraintPolyline.buffer(buffer)
 
@@ -965,20 +698,17 @@ class WorldMapXBlock(XBlock):
                         additionalErrorInfo = _(" - You missed the proper area")
 
                 elif constraint['type'] == "inside": #polygon
-                    buffer = self.scale(constraint['padding'])
-                    constraintPolygon = makePolygon(constraint['geometry']['points']).buffer(buffer)
+                    constraintPolygon = makePolygon(constraint['geometry']['points'])
                     constraintSatisfied = constraintPolygon.contains(answerPolyline)
                     if not constraintSatisfied:
                         additionalErrorInfo = _(" - Outside permissible boundary")
                 elif constraint['type'] == 'excludes': #polygon
-                    buffer = self.scale(constraint['padding'])
-                    constraintPolygon = makePolygon(constraint['geometry']['points']).buffer(buffer)
+                    constraintPolygon = makePolygon(constraint['geometry']['points'])
                     constraintSatisfied = not constraintPolygon.crosses(answerPolyline)
                     if not constraintSatisfied:
                         additionalErrorInfo = _(" - Must be outside of a certain boundary")
                 elif constraint['type'] == 'includes':  #point
-                    buffer = self.scale(constraint['padding'])
-                    constraintPointArea = makePoint(constraint['geometry'['points'][0]]).buffer(buffer)
+                    constraintPointArea = makePoint(constraint['geometry'['points'][0]]).buffer(answerPolyline.length*0.1)  #radius around point = 10% of length of polyline
                     constraintSatisfied = constraintPointArea.crosses(answerPolyline)
                     if not constraintSatisfied:
                         additionalErrorInfo = _(" - Must include a particular point")
@@ -1028,11 +758,13 @@ class WorldMapXBlock(XBlock):
 
     @XBlock.json_handler
     def getFuzzyGeometry(self, data, suffix=''):
+
         buffer = self.scale(data['buffer'])
 
         # create a bunch of polygons that are more/less the shape of our original geometry
         geometryArr = []
         if data['type'] == 'point':
+            buffer = max(self.scale(10), buffer)    # for a point, a minimum buffer of 10 meters is necessary - otherwise it doesn't show up on the map.
             point = Point(data['geometry'][0]['lon']+360., data['geometry'][0]['lat'])
             geometryArr.append( point.buffer(buffer))
             geometryArr.append( point.buffer(buffer*2))
@@ -1048,7 +780,7 @@ class WorldMapXBlock(XBlock):
                 for pt in data['geometry']:
                     arr.append((pt['lon']+360., pt['lat']))
                 polyline = LineString(arr)
-                buffer = max(buffer, 0.2*polyline.length)
+                buffer = max(buffer, 0.1*polyline.length)
                 polygon = LineString(arr).buffer(buffer)
 
             geometryArr.append( polygon.buffer(buffer*1.5))
@@ -1060,15 +792,16 @@ class WorldMapXBlock(XBlock):
 
 
         # move these polygons around a bit randomly
+
         r = []
         for g in geometryArr:
             arr = []
-            for i in range(0,4):   # give it a blobby look
-                arr.append(affinity.translate(g, 4*buffer*randrange(-500,500)/1000., 4*buffer*randrange(-500,500)/1000.,0))
+            for i in range(0,2):   # give it a bit of a "blobby look"
+                arr.append(shapely.affinity.translate(g, 4*buffer*randrange(-500,500)/1000., 4*buffer*randrange(-500,500)/1000.,0))
             # union these randomly moved polygons back together and get their convex_hull
             hull = ops.cascaded_union(arr).convex_hull
             for i in range(0,10):
-                r.append( affinity.translate(hull, 4*buffer*randrange(-500,500)/1000., 4*buffer*randrange(-500,500)/1000.,0))
+                r.append( shapely.affinity.translate(hull, 4*buffer*randrange(-500,500)/1000., 4*buffer*randrange(-500,500)/1000.,0))
 
         # output the polygons
         result = []

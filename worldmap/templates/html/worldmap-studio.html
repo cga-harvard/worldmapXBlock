@@ -295,10 +295,16 @@
                             <input type="text" name="constraintPercentOfGrade" id="constraint-percentOfGrade" value="" class="required required-number text ui-widget-content ui-corner-all">
                             <span id="constraint-percentMatch-span">
                                <label for="constraint-percentMatch">Percent match</label>
-                               <input type="text" name="constraintPercentMatch" id="constraint-percentMatch" value="" class="required required-number text ui-widget-content ui-corner-all">
+                               <input type="text" id="constraint-percentMatch" value="" class="required required-number text ui-widget-content ui-corner-all">
                             </span>
-                            <label for="constraint-padding">Padding (meters)</label>
-                            <input type="text" name="constraintPadding" id="constraint-padding" value="" class="required required-number text ui-widget-content ui-corner-all">
+                            <br/>
+                            <label for="constraint-padding">Hint blur padding (meters)</label>
+                            <input type="text" id="constraint-padding" value="" class="required required-number text ui-widget-content ui-corner-all">                            <br/>
+                            <br/>
+                            <span id="constraint-maxAreaFactor-span">
+                               <label for="constraint-maxAreaFactor">Max Area Ratio</label>
+                               <input type="text" id="constraint-maxAreaFactor" value="" class="required required-number text ui-widget-content ui-corner-all" title="Must be greater than 1 - keeps user from drawing too big of a polygon">
+                            </span>
                             <BR/><BR/>
                             <label>Type
                             <select name="type" id="constraint-type" class="select ui-widget-content ui-corner-all">
@@ -312,7 +318,7 @@
                         <td style="width:60%">
                             <label for="worldmap_constraint_{{uniqueId}}" id="constraint-type-label">
                                 Constraint geometry:
-                                <select name="constraintGeometryType" id="constraint-geometry-type" class="select ui-widget-content ui-corner-all">
+                                <select id="constraint-geometry-type" class="select ui-widget-content ui-corner-all">
                                     <option value="point">Point</option>
                                     <option value="polyline">Polyline</option>
                                     <option value="polygon">Polygon</option>
@@ -358,7 +364,7 @@
                             <input type="text" name="hintAfterAttempt" id="hintAfterAttempt" class="text required required-integer ui-widget-content ui-corner-all">
                             <label for="hintDisplayTime"># Seconds to display hint</label>
                             <input type="text" name="hintDisplayTime" id="hintDisplayTime" class="text required required-number ui-widget-content ui-corner-all">
-                            <label for="response-type">User response to question</label><br/>
+                            <label for="response-type">User's response to question</label><br/>
                             <select name="type" id="response-type" class="select ui-widget-content ui-corner-all">
                                 <option value="point">Point</option>
                                 <option value="polyline">Polyline</option>

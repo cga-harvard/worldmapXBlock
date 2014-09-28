@@ -60,7 +60,7 @@ var CLICK_CONTROL = OpenLayers.Class(OpenLayers.Control, {
 
         var size = new OpenLayers.Size(21,25);
         var offset = new OpenLayers.Pixel(-size.w/2, -size.h);
-        var icon = new OpenLayers.Icon('http://robertlight.com/tmp/marker.png',size,offset);
+        var icon = new OpenLayers.Icon('/static/geonode/externals/ext/resources/images/default/xblock-images/marker.png',size,offset);
         icon.imageDiv.firstChild.setAttribute("style","background-color:"+currentQuestion.color);
 
         if( markers[currentQuestion.id] ) {
@@ -338,7 +338,7 @@ Ext.onReady(function() {
 
             //TODO: fix url - make relative
             //should use   $('.olMapViewport').style.cursor = "url(http://robertlight.com/tmp/"+currentQuestion.type+"Cursor.png) 16 16, auto";
-            $('.olMapViewport').css('cursor', "url(http://robertlight.com/tmp/"+currentQuestion.type+"Cursor.png) 16 16, auto");
+            $('.olMapViewport').css('cursor', "url(/static/geonode/externals/ext/resources/images/default/xblock-images/"+currentQuestion.type+"Cursor.png) 16 16, auto");
             //document.getElementById(app.mapPanel.map.id+"_OpenLayers_ViewPort").style.cursor = "url(http://robertlight.com/tmp/"+currentQuestion.type+"Cursor.png) 16 16, auto";
             if( currentQuestion.type == 'point' ) {
                Ext.example.msg("Info","{% trans 'Click the map at the location requested' %}" );
@@ -490,7 +490,7 @@ Ext.onReady(function() {
                 var size = new OpenLayers.Size(21,25);
                 var offset = new OpenLayers.Pixel(-size.w/2, -size.h);
                 var xy = transformToXY(data['points'][0]);
-                var icon = new OpenLayers.Icon('http://robertlight.com/tmp/marker.png',size,offset);
+                var icon = new OpenLayers.Icon('/static/geonode/externals/ext/resources/images/default/xblock-images/marker.png',size,offset);
                 app.mapPanel.map.setCenter( [xy.x, xy.y], 11+relativeZoom);
                 marker = new OpenLayers.Marker({lon:xy.x,lat:xy.y},icon);
                 markerLayer.addMarker(marker);

@@ -169,6 +169,7 @@ function WorldMapEditBlock(runtime, element) {
         questionDialog.data('question')['constraints'].push(
             {
                 "type": "unknown",
+                "validated": false,
                 "geometry": {
                    "type": "unknown"
                 }
@@ -722,7 +723,7 @@ function WorldMapEditBlock(runtime, element) {
         autoOpen: false,
         height: 545,
         dialogClass: "no-close",
-        width: 700,
+        width: 620,
         modal: true,
         //appendTo: $('.wrapper-comp-settings'),
         buttons: [
@@ -835,6 +836,20 @@ function WorldMapEditBlock(runtime, element) {
         if( requiredColor ) {
             msg += "Field must be an color string (e.g. 00FF00 for green)<br/>";
             result = false;
+        }
+        if( questionDialog.data('question')['constraints'].length == 0 ) {
+            msg += "A question must have at least one constraint to determine if answer is correct<br/>";
+            $('#constraint-list').addClass('field-error');
+            result = false;
+        } else {
+            $('#constraint-list').removeClass('field-error');
+            for( var i=0; i< questionDialog.data('question')['constraints'].length; i++ ) {
+                var constraint = questionDialog.data('question')['constraints'][i];
+                if( constraint.validated != undefined &&  !constraint.validated ) {
+                    msg += "Constraint #"+(i+1)+" is invalid, please correct it<br/>";
+                    result = false;
+                }
+            }
         }
         $('#question-dialog-error').html(msg);
         return result;
@@ -996,9 +1011,11 @@ function WorldMapEditBlock(runtime, element) {
                             explanation: $('#constraint-explanation', constraintDialog).val(),
                             percentOfGrade: parseInt($('#constraint-percentOfGrade', constraintDialog).val()),
                             percentMatch: parseInt($('#constraint-percentMatch', constraintDialog).val()),
+                            maxAreaFactor: parseFloat($('#constraint-maxAreaFactor', constraintDialog).val()),
                             padding: parseInt($('#constraint-padding', constraintDialog).val()),
                             type: $('#constraint-type', constraintDialog).val(),
-                            geometry: constraintDialog.data('constraint')['geometry']
+                            geometry: constraintDialog.data('constraint')['geometry'],
+                            validated: true
                         };
                         refreshConstraints();
                         constraintDialog.dialog("close");
@@ -1023,12 +1040,16 @@ function WorldMapEditBlock(runtime, element) {
             $('#dialog-constraint-form .required').change( function() {
                 constraintDialog.validate();
             });
+            $('#dialog-constraint-form .required-number').change( function() {
+                constraintDialog.validate();
+            });
         },
         open: function() {
 
             $('#constraint-explanation',this).val(constraintDialog.data('constraint')['explanation']);
             $('#constraint-percentOfGrade',this).val(constraintDialog.data('constraint')['percentOfGrade']);
             $('#constraint-percentMatch',this).val(constraintDialog.data('constraint')['percentMatch']);
+            $('#constraint-maxAreaFactor',this).val(constraintDialog.data('constraint')['maxAreaFactor']);
             $('#constraint-padding',this).val(constraintDialog.data('constraint')['padding']);
             $('#constraint-geometry-type option[value='+constraintDialog.data('constraint')['geometry']['type']+']',this).attr('selected','selected');
             $('#constraint-type option[value='+constraintDialog.data('constraint')['type']+']',this).attr('selected','selected');
@@ -1036,8 +1057,12 @@ function WorldMapEditBlock(runtime, element) {
             var responseType = constraintDialog.data('responseType');
             constraintDialog.dialog('option', 'title', 'Constraint on "'+responseType+'" user response');
 
-            if( responseType === 'point' || $('#constraint-type',constraintDialog).val() !== 'matches' ) $('#constraint-percentMatch-span').hide();
-            else $('#constraint-percentMatch-span').show();
+            $('#constraint-percentMatch-span').toggle(!(responseType === 'point' || $('#constraint-type',constraintDialog).val() !== 'matches' ));
+            $('#constraint-maxAreaFactor-span').toggle(
+                responseType === 'polygon'
+                && $('#constraint-type',constraintDialog).val() === 'includes'
+                && $('#constraint-geometry-type',constraintDialog).val() !== 'point'
+            );
             $('#constraint-type option[value="includes"]').attr('disabled',responseType === 'point');
             $('#constraint-type option[value="excludes"]').attr('disabled',responseType === 'point');
             $('#constraint-type option[value="matches"]').attr('disabled',responseType === 'point');
@@ -1061,38 +1086,68 @@ function WorldMapEditBlock(runtime, element) {
             var responseType = constraintDialog.data('responseType');
             var result = true;
             var msg = "";
+            var compatible = constraintType !== 'inside' || constraintGeoType === 'polygon';
+            $('#constraint-type').toggleClass('field-error', !compatible);
+            $('#constraint-geometry-type').toggleClass('field-error', !compatible);
+            if( !compatible ) {
+                msg += "Constraint type: 'inside' is only compatible with 'polygon'<br/>";
+                result = false;
+            }
             if( responseType == 'polyline' ) {
-                var compatible = (constraintType == 'matches' && constraintGeoType == 'polyline')
+                compatible = compatible && (
+                    (constraintType == 'matches' && constraintGeoType == 'polyline')
                   ||(constraintType == 'inside'  && constraintGeoType == 'polygon')
                   ||(constraintType == 'includes'&& constraintGeoType == 'point')
-                  ||(constraintType == 'excludes'&& constraintGeoType == 'polygon');
+                  ||(constraintType == 'excludes'&& constraintGeoType == 'polygon'));
+
                 $('#constraint-type').toggleClass('field-error', !compatible);
                 $('#constraint-geometry-type').toggleClass('field-error', !compatible);
                 if( !compatible) {
                    msg += "Constraint type: "+$('#constraint-type').val()+"("+$('#constraint-geometry-type').val()+") is incompatible for a polyline user response<br/>";
                    result = false;
                 }
+
             } else if( responseType == 'point') {
                 $('#constraint-type').removeClass('field-error');
                 $('#constraint-geometry-type').removeClass('field-error');
+                compatible = constraintType == 'inside' && constraintGeoType == 'polygon';
+                $('#constraint-type').toggleClass('field-error', !compatible);
+                $('#constraint-geometry-type').toggleClass('field-error', !compatible);
+                if( !compatible ) {
+                    msg += "A 'point' user response can only be constrained to be 'inside' a 'polygon'";
+                    result =false;
+                }
+
             }
+            $('#constraint-maxAreaRatio').toggle(responseType == 'polygon');
+
             var requiredEmpty = false;
-            if( $('#constraint-percentMatch').toggleClass('field-error', $('#constraint-type').val() === "matches" && $('#constraint-percentMatch').val() === "")
-                .hasClass('field-error')) {
-                requiredEmpty = true;
-            }
-            if( $('#constraint-percentOfGrade').toggleClass('field-error', $('#constraint-percentOfGrade').val() === "" )
-                .hasClass('field-error') ) {
-                requiredEmpty = true;
-            }
-            if( $('#constraint-padding').toggleClass('field-error',$('#constraint-padding').val() === "" )
-                .hasClass('field-error') ) {
-                requiredEmpty = true;
-            }
-            if( $('#constraint-explanation').toggleClass('field-error', $('#constraint-explanation').val() === "")
-                .hasClass('field-error')) {
-                requiredEmpty = true;
-            }
+            $('#dialog-constraint-form .required').each( function() {
+                if( $(this).toggleClass('field-error',$(this).is(':visible') && $(this).val() === "" )
+                    .hasClass('field-error')) {
+                    requiredEmpty = true;
+                }
+            });
+//            if( $('#constraint-percentMatch').toggleClass('field-error', $('#constraint-type').val() === "matches" && $('#constraint-percentMatch').val() === "")
+//                .hasClass('field-error')) {
+//                requiredEmpty = true;
+//            }
+//            if( $('#constraint-percentOfGrade').toggleClass('field-error', $('#constraint-percentOfGrade').val() === "" )
+//                .hasClass('field-error') ) {
+//                requiredEmpty = true;
+//            }
+//            if( $('#constraint-padding').toggleClass('field-error',$('#constraint-padding').val() === "" )
+//                .hasClass('field-error') ) {
+//                requiredEmpty = true;
+//            }
+//            if( $('#constraint-maxAreaFactor').toggleClass('field-error',$('#constraint-maxAreaFactor').val() === "" )
+//                .hasClass('field-error') ) {
+//                requiredEmpty = true;
+//            }
+//            if( $('#constraint-explanation').toggleClass('field-error', $('#constraint-explanation').val() === "")
+//                .hasClass('field-error')) {
+//                requiredEmpty = true;
+//            }
 
             var requiredNumber = false;
             $('#dialog-constraint-form .required-number').each( function() {
@@ -1237,17 +1292,19 @@ function WorldMapEditBlock(runtime, element) {
 
     function onChangeConstraintType() {
         constraintDialog.validate();
-        if( $('#constraint-type',constraintDialog).val() === 'matches') {
-            $('#constraint-percentMatch-span').show();
-        } else {
-            $('#constraint-percentMatch-span').hide();
-        }
+        $('#constraint-percentMatch-span').toggle($('#constraint-type',constraintDialog).val() === 'matches');
+        $('#constraint-maxAreaFactor-span').toggle($('#constraint-type', constraintDialog).val() === 'includes' && $('#constraint-geometry-type').val() !== 'point');
+        constraintDialog.validate();
     }
+
     function onChangeConstraintTool(e) {
         var type = $(e.target).val();
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("reset-answer-tool", null));
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("reset-highlights", null));
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("set-answer-tool", {type: type, color: '0000FF'}));
+
+        $('#constraint-maxAreaFactor-span').toggle( $('#constraint-geometry-type').val() === 'polygon' );
+
         constraintDialog.validate();
     }
 
