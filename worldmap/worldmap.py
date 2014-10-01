@@ -368,19 +368,24 @@ class WorldMapXBlock(XBlock):
         self.debug = self.worldmapConfig.get("debug",False)
         self.baseLayer = self.worldmapConfig.get("baseLayer",None)
 
-        if not self.worldmapConfig['stickyMap']:
+        if not self.worldmapConfig.get('stickyMap',False):
             self.zoomLevel = self.worldmapConfig.get("zoom",None)
             self.centerLat = self.worldmapConfig.get("lat",None)
             self.centerLon = self.worldmapConfig.get("lon",None)
 
 
-        frag = Fragment(self.resource_string("static/html/worldmap.html").format(self=self, uniqueId=uniqueId))
+        html = self.resource_string("static/html/worldmap.html").format(self=self, uniqueId=uniqueId)
+        log.info(html)
+
+        frag = Fragment(html)
         template = Template(self.resource_string("static/css/worldmap.css"))
         frag.add_css(template.substitute(imagesRoot=self.runtime.local_resource_url(self,"public/images")))
         frag.add_css(self.worldmapConfig.get('stylesheet',""))
 
-        frag.add_javascript(unicode(pkg_resources.resource_string(__name__, "static/js/src/xBlockCom-master.js")))
-        frag.add_javascript(self.resource_string("static/js/src/worldmap.js"))
+#        frag.add_javascript(unicode(pkg_resources.resource_string(__name__, "static/js/src/xBlockCom-master.js")))
+        frag.add_javascript_url(self.runtime.local_resource_url(self, "public/js/src/xBlockCom-master.js"))
+#        frag.add_javascript(self.resource_string("static/js/src/worldmap.js"))
+        frag.add_javascript_url(self.runtime.local_resource_url(self, "public/js/src/worldmap.js"))
 
 
         if not isinstance(self.scope_ids.usage_id, Location):
