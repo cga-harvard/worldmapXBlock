@@ -27,7 +27,7 @@ from shapely.geometry.polygon import Polygon
 from shapely.geometry import LineString
 from shapely.geometry.point import Point
 from shapely.geos import TopologicalError
-from shapely import ops
+from shapely import ops, affinity
 from random import randrange
 from django.utils.translation import ugettext as _    #see - https://docs.djangoproject.com/en/1.3/topics/i18n/internationalization/
 from xmodule.modulestore import Location
@@ -115,29 +115,71 @@ class WorldMapXBlock(XBlock):
                        }
                     ],
                     "questions": [
-                       {
-                          "id": "question-id-1",
-                          "color": "00FF00",
-                          "type": "point",
-                          "explanation": "Add questions if desired e.g. Where is the biggest island in Boston harbor?",
-                          "hintAfterAttempt": 3,
-                          "hintDisplayTime": -1,
-
-                          "constraints": [
-                             {
-                                "type": "matches",
-                                "padding": 1000,
-                                "explanation": "This is a hint that gets displayed after 3 failed attempts<br/>Look at boston harbor - pick the biggest island.",
-                                "percentOfGrade": 100,
-                                "geometry": {
-                                   "type": "point",
-                                   "points": [
-                                      {"lon": -70.9657058456866, "lat": 42.32011232390349}
-                                   ]
+                        {
+                            "hintAfterAttempt": 2,
+                            "color": "00FF00",
+                            "explanation": "Where is the biggest island in Boston harbor?",
+                            "hintDisplayTime": -1,
+                            "type": "point",
+                            "id": "foobar",
+                            "constraints": [
+                                {
+                                    "geometry": {
+                                        "points": [
+                                            {
+                                                "lat": 42.31071913366582,
+                                                "lon": -70.9768638351889
+                                            },
+                                            {
+                                                "lat": 42.31516203351538,
+                                                "lon": -70.9710273483719
+                                            },
+                                            {
+                                                "lat": 42.323919974596905,
+                                                "lon": -70.96656415257098
+                                            },
+                                            {
+                                                "lat": 42.32836194250175,
+                                                "lon": -70.95935437473969
+                                            },
+                                            {
+                                                "lat": 42.33090006905591,
+                                                "lon": -70.95815274510085
+                                            },
+                                            {
+                                                "lat": 42.33026554701893,
+                                                "lon": -70.95368954929992
+                                            },
+                                            {
+                                                "lat": 42.327727394860425,
+                                                "lon": -70.95334622654636
+                                            },
+                                            {
+                                                "lat": 42.3269659292422,
+                                                "lon": -70.95712277683923
+                                            },
+                                            {
+                                                "lat": 42.318969983762415,
+                                                "lon": -70.96295926365534
+                                            },
+                                            {
+                                                "lat": 42.31198856562581,
+                                                "lon": -70.96553418430938
+                                            },
+                                            {
+                                                "lat": 42.309322728939854,
+                                                "lon": -70.97531888279559
+                                            },
+                                            {
+                                                "lat": 42.31071913366582,
+                                                "lon": -70.9768638351889
+                                            }
+                                        ],
+                                        "type": "polygon"
+                                    }
                                 }
-                             }
-                          ]
-                       }
+                            ]
+                        }
                     ]
                 }
     """
@@ -242,24 +284,17 @@ class WorldMapXBlock(XBlock):
                             }
                         ]
                     },
-                    "sliders": [
-                       {
-                            "id":"timeSlider",
-                            "title":"test-slider: delete if not needed",
-                            "param":"CensusYear",
-                            "min":1972,
-                            "max":1980,
-                            "increment": 0.2,
-                            "position":"bottom",
-                            "help": [
-                                "<B>This is some generalized html</B><br/><i>you can use to create help info for using the slider</i>",
-                                "<ul>",
-                                "   <li>You can explain what it does</li>",
-                                "   <li>How to interpret things</li>",
-                                "   <li>What other things you might be able to do</li>",
-                                "</ul>"
-                            ]
-                       }
+                   	"sliders": [
+                        {
+                            "help": "General <B>HTML</B> here - useful for creating a help message",
+                            "title": "Example Slider",
+                            "max": 2010,
+                            "min": 1970,
+                            "param": "CensusYear",
+                            "increment": 1,
+                            "position": "bottom",
+                            "id": "slider-1412208064.961"
+                        }
                     ]
                 }
     """
@@ -442,7 +477,7 @@ class WorldMapXBlock(XBlock):
         fragment.add_javascript(self.resource_string('public/js/jquery-ui-1.10.4.custom.js'))
         # fragment.add_javascript(self.resource_string('public/js/jquery-validation-min.js'))
         # fragment.add_javascript(self.resource_string('public/js/jquery-validation-additional-methods-min.js'))
-        fragment.add_javascript(self.resource_string('static/js/src/worldmap-studio.js'))
+        fragment.add_javascript(self.resource_string('public/js/src/worldmap-studio.js'))
 
         fragment.initialize_js('WorldMapEditBlock')
         return fragment
@@ -802,11 +837,11 @@ class WorldMapXBlock(XBlock):
         for g in geometryArr:
             arr = []
             for i in range(0,2):   # give it a bit of a "blobby look"
-                arr.append(shapely.affinity.translate(g, 4*buffer*randrange(-500,500)/1000., 4*buffer*randrange(-500,500)/1000.,0))
+                arr.append(affinity.translate(g, 4*buffer*randrange(-500,500)/1000., 4*buffer*randrange(-500,500)/1000.,0))
             # union these randomly moved polygons back together and get their convex_hull
             hull = ops.cascaded_union(arr).convex_hull
             for i in range(0,10):
-                r.append( shapely.affinity.translate(hull, 4*buffer*randrange(-500,500)/1000., 4*buffer*randrange(-500,500)/1000.,0))
+                r.append( affinity.translate(hull, 4*buffer*randrange(-500,500)/1000., 4*buffer*randrange(-500,500)/1000.,0))
 
         # output the polygons
         result = []
@@ -921,623 +956,8 @@ class WorldMapXBlock(XBlock):
             ("WorldMapXBlock",
              """
              <vertical_demo>
-             """
-                # <worldmap-expository>
-                #     <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'/>
-                #     <explanation>
-                #           testing Chinese: 基區提供本站原典資料庫收藏之外的許多經典文獻的全文閱讀和檢索功<br/>
-                #           Lorem ipsum dolor sit amet, <a href='#' onclick='return highlight(\"backbay\", 2000, -2)'>Back Bay</a> adipiscing elit. Aliquam a neque diam . Cras ac erat nisi. Etiam aliquet ultricies lobortis <a href='#' onclick='return highlight(\"esplanade\")'>Esplanade</a>. Etiam lacinia malesuada leo, pretium egestas mauris suscipit at. Fusce ante mi, faucibus a purus quis, commodo accumsan ipsum. Morbi vitae ultrices nibh. Quisque quis dolor elementum sem mollis pharetra vitae quis magna. Duis auctor pretium ligula a eleifend.
-                #           <p/>Curabitur sem <a href='#' onclick='return highlightLayer(\"OpenLayers_Layer_WMS_124\",5000, -2)'>layer diam</a>, congue sed vehicula vitae  <a href='#' onclick='return highlight(\"bay-village\", 10000, -5)'>Bay Village</a>, lobortis pulvinar odio. Phasellus ac lacus sapien. Nam nec tempus metus, sit amet ullamcorper tellus. Nullam ac nibh semper felis vulputate elementum eget in ligula. Integer semper pharetra orci, et tempor orci commodo a. Duis id faucibus felis. Maecenas bibendum accumsan nisi, ut semper quam elementum quis. Donec erat libero, pretium sollicitudin augue a, suscipit mollis libero. Mauris aliquet sem eu ligula rutrum imperdiet. Proin quis velit congue, fermentum ligula vitae, eleifend nisi. Sed justo est, egestas id nisl non, fringilla vulputate orci. Ut non nisl vitae lectus tincidunt sollicitudin. Donec ornare purus eu dictum sollicitudin. Aliquam erat volutpat.
-                #           <p/>Vestibulum ante ipsum primis <a href='#' onclick='return highlight(\"beltway\",4000, -1)'>beltway around boston</a> faucibus orci luctus et <a href='#' onclick='return highlight(\"big-island\", 2000)'>Big Island</a>ultrices posuere cubilia Curae; Quisque purus dolor, fermentum eu vestibulum nec, ultricies semper tellus. Vivamus nunc mi, fermentum a commodo vel, iaculis in odio. Vivamus commodo mi convallis, congue magna eget, sodales sem. Morbi facilisis nunc vitae porta elementum. Praesent auctor vitae nisi a pharetra. Mauris non urna auctor nunc dignissim mollis. In sem ipsum, porta sit amet dignissim ut, adipiscing eu dui. Nam sodales nisi quis urna malesuada, quis aliquet ipsum placerat.
-                #
-                #     </explanation>
-                #     <polygon id='backbay'>
-                #          <point lon="-71.09350774082822" lat="42.35148683512319"/>
-                #          <point lon="-71.09275672230382" lat="42.34706235935522"/>
-                #          <point lon="-71.08775708470029" lat="42.3471733715164"/>
-                #          <point lon="-71.08567569050435" lat="42.34328782922443"/>
-                #          <point lon="-71.08329388889936" lat="42.34140047917672"/>
-                #          <point lon="-71.07614848408352" lat="42.347379536438645"/>
-                #          <point lon="-71.07640597614892" lat="42.3480456031057"/>
-                #          <point lon="-71.0728225449051"  lat="42.34785529906382"/>
-                #          <point lon="-71.07200715336435" lat="42.34863237027516"/>
-                #          <point lon="-71.07228610310248" lat="42.34942529018035"/>
-                #          <point lon="-71.07011887821837" lat="42.35004376076278"/>
-                #          <point lon="-71.0708055237264"  lat="42.351835705270716"/>
-                #          <point lon="-71.07325169834775" lat="42.35616470553563"/>
-                #          <point lon="-71.07408854756031" lat="42.35600613935877"/>
-                #          <point lon="-71.07483956608469" lat="42.357131950552244"/>
-                #          <point lon="-71.09331462177917" lat="42.35166127043902"/>
-                #     </polygon>
-                #     <polygon id='esplanade'>
-                #         <point lon="-71.07466790470745" lat="42.35719537593463"/>
-                #         <point lon="-71.08492467197995" lat="42.35399231410341"/>
-                #         <point lon="-71.08543965611076" lat="42.35335802506911"/>
-                #         <point lon="-71.08822915348655" lat="42.35250172471913"/>
-                #         <point lon="-71.08814332279839" lat="42.352279719020736"/>
-                #         <point lon="-71.08689877781501" lat="42.35253343975517"/>
-                #         <point lon="-71.07411000523211" lat="42.355958569427614"/>
-                #         <point lon="-71.07466790470745" lat="42.35719537593463"/>
-                #     </polygon>
-                #     <polygon id="bay-village">
-                #        <point lon="-71.06994721684204" lat="42.349520439895464"/>
-                #        <point lon="-71.0687455872032" lat="42.34856893624958"/>
-                #        <point lon="-71.07140633854628" lat="42.34863237027384"/>
-                #     </polygon>
-                #     <polyline id="beltway">
-                #       <point lon='-71.0604629258' lat='42.3434622873'/>
-                #       <point lon='-71.0645827988' lat='42.3262044544'/>
-                #       <point lon='-71.0522231797' lat='42.3160505758'/>
-                #       <point lon='-71.0549697617' lat='42.3099574622'/>
-                #       <point lon='-71.0412368515' lat='42.2967536924'/>
-                #       <point lon='-71.0426101426' lat='42.2804990976'/>
-                #       <point lon='-71.0522231797' lat='42.268305399'/>
-                #       <point lon='-71.0275039414' lat='42.2428942831'/>
-                #       <point lon='-71.0247573594' lat='42.2296764566'/>
-                #       <point lon='-71.0467300156' lat='42.2093359332'/>
-                #       <point lon='-71.1030349472' lat='42.202215202'/>
-                #       <point lon='-71.1552200058' lat='42.2144216783'/>
-                #       <point lon='-71.1840591172' lat='42.2317101486'/>
-                #       <point lon='-71.2074050644' lat='42.2550928966'/>
-                #       <point lon='-71.2019119004' lat='42.2723702273'/>
-                #       <point lon='-71.2019119004' lat='42.285579109'/>
-                #       <point lon='-71.2197646836' lat='42.2987852218'/>
-                #       <point lon='-71.256843541' lat='42.3373718282'/>
-                #       <point lon='-71.2650832871' lat='42.3657889233'/>
-                #       <point lon='-71.260963414' lat='42.3931789538'/>
-                #       <point lon='-71.256843541' lat='42.4235983077'/>
-                #       <point lon='-71.258216832' lat='42.4580557417'/>
-                #       <point lon='-71.2444839219' lat='42.4722385889'/>
-                #       <point lon='-71.2074050644' lat='42.4823672268'/>
-                #       <point lon='-71.1909255722' lat='42.487430931'/>
-                #       <point lon='-71.164833043' lat='42.4965445656'/>
-                #       <point lon='-71.1208877305' lat='42.5046444593'/>
-                #       <point lon='-71.0920486191' lat='42.50363203'/>
-                #       <point lon='-71.082435582' lat='42.5188167484'/>
-                #       <point lon='-71.0590896347' lat='42.5238775014'/>
-                #       <point lon='-71.0439834336' lat='42.5167923324'/>
-                #       <point lon='-71.0316238144' lat='42.5157800999'/>
-                #       <point lon='-71.0069045762' lat='42.5167923324'/>
-                #       <point lon='-70.989051793' lat='42.5228653836'/>
-                #     </polyline>
-                #     <point id="big-island" lon="-70.9657058456866" lat="42.32011232390349"/>
-                # </worldmap-expository>
-             +"""
-             <worldmap>
-                <explanation>
-                     A quiz about the Boston area... particularly <B><a href='#' onclick='return highlight(\"backbay\", 5000, -2)'>Back Bay</a></B>
-                </explanation>
-                <config>
-                {
-                    "highlights": [
-                       {
-                          "id": "backbay",
-                          "geometry": {
-                              "type": "polygon",
-                              "points": [
-                                 {"lon": -71.09350774082822, "lat": 42.35148683512319},
-                                 {"lon": -71.09275672230382, "lat": 42.34706235935522},
-                                 {"lon": -71.08775708470029, "lat": 42.3471733715164},
-                                 {"lon": -71.08567569050435, "lat": 42.34328782922443},
-                                 {"lon": -71.08329388889936, "lat": 42.34140047917672},
-                                 {"lon": -71.07614848408352, "lat": 42.347379536438645},
-                                 {"lon": -71.07640597614892, "lat": 42.3480456031057},
-                                 {"lon": -71.0728225449051, "lat": 42.34785529906382},
-                                 {"lon": -71.07200715336435, "lat": 42.34863237027516},
-                                 {"lon": -71.07228610310248, "lat": 42.34942529018035},
-                                 {"lon": -71.07011887821837, "lat": 42.35004376076278},
-                                 {"lon": -71.0708055237264, "lat": 42.351835705270716},
-                                 {"lon": -71.07325169834775, "lat": 42.35616470553563},
-                                 {"lon": -71.07408854756031, "lat": 42.35600613935877},
-                                 {"lon": -71.07483956608469, "lat": 42.357131950552244},
-                                 {"lon": -71.09331462177917, "lat": 42.35166127043902}
-                              ]
-                          }
-                       }
-                    ],
-                    "questions": [
-                       {
-                          "id": "foobar",
-                          "color": "00FF00",
-                          "type": "point",
-                          "explanation": "Where is the biggest island in Boston harbor?",
-                          "hintAfterAttempt": 0,
-                          "hintDisplayTime": -1,
-
-                          "constraints": [
-                             {
-                                "type": "matches",
-                                "padding": 1000,
-                                "explanation": "<B> Look at boston harbor - pick the biggest island </B>",
-                                "percentOfGrade": 100,
-                                "geometry": {
-                                   "type": "point",
-                                   "points": [
-                                      {"lon": -70.9657058456866, "lat": 42.32011232390349}
-                                   ]
-                                }
-                             }
-                          ]
-                       },
-                       {
-                          "id": "baz",
-                          "color": "0000FF",
-                          "type": "polygon",
-                          "explanation": "Draw a polygon around the land bridge that formed Nahant bay?",
-                          "hintAfterAttempt": 2,
-                          "hintDisplayTime": -1,
-
-                          "constraints": [
-                             {
-                                "type": "includes",
-                                "explanation": "<B>'Hint':</B> Look for Nahant Bay on the map",
-                                "percentOfGrade": 100,
-                                "padding": 500,
-                                "geometry": {
-                                   "type": "point",
-                                   "points": [
-                                      {"lon": -70.93824002537393, "lat": 42.445896458204764}
-                                   ]
-                                }
-                             }
-                          ]
-                       },
-                       {
-                          "id": "area",
-                          "color": "FF00FF",
-                          "type": "polygon",
-                          "explanation": "Draw a polygon around 'back bay'?",
-                          "hintAfterAttempt": 2,
-                          "hintDisplayTime": -1,
-
-                          "constraints": [
-                             {
-                                "type": "matches",
-                                "explanation": "<B>'Hint':</B> Back bay was a land fill into the Charles River basin",
-                                "percentOfGrade": 20,
-                                "geometry": {
-                                   "type": "polygon",
-                                   "points": [
-                                         {"lon": -71.09350774082822, "lat": 42.35148683512319},
-                                         {"lon": -71.09275672230382, "lat": 42.34706235935522},
-                                         {"lon": -71.08775708470029, "lat": 42.3471733715164},
-                                         {"lon": -71.08567569050435, "lat": 42.34328782922443},
-                                         {"lon": -71.08329388889936, "lat": 42.34140047917672},
-                                         {"lon": -71.07614848408352, "lat": 42.347379536438645},
-                                         {"lon": -71.07640597614892, "lat": 42.3480456031057},
-                                         {"lon": -71.07282254490510, "lat": 42.34785529906382},
-                                         {"lon": -71.07200715336435, "lat": 42.34863237027516},
-                                         {"lon": -71.07228610310248, "lat": 42.34942529018035},
-                                         {"lon": -71.07011887821837, "lat": 42.35004376076278},
-                                         {"lon": -71.07080552372640, "lat": 42.351835705270716},
-                                         {"lon": -71.07325169834775, "lat": 42.35616470553563},
-                                         {"lon": -71.07408854756031, "lat": 42.35600613935877},
-                                         {"lon": -71.07483956608469, "lat": 42.357131950552244},
-                                         {"lon": -71.09331462177917, "lat": 42.35166127043902}
-                                   ]
-                                },
-                                "percentMatch": 60,
-                                "percentOfGrade": 25,
-                                "padding": 1000
-                             },
-                             {
-                                "type": "includes",
-                                "explanation": "<B>Must</B> include the esplanade",
-                                "percentOfGrade": 20,
-                                "geometry": {
-                                   "type": "polygon",
-                                   "points": [
-                                        {"lon": -71.07466790470745, "lat": 42.35719537593463},
-                                        {"lon": -71.08492467197995, "lat": 42.35399231410341},
-                                        {"lon": -71.08543965611076, "lat": 42.35335802506911},
-                                        {"lon": -71.08822915348655, "lat": 42.35250172471913},
-                                        {"lon": -71.08814332279839, "lat": 42.352279719020736},
-                                        {"lon": -71.08689877781501, "lat": 42.35253343975517},
-                                        {"lon": -71.07411000523211, "lat": 42.355958569427614},
-                                        {"lon": -71.07466790470745, "lat": 42.35719537593463}
-                                   ]
-                                },
-                                "percentMatch": 60,
-                                "percentOfGrade": 25,
-                                "padding": 100
-                             },
-                             {
-                                "type": "excludes",
-                                "explanation": "Must <B>not</B> include intersection of Boylston and Arlington Streets",
-                                "percentOfGrade": 20,
-                                "geometry": {
-                                   "type": "point",
-                                   "points": [
-                                      {"lon": -71.07071969303735, "lat": 42.351962566661165}
-                                   ]
-                                },
-                                "percentOfGrade": 25,
-                                "padding": 25
-                             },
-                             {
-                                "type": "excludes",
-                                "explanation": "Must <b>not</b> include <i>Bay Village</i>",
-                                "percentOfGrade": 20,
-                                "geometry": {
-                                   "type": "polygon",
-                                   "points": [
-                                       {"lon": -71.06994721684204, "lat": 42.349520439895464},
-                                       {"lon": -71.06874558720320, "lat": 42.34856893624958},
-                                       {"lon": -71.07140633854628, "lat": 42.34863237027384}
-                                   ]
-                                },
-                                "percentOfGrade": 10,
-                                "padding": 150
-                             },
-                             {
-                                "type": "includes",
-                                "explanation": "<B>Must</B> include corner of <i>Mass ave.</i> and <i>SW Corridor Park</i>",
-                                "percentOfGrade": 20,
-                                "geometry": {
-                                   "type": "point",
-                                   "points": [
-                                      {"lon": -71.08303639683305, "lat": 42.341527361626746}
-                                   ]
-                                },
-                                "percentOfGrade": 25,
-                                "padding": 50
-                             }
-                          ]
-                        },
-                       {
-                          "id": "esplanade",
-                          "color": "00FF00",
-                          "type": "polygon",
-                          "explanation": "Where is the biggest island in Boston harbor?",
-                          "hintAfterAttempt": 2,
-                          "hintDisplayTime": -1,
-
-                          "constraints": [
-                             {
-                                "type": "matches",
-                                "percentMatch": 50,
-                                "percentOfGrade": 25,
-                                "padding": 0,
-                                "explanation": "<B>Must</B> include the esplanade",
-                                "geometry": {
-                                   "type": "polygon",
-                                   "points": [
-                                    {"lon": -71.07466790470745, "lat": 42.35719537593463},
-                                    {"lon": -71.08492467197995, "lat": 42.35399231410341},
-                                    {"lon": -71.08543965611076, "lat": 42.35335802506911},
-                                    {"lon": -71.08822915348655, "lat": 42.35250172471913},
-                                    {"lon": -71.08814332279839, "lat": 42.352279719020736},
-                                    {"lon": -71.08689877781501, "lat": 42.35253343975517},
-                                    {"lon": -71.07411000523211, "lat": 42.355958569427614},
-                                    {"lon": -71.07466790470745, "lat": 42.35719537593463}
-                                   ]
-                                }
-                             }
-                          ]
-                       },
-                       {
-                          "id": "boffo",
-                          "color": "00FFFF",
-                          "type": "polyline",
-                          "explanation": "Draw a polyline on the land bridge that formed Nahant bay?",
-                          "hintAfterAttempt": 2,
-                          "hintDisplayTime": -1,
-
-                          "constraints": [
-                             {
-                                "type": "matches",
-                                "percentOfGrade": 50,
-                                "padding": 500,
-                                "percentMatch": 80,
-                                "explanation": "<B>'Hint':</B> Look for Nahant Bay on the map - draw a polyline on the land bridge out to Nahant Island",
-                                "geometry": {
-                                   "type": "polyline",
-                                   "points": [
-                                     {"lon": -70.93703839573509, "lat": 42.455142795067786},
-                                     {"lon": -70.93978497776635, "lat": 42.44146279890606},
-                                     {"lon": -70.93360516819578, "lat": 42.43082073646349}
-                                   ]
-                                }
-                             },
-                             {
-                                "type": "inside",
-                                "percentOfGrade": 25,
-                                "percentMatch": 70,
-                                "padding": 1,
-                                "explanation": "The land bridge is somewhere inside this polygon",
-                                "geometry": {
-                                   "type": "polygon",
-                                   "points": [
-                                     {"lon": -70.9210738876792, "lat": 42.47325152648776},
-                                     {"lon": -70.95746609959279, "lat": 42.471732113995365},
-                                     {"lon": -70.93686673435874, "lat": 42.42005014321707},
-                                     {"lon": -70.91901395115596, "lat": 42.433734814183005}
-                                   ]
-                                }
-                             },
-                             {
-                                "type": "excludes",
-                                "percentOfGrade": 25,
-                                "percentMatch": 80,
-                                "padding": 1,
-                                "explanation": "Must not include Nahant Island",
-                                "geometry": {
-                                   "type": "polygon",
-                                   "points": [
-                                    {"lon": -70.9252795914228, "lat": 42.42955370389016},
-                                    {"lon": -70.93763921056394, "lat": 42.42581580857819},
-                                    {"lon": -70.93652341161325, "lat": 42.416438412427965},
-                                    {"lon": -70.92828366551946, "lat": 42.41795916653644},
-                                    {"lon": -70.92905614171568, "lat": 42.42112728581168},
-                                    {"lon": -70.91978642736025, "lat": 42.424105171979036},
-                                    {"lon": -70.91789815221426, "lat": 42.420683758749576},
-                                    {"lon": -70.90983006749771, "lat": 42.416375046873334},
-                                    {"lon": -70.90536687169678, "lat": 42.416628508708406},
-                                    {"lon": -70.90227696691106, "lat": 42.41992341934355},
-                                    {"lon": -70.91060254369391, "lat": 42.42708291670639},
-                                    {"lon": -70.91927144322945, "lat": 42.42949035158941}
-                                   ]
-                                }
-                             }
-                          ]
-                       }
-                    ]
-                }
-                </config>
-                <worldmap-config>
-                {
-                    "href": "http://23.21.172.243/maps/bostoncensus/embed",
-                    "debug": true,
-                    "width": 600,
-                    "height": 400,
-                    "baseLayer":"OpenLayers_Layer_Google_116",
-                    "layers": [
-                    ],
-                    "layers": [
-                        {
-                            "id":"geonode:qing_charity_v1_mzg"
-                        },
-                        {
-                            "id":"OpenLayers_Layer_WMS_122",
-                            "params": [
-                                { "name":"CensusYear",  "value":1972 }
-                            ]
-                        },
-                        {
-                            "id":"OpenLayers_Layer_WMS_124",
-                            "params": [
-                                { "name":"CensusYear",  "min":1973, "max": 1977 }
-                            ]
-                        },
-                        {
-                            "id":"OpenLayers_Layer_WMS_120",
-                            "params": [
-                                { "name":"CensusYear",  "value":1976 }
-                            ]
-                        },
-                        {
-                            "id":"OpenLayers_Layer_WMS_118",
-                            "params": [
-                                { "name":"CensusYear",  "value":1978 }
-                            ]
-                        },
-                        {
-                            "id":"OpenLayers_Layer_Vector_132",
-                            "params": [
-                                { "name":"CensusYear",  "value":1980 }
-                            ]
-                        }
-                    ],
-                    "layer-controls": {
-                        "title":"Census Data",
-                        "expand": false,
-                        "children": [
-                            {
-                                "key":"OpenLayers_Layer_WMS_120",
-                                "visible": true,
-                                "title": "layerA"
-                            },
-                            {
-                                "key":"OpenLayers_Layer_WMS_122",
-                                "visible": true,
-                                "title": "layerB"
-                            },
-                            {
-                                "key":"OpenLayers_Layer_WMS_124",
-                                "visible": true,
-                                "title": "layerC"
-                            },
-                            {
-                                "key":"OpenLayers_Layer_WMS_120",
-                                "visible": true,
-                                "title": "layerD"
-                            },
-                            {
-                                "key":"OpenLayers_Layer_WMS_118",
-                                "visible": true,
-                                "title": "layerE"
-                            },
-                            {
-                                "key":"OpenLayers_Layer_Vector_132",
-                                "visible": true,
-                                "title": "layerF"
-                            },
-                            {
-                                "title":"A sub group of layers",
-                                "isFolder": true,
-                                "children": [
-                                    {
-                                        "title":"A sub sub group of layers",
-                                        "isFolder": true,
-                                        "children": [
-                                            {
-                                                "key":"OpenLayers_Layer_WMS_118",
-                                                "visible": true,
-                                                "title": "layerE.1"
-                                            },
-                                            {
-                                                "key":"OpenLayers_Layer_Vector_132",
-                                                "visible": true,
-                                                "title": "layerF.1"
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        "title":"Another sub sub group of layers",
-                                        "visible": false,
-                                        "isFolder": true,
-                                        "children": [
-                                            {
-                                                "key":"OpenLayers_Layer_WMS_118",
-                                                "visible": true,
-                                                "title": "layerE.2"
-                                            },
-                                            {
-                                                "key":"OpenLayers_Layer_Vector_132",
-                                                "visible": true,
-                                                "title": "layerF.2"
-                                            }
-                                        ]
-                                    },
-                                    {
-                                        "key":"OpenLayers_Layer_WMS_122",
-                                        "visible": true,
-                                        "title": "layerA.1"
-                                    },
-                                    {
-                                        "key":"OpenLayers_Layer_WMS_124",
-                                        "visible": true,
-                                        "title": "layerB.1"
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                    "sliders": [
-                       {
-                            "id":"timeSlider1",
-                            "title":"slider: 原典資料",
-                            "param":"CensusYear",
-                            "min":1972,
-                            "max":1980,
-                            "increment": 0.2,
-                            "position":"bottom",
-                            "help": [
-                                "<B>This is some generalized html</B><br/><i>you can use to create help info for using the slider</i>",
-                                "<ul>",
-                                "   <li>You can explain what it does</li>",
-                                "   <li>How to interpret things</li>",
-                                "   <li>What other things you might be able to do</li>",
-                                "</ul>"
-                            ]
-                       }
-                    ]
-                }
-                </worldmap-config>
-                </worldmap>
-                """
-                # <worldmap-quiz>
-                #     <explanation>
-                #          <B>A quiz about the Boston area</B>
-                #     </explanation>
-                #     <answer id='foobar' color='00FF00' type='point' hintAfterAttempt='3'>
-                #        <explanation>
-                #           Where is the biggest island in Boston harbor?
-                #        </explanation>
-                #        <constraints>
-                #           <matches percentOfGrade="25" percentMatch="100" padding='1000'>
-                #               <point lon="-70.9657058456866" lat="42.32011232390349"/>
-                #               <explanation>
-                #                  <B> Look at boston harbor - pick the biggest island </B>
-                #               </explanation>
-                #           </matches>
-                #        </constraints>
-                #     </answer>
-                #     <answer id='baz' color='0000FF' type='polygon' hintAfterAttempt='2'>
-                #        <explanation>
-                #           Draw a polygon around the land bridge that formed Nahant bay?
-                #        </explanation>
-                #        <constraints>
-                #           <includes percentOfGrade="25" padding='500' maxAreaFactor='15'>
-                #               <point lon="-70.93824002537393" lat="42.445896458204764"/>
-                #               <explanation>
-                #                  <B>Hint:</B> Look for Nahant Bay on the map
-                #               </explanation>
-                #           </includes>
-                #        </constraints>
-                #     </answer>
-                #     <answer id='boffo' color='00FFFF' type='polyline' hintAfterAttempt='2'>
-                #        <explanation>
-                #           Draw a polyline on the land bridge that formed Nahant bay?
-                #        </explanation>
-                #        <constraints hintDisplayTime='-1'>
-                #           <matches percentOfGrade="100" padding='500'>
-                #               <polyline>
-                #                  <point lon="-70.93703839573509" lat="42.455142795067786"/>
-                #                  <point lon="-70.93978497776635" lat="42.44146279890606"/>
-                #                  <point lon="-70.93360516819578" lat="42.43082073646349"/>
-                #               </polyline>
-                #               <explanation>
-                #                  <B>Hint:</B> Look for Nahant Bay on the map - draw a polyline on the land bridge out to Nahant Island
-                #               </explanation>
-                #           </matches>
-                #           <inside percentOfGrade="25"  padding='1'>
-                #              <polygon>
-                #                  <point lon="-70.9210738876792" lat="42.47325152648776"/>
-                #                  <point lon="-70.95746609959279" lat="42.471732113995365"/>
-                #                  <point lon="-70.93686673435874" lat="42.42005014321707"/>
-                #                  <point lon="-70.91901395115596" lat="42.433734814183005"/>
-                #              </polygon>
-                #              <explanation>
-                #                 The land bridge is somewhere inside this polygon
-                #              </explanation>
-                #           </inside>
-                #           <excludes percentOfGrade="25" padding="1">
-                #              <polygon>
-                #                 <point lon="-70.9252795914228" lat="42.42955370389016"/>
-                #                 <point lon="-70.93763921056394" lat="42.42581580857819"/>
-                #                 <point lon="-70.93652341161325" lat="42.416438412427965"/>
-                #                 <point lon="-70.92828366551946" lat="42.41795916653644"/>
-                #                 <point lon="-70.92905614171568" lat="42.42112728581168"/>
-                #                 <point lon="-70.91978642736025" lat="42.424105171979036"/>
-                #                 <point lon="-70.91789815221426" lat="42.420683758749576"/>
-                #                 <point lon="-70.90983006749771" lat="42.416375046873334"/>
-                #                 <point lon="-70.90536687169678" lat="42.416628508708406"/>
-                #                 <point lon="-70.90227696691106" lat="42.41992341934355"/>
-                #                 <point lon="-70.91060254369391" lat="42.42708291670639"/>
-                #                 <point lon="-70.91927144322945" lat="42.42949035158941"/>
-                #              </polygon>
-                #              <explanation>
-                #                 Must not include Nahant Island
-                #              </explanation>
-                #           </excludes>
-                #        </constraints>
-                #     </answer>
-                #     <worldmap href='http://23.21.172.243/maps/bostoncensus/embed' debug='true' width='600' height='400' baseLayer='OpenLayers_Layer_Google_116'>
-                #
-                #        <group-control name="Census Data" visible="true" expand="true">
-                #           <layer-control layerid="OpenLayers_Layer_WMS_120" visible="true" name="原典資料"/>
-                #           <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA"/>
-                #           <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB"/>
-                #           <layer-control layerid="OpenLayers_Layer_WMS_120" visible="false" name="layerC"/>
-                #           <layer-control layerid="OpenLayers_Layer_WMS_118" visible="true" name="layerE"/>
-                #           <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF"/>
-                #           <group-control name="A sub group of layers">
-                #              <group-control name="A sub-sub-group">
-                #                 <layer-control layerid="OpenLayers_Layer_Vector_132" visible="true" name="layerF.1"/>
-                #              </group-control>
-                #              <group-control name="another sub-sub-group" visible="true">
-                #                 <layer-control layerid="OpenLayers_Layer_WMS_118" visible="false" name="layerE.2"/>
-                #                 <layer-control layerid="OpenLayers_Layer_Vector_132" visible="false" name="layerF.2"/>
-                #              </group-control>
-                #              <layer-control layerid="OpenLayers_Layer_WMS_122" visible="true" name="layerA.1"/>
-                #              <layer-control layerid="OpenLayers_Layer_WMS_124" visible="true" name="layerB.1"/>
-                #           </group-control>
-                #        </group-control>
-                #
-                #     </worldmap>
-                # </worldmap-quiz>
-             +"""
+                 <worldmap/>
+                 <worldmap/>
              </vertical_demo>
              """
             ),

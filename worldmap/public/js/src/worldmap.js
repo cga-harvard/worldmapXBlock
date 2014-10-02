@@ -18,7 +18,7 @@ function gettext(s) { return s;}  //TODO: replace with django's javascript i18n 
 
 
 function WorldMapXBlock(runtime, element) {
-    "use strict";
+//    "use strict";
     if( $('.frame',element).attr('debug') == 'True' ) {
         $(".debugInfo",element).show();
     } else {
@@ -115,7 +115,7 @@ function WorldMapXBlock(runtime, element) {
             }
 
 
-
+            debugger;
             $.ajax({
                  type: "POST",
                  url: runtime.handlerUrl(element, 'getSliderSetup'),
@@ -123,8 +123,10 @@ function WorldMapXBlock(runtime, element) {
                  success: function(result) {
 
                     for( var i=0; i<result.length; i++) {
+
                         var sliderSpec = result[i];
 
+                        console.log("sliderSpec = "+JSON.stringify(sliderSpec));
                         var thumb = $('<div class="slider-thumb-value" />').css({
                             top: (sliderSpec.position=="top"?-15:25),
                             left: -10

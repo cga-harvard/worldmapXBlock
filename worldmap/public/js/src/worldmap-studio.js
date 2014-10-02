@@ -386,12 +386,21 @@ function WorldMapEditBlock(runtime, element) {
                 text: "OK",
                 click: function() {
                     var valid = true;
+                    var msg = "Validation problems:\n\n";
                     $('#dialog-slider-form .required').each( function() {
                         if( $(this).val() === "")valid = false;
+                        msg += "Value must be specified\n\n";
                     });
                     $('#dialog-slider-form .required-number').each( function() {
                         if( !$.isNumeric($(this).val())) valid = false;
+                        msg += "Value must be a number\n\n";
                     });
+                    if( $('#slider-min',this).val() != "" && $('#slider-min',this).val() != ""
+                       && $('#slider-min',this).val() >= $('#slider-max',this).val()) {
+                        valid = false;
+                        $(this).addClass('field-error');
+                        msg += "Minimum must be less than maximum\n\n";
+                    }
                     if( valid ) {
                         var slider = $(this).data('slider');
                         for (var i in worldmapConfig['sliders']) {
@@ -409,7 +418,7 @@ function WorldMapEditBlock(runtime, element) {
                         refreshSliders();
                         $(this).dialog("close");
                     } else {
-                        window.alert("Validation problems:\n\nFix errors before closing.");
+                        window.alert(msg + "Fix errors before closing.");
                     }
                 }
             },

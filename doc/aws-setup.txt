@@ -29,3 +29,13 @@ In /edx/app/edxapp/edx-platform/cms/envs/common.py   set:
    'ALLOW_ALL_ADVANCED_COMPONENTS': True,
 
 pip install affinity
+
+
+
+Re-installing worldmapXblock
+    sudo -u edxapp /edx/bin/pip.edxapp uninstall worldmap-xblock
+    sudo -u edxapp /edx/bin/pip.edxapp install /path/to/your/block
+
+    restart your lms/cms
+    sudo /edx/bin/supervisorctl -c /edx/etc/supervisord.conf restart edxapp:
+    sudo /edx/bin/supervisorctl -c /edx/etc/supervisord.conf restart edxapp_worker:
