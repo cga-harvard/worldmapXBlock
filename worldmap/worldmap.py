@@ -87,33 +87,81 @@ class WorldMapXBlock(XBlock):
 
     configJson = """
                 {
-                    "explanation": "General HTML prose goes here.  Delete it if not needed. Include an anchor like '<a href='#' onclick='return highlight(\\"backbay\\", 5000, -2)'>Back Bay</a>' to highlight areas on the map",
                     "highlights": [
-                       {
-                          "id": "backbay",
-                          "geometry": {
-                              "type": "polygon",
-                              "points": [
-                                 {"lon": -71.09350774082822, "lat": 42.35148683512319},
-                                 {"lon": -71.09275672230382, "lat": 42.34706235935522},
-                                 {"lon": -71.08775708470029, "lat": 42.3471733715164},
-                                 {"lon": -71.08567569050435, "lat": 42.34328782922443},
-                                 {"lon": -71.08329388889936, "lat": 42.34140047917672},
-                                 {"lon": -71.07614848408352, "lat": 42.347379536438645},
-                                 {"lon": -71.07640597614892, "lat": 42.3480456031057},
-                                 {"lon": -71.0728225449051, "lat": 42.34785529906382},
-                                 {"lon": -71.07200715336435, "lat": 42.34863237027516},
-                                 {"lon": -71.07228610310248, "lat": 42.34942529018035},
-                                 {"lon": -71.07011887821837, "lat": 42.35004376076278},
-                                 {"lon": -71.0708055237264, "lat": 42.351835705270716},
-                                 {"lon": -71.07325169834775, "lat": 42.35616470553563},
-                                 {"lon": -71.07408854756031, "lat": 42.35600613935877},
-                                 {"lon": -71.07483956608469, "lat": 42.357131950552244},
-                                 {"lon": -71.09331462177917, "lat": 42.35166127043902}
-                              ]
-                          }
-                       }
+                        {
+                            "geometry": {
+                                "points": [
+                                    {
+                                        "lat": 42.35148683512319,
+                                        "lon": -71.09350774082822
+                                    },
+                                    {
+                                        "lat": 42.34706235935522,
+                                        "lon": -71.09275672230382
+                                    },
+                                    {
+                                        "lat": 42.3471733715164,
+                                        "lon": -71.08775708470029
+                                    },
+                                    {
+                                        "lat": 42.34328782922443,
+                                        "lon": -71.08567569050435
+                                    },
+                                    {
+                                        "lat": 42.34140047917672,
+                                        "lon": -71.08329388889936
+                                    },
+                                    {
+                                        "lat": 42.347379536438645,
+                                        "lon": -71.07614848408352
+                                    },
+                                    {
+                                        "lat": 42.3480456031057,
+                                        "lon": -71.07640597614892
+                                    },
+                                    {
+                                        "lat": 42.34785529906382,
+                                        "lon": -71.0728225449051
+                                    },
+                                    {
+                                        "lat": 42.34863237027516,
+                                        "lon": -71.07200715336435
+                                    },
+                                    {
+                                        "lat": 42.34942529018035,
+                                        "lon": -71.07228610310248
+                                    },
+                                    {
+                                        "lat": 42.35004376076278,
+                                        "lon": -71.07011887821837
+                                    },
+                                    {
+                                        "lat": 42.351835705270716,
+                                        "lon": -71.0708055237264
+                                    },
+                                    {
+                                        "lat": 42.35616470553563,
+                                        "lon": -71.07325169834775
+                                    },
+                                    {
+                                        "lat": 42.35600613935877,
+                                        "lon": -71.07408854756031
+                                    },
+                                    {
+                                        "lat": 42.357131950552244,
+                                        "lon": -71.07483956608469
+                                    },
+                                    {
+                                        "lat": 42.35166127043902,
+                                        "lon": -71.09331462177917
+                                    }
+                                ],
+                                "type": "polygon"
+                            },
+                            "id": "backbay"
+                        }
                     ],
+                    "explanation": "General HTML prose goes here.  Delete it if not needed. Include an anchor like '<a href='#' onclick='return highlight(\"backbay\", 5000, -2)'>Back Bay</a>' to highlight areas on the map",
                     "questions": [
                         {
                             "hintAfterAttempt": 2,
@@ -179,7 +227,7 @@ class WorldMapXBlock(XBlock):
                                         "type": "polygon",
                                         "relativeZoom": -2
                                     },
-                                    "explanation": "Here is the island",
+                                    "explanation": "The island is somewhere near here",
                                     "padding": 1000,
                                     "maxAreaFactor": null,
                                     "percentMatch": null,
@@ -191,7 +239,7 @@ class WorldMapXBlock(XBlock):
                         }
                     ]
                 }
-    """
+                """
     worldmapConfigJson = """
                 {
                     "href": "http://23.21.172.243/maps/bostoncensus/embed",
