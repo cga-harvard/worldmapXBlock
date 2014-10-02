@@ -161,7 +161,7 @@ class WorldMapXBlock(XBlock):
                             "id": "backbay"
                         }
                     ],
-                    "explanation": "General HTML prose goes here.  Delete it if not needed. Include an anchor like '<a href='#' onclick='return highlight(\"backbay\", 5000, -2)'>Back Bay</a>' to highlight areas on the map",
+                    "explanation": "General HTML prose goes here.  Delete it if not needed. Include an anchor like <a href='#' onclick='return highlight(\\"backbay\\",5000,0)'>Back Bay</a> to highlight areas on the map",
                     "questions": [
                         {
                             "hintAfterAttempt": 2,
@@ -172,8 +172,15 @@ class WorldMapXBlock(XBlock):
                             "id": "foobar",
                             "constraints": [
                                 {
+                                    "explanation": "The island is somewhere near here",
+                                    "padding": 1000,
+                                    "maxAreaFactor": null,
+                                    "percentMatch": null,
+                                    "percentOfGrade": 100,
+                                    "validated": true,
+                                    "type": "inside",
                                     "geometry": {
-                                        "duration": -1,
+                                        "type": "polygon",
                                         "points": [
                                             {
                                                 "lat": 42.31071913366582,
@@ -223,17 +230,8 @@ class WorldMapXBlock(XBlock):
                                                 "lat": 42.31071913366582,
                                                 "lon": -70.9768638351889
                                             }
-                                        ],
-                                        "type": "polygon",
-                                        "relativeZoom": -2
-                                    },
-                                    "explanation": "The island is somewhere near here",
-                                    "padding": 1000,
-                                    "maxAreaFactor": null,
-                                    "percentMatch": null,
-                                    "percentOfGrade": 100,
-                                    "validated": true,
-                                    "type": "inside"
+                                        ]
+                                    }
                                 }
                             ]
                         }
@@ -242,117 +240,288 @@ class WorldMapXBlock(XBlock):
                 """
     worldmapConfigJson = """
                 {
-                    "href": "http://23.21.172.243/maps/bostoncensus/embed",
-                    "lat": 42.365,
-                    "lon": -70.9,
-                    "zoom": 9,
-                    "stickyMap": true,
-                    "debug": false,
-                    "width": 600,
-                    "height": 400,
-                    "baseLayer":"OpenLayers_Layer_Google_116",
                     "layers": [
                         {
-                            "id":"OpenLayers_Layer_WMS_122",
                             "params": [
-                                { "name":"CensusYear",  "value":1972 }
-                            ]
+                                {
+                                    "name": "CensusYear",
+                                    "value": 1972
+                                }
+                            ],
+                            "id": "OpenLayers_Layer_WMS_122"
                         },
                         {
-                            "id":"OpenLayers_Layer_WMS_124",
                             "params": [
-                                { "name":"CensusYear",  "min":1973, "max": 1977 }
-                            ]
+                                {
+                                    "max": 1977,
+                                    "name": "CensusYear",
+                                    "min": 1973
+                                }
+                            ],
+                            "id": "OpenLayers_Layer_WMS_124"
                         },
                         {
-                            "id":"OpenLayers_Layer_WMS_120",
                             "params": [
-                                { "name":"CensusYear",  "value":1976 }
-                            ]
+                                {
+                                    "name": "CensusYear",
+                                    "value": 1976
+                                }
+                            ],
+                            "id": "OpenLayers_Layer_WMS_120"
                         },
                         {
-                            "id":"OpenLayers_Layer_WMS_118",
                             "params": [
-                                { "name":"CensusYear",  "value":1978 }
-                            ]
+                                {
+                                    "name": "CensusYear",
+                                    "value": 1978
+                                }
+                            ],
+                            "id": "OpenLayers_Layer_WMS_118"
                         },
                         {
-                            "id":"OpenLayers_Layer_Vector_132",
                             "params": [
-                                { "name":"CensusYear",  "value":1980 }
-                            ]
+                                {
+                                    "name": "CensusYear",
+                                    "value": 1980
+                                }
+                            ],
+                            "id": "OpenLayers_Layer_Vector_132"
                         }
                     ],
-                    "layer-controls": {
-                        "title":"Layers - delete if not needed",
-                        "expand": false,
-                        "children": [
-                            {
-                                "key":"OpenLayers_Layer_WMS_120",
-                                "visible": true,
-                                "title": "layerA"
-                            },
-                            {
-                                "key":"OpenLayers_Layer_WMS_122",
-                                "visible": true,
-                                "title": "layerB"
-                            },
-                            {
-                                "key":"OpenLayers_Layer_WMS_124",
-                                "visible": true,
-                                "title": "layerC"
-                            },
-                            {
-                                "key":"OpenLayers_Layer_WMS_120",
-                                "visible": true,
-                                "title": "layerD"
-                            },
-                            {
-                                "key":"OpenLayers_Layer_WMS_118",
-                                "visible": true,
-                                "title": "layerE"
-                            },
-                            {
-                                "key":"OpenLayers_Layer_Vector_132",
-                                "visible": true,
-                                "title": "layerF"
-                            },
-                            {
-                                "title":"A sub group of layers",
-                                "isFolder": true,
-                                "children": [
-                                    {
-                                        "title":"A sub sub group of layers",
-                                        "isFolder": true,
-                                        "children": [
-                                            {
-                                                "key":"OpenLayers_Layer_WMS_118",
-                                                "visible": true,
-                                                "title": "layerE.1"
-                                            },
-                                            {
-                                                "key":"OpenLayers_Layer_Vector_132",
-                                                "visible": true,
-                                                "title": "layerF.1"
-                                            }
-                                        ]
-                                    }
-                                ]
-                            }
-                        ]
-                    },
-                   	"sliders": [
+                    "stickyMap": true,
+                    "lat": 42.365,
+                    "sliders": [
                         {
                             "help": "General <B>HTML</B> here - useful for creating a help message",
-                            "title": "Example Slider",
-                            "max": 2010,
                             "min": 1970,
+                            "max": 2010,
+                            "title": "Example Slider",
                             "param": "CensusYear",
                             "increment": 1,
                             "position": "bottom",
                             "id": "slider-1412208064.961"
                         }
-                    ]
+                    ],
+                    "lon": -70.9,
+                    "zoom": 9,
+                    "height": 400,
+                    "layer-controls": {
+                        "activate": false,
+                        "title": "Layers - delete if not needed",
+                        "unselectable": false,
+                        "noLink": false,
+                        "isFolder": false,
+                        "focus": false,
+                        "tooltip": null,
+                        "hideCheckbox": false,
+                        "href": null,
+                        "select": false,
+                        "key": "_2",
+                        "isLazy": false,
+                        "hidden": false,
+                        "addClass": null,
+                        "children": [
+                            {
+                                "activate": false,
+                                "title": "layerA",
+                                "hideCheckbox": false,
+                                "unselectable": false,
+                                "noLink": false,
+                                "isFolder": false,
+                                "focus": false,
+                                "tooltip": null,
+                                "visible": true,
+                                "href": null,
+                                "select": false,
+                                "key": "OpenLayers_Layer_WMS_120",
+                                "isLazy": false,
+                                "hidden": false,
+                                "addClass": null,
+                                "expand": false,
+                                "icon": null
+                            },
+                            {
+                                "activate": false,
+                                "title": "layerB",
+                                "hideCheckbox": false,
+                                "unselectable": false,
+                                "noLink": false,
+                                "isFolder": false,
+                                "focus": false,
+                                "tooltip": null,
+                                "visible": true,
+                                "href": null,
+                                "select": false,
+                                "key": "OpenLayers_Layer_WMS_122",
+                                "isLazy": false,
+                                "hidden": false,
+                                "addClass": null,
+                                "expand": false,
+                                "icon": null
+                            },
+                            {
+                                "activate": false,
+                                "title": "layerC",
+                                "hideCheckbox": false,
+                                "unselectable": false,
+                                "noLink": false,
+                                "isFolder": false,
+                                "focus": false,
+                                "tooltip": null,
+                                "visible": true,
+                                "href": null,
+                                "select": false,
+                                "key": "OpenLayers_Layer_WMS_124",
+                                "isLazy": false,
+                                "hidden": false,
+                                "addClass": null,
+                                "expand": false,
+                                "icon": null
+                            },
+                            {
+                                "activate": false,
+                                "title": "layerD",
+                                "hideCheckbox": false,
+                                "unselectable": false,
+                                "noLink": false,
+                                "isFolder": false,
+                                "focus": false,
+                                "tooltip": null,
+                                "visible": true,
+                                "href": null,
+                                "select": false,
+                                "key": "OpenLayers_Layer_WMS_120",
+                                "isLazy": false,
+                                "hidden": false,
+                                "addClass": null,
+                                "expand": false,
+                                "icon": null
+                            },
+                            {
+                                "activate": false,
+                                "title": "layerE",
+                                "hideCheckbox": false,
+                                "unselectable": false,
+                                "noLink": false,
+                                "isFolder": false,
+                                "focus": false,
+                                "tooltip": null,
+                                "visible": true,
+                                "href": null,
+                                "select": false,
+                                "key": "OpenLayers_Layer_WMS_118",
+                                "isLazy": false,
+                                "hidden": false,
+                                "addClass": null,
+                                "expand": false,
+                                "icon": null
+                            },
+                            {
+                                "activate": false,
+                                "title": "layerF",
+                                "hideCheckbox": false,
+                                "unselectable": false,
+                                "noLink": false,
+                                "isFolder": false,
+                                "focus": false,
+                                "tooltip": null,
+                                "visible": true,
+                                "href": null,
+                                "select": false,
+                                "key": "OpenLayers_Layer_Vector_132",
+                                "isLazy": false,
+                                "hidden": false,
+                                "addClass": null,
+                                "expand": false,
+                                "icon": null
+                            },
+                            {
+                                "activate": false,
+                                "title": "A sub group of layers",
+                                "unselectable": false,
+                                "noLink": false,
+                                "isFolder": true,
+                                "focus": false,
+                                "tooltip": null,
+                                "hideCheckbox": false,
+                                "href": null,
+                                "select": false,
+                                "key": "_3",
+                                "isLazy": false,
+                                "hidden": false,
+                                "addClass": null,
+                                "children": [
+                                    {
+                                        "activate": false,
+                                        "title": "A sub sub group of layers",
+                                        "unselectable": false,
+                                        "noLink": false,
+                                        "isFolder": true,
+                                        "focus": false,
+                                        "tooltip": null,
+                                        "hideCheckbox": false,
+                                        "href": null,
+                                        "select": false,
+                                        "key": "_4",
+                                        "isLazy": false,
+                                        "hidden": false,
+                                        "addClass": null,
+                                        "children": [
+                                            {
+                                                "activate": false,
+                                                "title": "layerE.1",
+                                                "hideCheckbox": false,
+                                                "unselectable": false,
+                                                "noLink": false,
+                                                "isFolder": false,
+                                                "focus": false,
+                                                "tooltip": null,
+                                                "visible": true,
+                                                "href": null,
+                                                "select": false,
+                                                "key": "OpenLayers_Layer_WMS_118",
+                                                "isLazy": false,
+                                                "hidden": false,
+                                                "addClass": null,
+                                                "expand": false,
+                                                "icon": null
+                                            },
+                                            {
+                                                "activate": false,
+                                                "title": "layerF.1",
+                                                "hideCheckbox": false,
+                                                "unselectable": false,
+                                                "noLink": false,
+                                                "isFolder": false,
+                                                "focus": false,
+                                                "tooltip": null,
+                                                "visible": true,
+                                                "href": null,
+                                                "select": false,
+                                                "key": "OpenLayers_Layer_Vector_132",
+                                                "isLazy": false,
+                                                "hidden": false,
+                                                "addClass": null,
+                                                "expand": false,
+                                                "icon": null
+                                            }
+                                        ],
+                                        "expand": false,
+                                        "icon": null
+                                    }
+                                ],
+                                "expand": false,
+                                "icon": null
+                            }
+                        ],
+                        "expand": false,
+                        "icon": null
+                    },
+                    "width": 600,
+                    "stylesheet": "/* be careful, you can override edX styles here too */",
+                    "href": "http://23.21.172.243/maps/bostoncensus/embed",
+                    "debug": true,
+                    "baseLayer": "OpenLayers_Layer_Google_116"
                 }
     """
 
