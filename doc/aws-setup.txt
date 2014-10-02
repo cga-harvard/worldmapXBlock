@@ -28,8 +28,9 @@ sudo -u edxapp /edx/bin/pip.edxapp install /path/to/your/block
 In /edx/app/edxapp/edx-platform/cms/envs/common.py   set:
    'ALLOW_ALL_ADVANCED_COMPONENTS': True,
 
-pip install affinity
-
+upgrade to Shapely 1.4.3
+    sudo -u edxapp /edx/bin/pip.edxapp uninstall Shapely
+    sudo -u edxapp /edx/bin/pip.edxapp install Shapely
 
 
 Re-installing worldmapXblock

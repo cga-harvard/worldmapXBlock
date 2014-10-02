@@ -125,6 +125,7 @@ class WorldMapXBlock(XBlock):
                             "constraints": [
                                 {
                                     "geometry": {
+                                        "duration": -1,
                                         "points": [
                                             {
                                                 "lat": 42.31071913366582,
@@ -175,8 +176,16 @@ class WorldMapXBlock(XBlock):
                                                 "lon": -70.9768638351889
                                             }
                                         ],
-                                        "type": "polygon"
-                                    }
+                                        "type": "polygon",
+                                        "relativeZoom": -2
+                                    },
+                                    "explanation": "Here is the island",
+                                    "padding": 1000,
+                                    "maxAreaFactor": null,
+                                    "percentMatch": null,
+                                    "percentOfGrade": 100,
+                                    "validated": true,
+                                    "type": "inside"
                                 }
                             ]
                         }
