@@ -520,7 +520,7 @@ class WorldMapXBlock(XBlock):
                     "width": 600,
                     "stylesheet": "/* be careful, you can override edX styles here too */",
                     "href": "http://23.21.172.243/maps/bostoncensus/embed",
-                    "debug": true,
+                    "debug": false,
                     "baseLayer": "OpenLayers_Layer_Google_116"
                 }
     """

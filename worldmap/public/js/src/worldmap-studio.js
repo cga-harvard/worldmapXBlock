@@ -1128,7 +1128,7 @@ function WorldMapEditBlock(runtime, element) {
                 }
 
             }
-            $('#constraint-maxAreaRatio').toggle(responseType == 'polygon');
+            $('#constraint-maxAreaRatio-span').toggle(responseType == 'polygon');
 
             var requiredEmpty = false;
             $('#dialog-constraint-form .required').each( function() {
@@ -1302,7 +1302,7 @@ function WorldMapEditBlock(runtime, element) {
     function onChangeConstraintType() {
         constraintDialog.validate();
         $('#constraint-percentMatch-span').toggle($('#constraint-type',constraintDialog).val() === 'matches');
-        $('#constraint-maxAreaFactor-span').toggle($('#constraint-type', constraintDialog).val() === 'includes' && $('#constraint-geometry-type').val() !== 'point');
+        $('#constraint-maxAreaFactor-span').toggle(constraintDialog.data('responseType')=='polygon' && $('#constraint-type', constraintDialog).val() === 'includes' && $('#constraint-geometry-type').val() !== 'point');
         constraintDialog.validate();
     }
 
@@ -1312,7 +1312,7 @@ function WorldMapEditBlock(runtime, element) {
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("reset-highlights", null));
         myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("set-answer-tool", {type: type, color: '0000FF'}));
 
-        $('#constraint-maxAreaFactor-span').toggle( $('#constraint-geometry-type').val() === 'polygon' );
+        $('#constraint-maxAreaFactor-span').toggle( constraintDialog.data('responseType')=='polygon' && $('#constraint-geometry-type').val() === 'polygon' );
 
         constraintDialog.validate();
     }

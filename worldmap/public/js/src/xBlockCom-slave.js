@@ -10,21 +10,6 @@ function getHost(r) {
    a.href = r;
    return a.protocol+"//"+a.hostname+":"+(a.port ? a.port : "80")+"/";
 }
-/*
- (function($) {
-    $.QueryString = (function(a) {
-        if (a == "") return {};
-        var b = {};
-        for (var i = 0; i < a.length; ++i)
-        {
-            var p=a[i].split('=');
-            if (p.length != 2) continue;
-            b[p[0]] = decodeURIComponent(p[1].replace(/\+/g, " "));
-        }
-        return b;
-    })(window.location.search.substr(1).split('&'))
-})(jQuery);
-*/
 
 /** MESSAGING is a singleton for easy access **/
 var MESSAGING = (function Messaging() { // declare 'Singleton' as the return value of a self-executing anonymous function
@@ -37,7 +22,11 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
     };
     _constructor.prototype = { // *** prototypes will be "public" methods available to the instance
         initialize: function() {
-           this.send(new Message("init",{}),true);
+           if( this.opener && this.opener != window ) {
+               this.isMasterSlave = false;
+           } else {
+               this.send(new Message("init", {}));
+           }
         },
         setMasterSlave: function(b) { this.isMasterSlave = b; },
         getReferringHost: function() {
@@ -47,16 +36,11 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
            this.opener = o;
            if( !this.opener ) this.isMasterSlave = false;
         },
-        send: function(msg, force) {
-           force = typeof force !== 'undefined'?force:false;
-           if( (force && this.opener) || this.isMasterSlave) {
+        send: function(msg) {
+           if( this.isMasterSlave ) {
               this.opener.postMessage({xblockId:queryParams.xblockId, uniqueClientId:this.uniqueId, message: msg}, this.getReferringHost());
            } else {
-              if( this.opener ) {
-                  console.log("not sending message, force: "+force+"  this.opener: defined  this.isMasterSlave:"+this.isMasterSlave);
-              } else {
-                  console.log("not sending message, this.opener is undefined    this.isMasterSlave: "+this.isMasterSlave);
-              }
+              console.log("not sending message: "+msg.type+", this.isMasterSlave:"+this.isMasterSlave);
            }
         },
         registerHandler: function(t,h) {
@@ -64,25 +48,30 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
         },
         handleMessageEvent: function(event) {
            try {
-             var data = JSON.parse(event.data);
-              if( data.type == "master-acknowledge" || this.isMasterSlave ) {
-                 var originHost = getHost(event.origin);
-                 if( originHost == this.referringHost) { //SECURITY: we only listen to messages from our referring host
-                    if( this.handlers[data.type] ) {
-                       try {
-                          var msg = new Message(data.type, JSON.parse(data.message)); //data.message is a JSON string
-                          this.handlers[data.type]( msg );
-                       } catch (e) {
-                          console.log("ERROR:  Failed to handle message - "+e+"\n"+ e.stack);
-                       }
-                    } else {
-                       console.log("ERROR:  Message ignored by slave - no handler for message type="+data.type);
-                    }          
-                 } else {
-                    console.log("WARNING:  Message ignored by slave - originHost="+originHost+"   - referringHost="+this.referringHost);
-                 }
+              //if not in master-slave mode, the init message echos back on us and we get it here
+              if( event.data.message && event.data.message.type=="init") {
+                  this.isMasterSlave = false;
               } else {
-                 console.log("WARNING: Message ignored by slave  -  message type: "+data.type+",  isMasterSlave: "+this.isMasterSlave);
+                  var data = JSON.parse(event.data);
+                  if (data.type == "master-acknowledge" || this.isMasterSlave) {
+                      var originHost = getHost(event.origin);
+                      if (originHost == this.referringHost) { //SECURITY: we only listen to messages from our referring host
+                          if (this.handlers[data.type]) {
+                              try {
+                                  var msg = new Message(data.type, JSON.parse(data.message)); //data.message is a JSON string
+                                  this.handlers[data.type](msg);
+                              } catch (e) {
+                                  console.log("ERROR:  Failed to handle message - " + e + "\n" + e.stack);
+                              }
+                          } else {
+                              console.log("ERROR:  Message ignored by slave - no handler for message type=" + data.type);
+                          }
+                      } else {
+                          console.log("WARNING:  Message ignored by slave - originHost=" + originHost + "   - referringHost=" + this.referringHost);
+                      }
+                  } else {
+                      console.log("WARNING: Message ignored by slave  -  message type: " + data.type + ",  isMasterSlave: " + this.isMasterSlave);
+                  }
               }
            } catch(e) {  
               console.log("ERROR:  SLAVE THREW EXCEPTION WHEN HANDLING MESSAGE: "+e+"\nevent.data="+event.data);
