@@ -21,10 +21,7 @@ The xBlockCom-slave.js is loaded by the embed.html mainpage which wraps the worl
 Worldmap server.
 
 
-
-
-
-There are only 2 restrictions with this architecture:
+There are only 3 restrictions with this architecture:
 
 1. If the master page is running off an *http* server, the slave page (ie: worldmap) must also be served on an *http* server (likewise with https).  This is a restriction imposed by the basic javascript sandbox security rules.
 2. The data contained in the message payload must not have pointers to protected resources - like the browser's sandbox resources etc.
