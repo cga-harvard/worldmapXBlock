@@ -307,7 +307,7 @@ class WorldMapXBlock(XBlock):
                     "height": 400,
                     "layer-controls": {
                         "activate": false,
-                        "title": "Layers - delete if not needed",
+                        "title": "Layers - hide if not needed",
                         "unselectable": false,
                         "noLink": false,
                         "isFolder": false,
@@ -517,7 +517,7 @@ class WorldMapXBlock(XBlock):
                         "expand": false,
                         "icon": null
                     },
-                    "width": 600,
+                    "width": 500,
                     "stylesheet": "/* be careful, you can override edX styles here too */",
                     "href": "http://23.21.172.243/maps/bostoncensus/embed",
                     "debug": false,
@@ -624,7 +624,7 @@ class WorldMapXBlock(XBlock):
         uniqueId = self.getUniqueId()
 
         self.url =   self.worldmapConfig.get("href",None) + delimiter + "xblockId=worldmap_" + uniqueId
-        self.width=  self.worldmapConfig.get("width",600)
+        self.width=  self.worldmapConfig.get("width",500)
         self.height= self.worldmapConfig.get("height",400)
         self.debug = self.worldmapConfig.get("debug",False)
         self.baseLayer = self.worldmapConfig.get("baseLayer",None)
@@ -636,7 +636,7 @@ class WorldMapXBlock(XBlock):
 
 
         html = self.resource_string("static/html/worldmap.html").format(self=self, uniqueId=uniqueId)
-        log.info(html)
+        #log.info(html)
 
         frag = Fragment(html)
         template = Template(self.resource_string("static/css/worldmap.css"))
@@ -791,7 +791,6 @@ class WorldMapXBlock(XBlock):
         if correctGeometry['type'] == 'polygon':
             hit = makePolygon(correctGeometry['points']).contains(makePoint(userAnswer))
 
-
         correctExplanation = ""
         percentCorrect = 100
         if not hit :
@@ -823,8 +822,7 @@ class WorldMapXBlock(XBlock):
 
             isHit = True
 
-            totalGradeValue = 0
-            totalCorrect = 0
+            totalIncorrect = 0
             unsatisfiedConstraints = []
             for constraint in data['question']['constraints']:
                 constraintSatisfied = True
@@ -882,10 +880,8 @@ class WorldMapXBlock(XBlock):
                             if not constraintSatisfied :
                                additionalErrorInfo = _(" (polygon includes a key polyline that it should not include)")
 
-                totalGradeValue += constraint['percentOfGrade']
-                if constraintSatisfied :
-                    totalCorrect += constraint['percentOfGrade']
-                else:
+                if not constraintSatisfied :
+                    totalIncorrect += constraint['percentOfGrade']
                     unsatisfiedConstraints.append(constraint)
 
                 isHit = isHit and constraintSatisfied
@@ -910,7 +906,7 @@ class WorldMapXBlock(XBlock):
                 'error': _("Unexpected error: "+sys.exc_info()[0])
             }
 
-        percentIncorrect = math.floor( 100 - totalCorrect*100/totalGradeValue);
+        percentIncorrect = math.min( totalIncorrect, 100);
 
         correctExplanation = "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
         self.setScore(data['question']['id'], 100-percentIncorrect, correctExplanation)
@@ -936,8 +932,7 @@ class WorldMapXBlock(XBlock):
         isHit = True
         try:
 
-            totalGradeValue = 0
-            totalCorrect = 0
+            totalIncorrect = 0
             unsatisfiedConstraints = []
             for constraint in data['question']['constraints']:
                 constraintSatisfied = True
@@ -979,10 +974,8 @@ class WorldMapXBlock(XBlock):
                     if not constraintSatisfied:
                         additionalErrorInfo = _(" - Must include a particular point")
 
-                totalGradeValue += constraint['percentOfGrade']
-                if constraintSatisfied :
-                    totalCorrect += constraint['percentOfGrade']
-                else:
+                if not constraintSatisfied :
+                    totalIncorrect += constraint['percentOfGrade']
                     unsatisfiedConstraints.append(constraint)
 
                 isHit = isHit and constraintSatisfied
@@ -990,7 +983,7 @@ class WorldMapXBlock(XBlock):
         except:
             print _("Unexpected error: "), sys.exc_info()[0]
 
-        percentIncorrect = math.floor( 100 - totalCorrect*100/totalGradeValue);
+        percentIncorrect = math.min( 100, totalIncorrect);
 
         correctExplanation = "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
 

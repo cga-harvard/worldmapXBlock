@@ -1,6 +1,6 @@
 console.log("worldmap-studio.js loaded and executing....");
 
-var myApp = myApp || {};
+var XB = XB || {};  // global used for xblock adapter scripts
 
 
 function WorldMapEditBlock(runtime, element) {
@@ -486,6 +486,7 @@ function WorldMapEditBlock(runtime, element) {
                     var valid = true;
                     $('#dialog-layerControl-form .required').each( function() {
                         if($(this).is(':visible') && $(this).val() === "" ) valid = false;
+                        $(this).toggleClass("field-error",!valid);
                     });
                     if( !valid ) {
                         window.alert("Validation problems:\n\nFix errors before closing.");
@@ -893,10 +894,10 @@ function WorldMapEditBlock(runtime, element) {
         create: function(event, ui) {
         },
         open: function() {
-            if( myApp.MESSAGING.getInstance().isPortalReady(getUniqueId('#dialog-geo-view-form')) ) {
+            if( XB.MESSAGING.getInstance().isPortalReady(getUniqueId('#dialog-geo-view-form')) ) {
                 initGeoViewMap();
             } else {
-                myApp.MESSAGING.getInstance().addHandler(getUniqueId('#dialog-geo-view-form'),"portalReady", initGeoViewMap);
+                XB.MESSAGING.getInstance().addHandler(getUniqueId('#dialog-geo-view-form'),"portalReady", initGeoViewMap);
             }
         }
     });
@@ -965,10 +966,10 @@ function WorldMapEditBlock(runtime, element) {
 
             $("#dialog-geo-form input[name=geo-boundary-type]").val([geoDialog.data('highlight')['geometry']['type']]);
 
-            if( myApp.MESSAGING.getInstance().isPortalReady(getUniqueId('#dialog-geo-form')) ) {
+            if( XB.MESSAGING.getInstance().isPortalReady(getUniqueId('#dialog-geo-form')) ) {
                 initGeoMap();
             } else {
-                myApp.MESSAGING.getInstance().addHandler(getUniqueId('#dialog-geo-form'),"portalReady", initGeoMap);
+                XB.MESSAGING.getInstance().addHandler(getUniqueId('#dialog-geo-form'),"portalReady", initGeoMap);
             }
         }
     });
@@ -1079,12 +1080,15 @@ function WorldMapEditBlock(runtime, element) {
                 $('#constraint-type option[value="inside"]').attr('selected', 'selected');
             }
 
+            //percent of grade only visible if responseType is NOT point
+            $('#constraint-percentOfGrade-span',this).toggle(responseType != 'point');
+
             constraintDialog.validate();
 
-            if( myApp.MESSAGING.getInstance().isPortalReady(getUniqueId('#dialog-constraint-form')) ) {
+            if( XB.MESSAGING.getInstance().isPortalReady(getUniqueId('#dialog-constraint-form')) ) {
                 initConstraintMap();
             } else {
-                myApp.MESSAGING.getInstance().addHandler(getUniqueId('#dialog-constraint-form'),"portalReady", initConstraintMap);
+                XB.MESSAGING.getInstance().addHandler(getUniqueId('#dialog-constraint-form'),"portalReady", initConstraintMap);
             }
         }
     });
@@ -1092,9 +1096,20 @@ function WorldMapEditBlock(runtime, element) {
     constraintDialog.validate = function() {
             var constraintGeoType = $('#constraint-geometry-type').val();
             var constraintType = $('#constraint-type').val();
+            var constraintPercent = $('#constraint-percentOfGrade').val();
             var responseType = constraintDialog.data('responseType');
             var result = true;
             var msg = "";
+
+            //range check
+            if( constraintPercent < 0 || constraintPercent > 100 ) {
+                result = false;
+                msg += "% deducted from score must be in range [0-100]<br/>";
+                $('#constraint-percentOfGrade').toggleClass('field-error',true);
+            } else {
+                $('#constraint-percentOfGrade').toggleClass('field-error',false);
+            }
+
             var compatible = constraintType !== 'inside' || constraintGeoType === 'polygon';
             $('#constraint-type').toggleClass('field-error', !compatible);
             $('#constraint-geometry-type').toggleClass('field-error', !compatible);
@@ -1123,7 +1138,7 @@ function WorldMapEditBlock(runtime, element) {
                 $('#constraint-type').toggleClass('field-error', !compatible);
                 $('#constraint-geometry-type').toggleClass('field-error', !compatible);
                 if( !compatible ) {
-                    msg += "A 'point' user response can only be constrained to be 'inside' a 'polygon'";
+                    msg += "A 'point' user response can only be constrained to be 'inside' a 'polygon'<br/>";
                     result =false;
                 }
 
@@ -1137,26 +1152,6 @@ function WorldMapEditBlock(runtime, element) {
                     requiredEmpty = true;
                 }
             });
-//            if( $('#constraint-percentMatch').toggleClass('field-error', $('#constraint-type').val() === "matches" && $('#constraint-percentMatch').val() === "")
-//                .hasClass('field-error')) {
-//                requiredEmpty = true;
-//            }
-//            if( $('#constraint-percentOfGrade').toggleClass('field-error', $('#constraint-percentOfGrade').val() === "" )
-//                .hasClass('field-error') ) {
-//                requiredEmpty = true;
-//            }
-//            if( $('#constraint-padding').toggleClass('field-error',$('#constraint-padding').val() === "" )
-//                .hasClass('field-error') ) {
-//                requiredEmpty = true;
-//            }
-//            if( $('#constraint-maxAreaFactor').toggleClass('field-error',$('#constraint-maxAreaFactor').val() === "" )
-//                .hasClass('field-error') ) {
-//                requiredEmpty = true;
-//            }
-//            if( $('#constraint-explanation').toggleClass('field-error', $('#constraint-explanation').val() === "")
-//                .hasClass('field-error')) {
-//                requiredEmpty = true;
-//            }
 
             var requiredNumber = false;
             $('#dialog-constraint-form .required-number').each( function() {
@@ -1190,27 +1185,27 @@ function WorldMapEditBlock(runtime, element) {
     function setupPortalReady(dlg, item) {
         var id = dlg.attr('id');
         var uniqueId = getUniqueId('#'+id);
-        if( !myApp.MESSAGING.getInstance().isPortalReady(uniqueId) ) {
-            myApp.MESSAGING.getInstance().addHandler(uniqueId,"portalReady", function(m) {
+        if( !XB.MESSAGING.getInstance().isPortalReady(uniqueId) ) {
+            XB.MESSAGING.getInstance().addHandler(uniqueId,"portalReady", function(m) {
                 if( id == geoViewDialog.attr('id')) {
-                    myApp.MESSAGING.getInstance().addHandler(uniqueId, "zoomend", function (m) {
+                    XB.MESSAGING.getInstance().addHandler(uniqueId, "zoomend", function (m) {
                         dlg.data('zoom', m.getMessage());
                     });
-                    myApp.MESSAGING.getInstance().addHandler(uniqueId, "moveend", function (m) {
+                    XB.MESSAGING.getInstance().addHandler(uniqueId, "moveend", function (m) {
                         var center = JSON.parse(m.getMessage())['center'];
                         dlg.data('centerLat', center['y']);
                         dlg.data('centerLon', center['x']);
                     });
                 } else {
-                    myApp.MESSAGING.getInstance().addHandler(uniqueId, "polygon_response", function (msg) {
+                    XB.MESSAGING.getInstance().addHandler(uniqueId, "polygon_response", function (msg) {
                         var data = JSON.parse(JSON.parse(msg.message));
                         dlg.data(item)['geometry'] = {type: 'polygon', points: data['polygon']};
                     });
-                    myApp.MESSAGING.getInstance().addHandler(uniqueId, "polyline_response", function (msg) {
+                    XB.MESSAGING.getInstance().addHandler(uniqueId, "polyline_response", function (msg) {
                         var data = JSON.parse(JSON.parse(msg.message));
                         dlg.data(item)['geometry'] = {type: 'polyline', points: data['polyline']};
                     });
-                    myApp.MESSAGING.getInstance().addHandler(uniqueId, "point_response", function (msg) {
+                    XB.MESSAGING.getInstance().addHandler(uniqueId, "point_response", function (msg) {
                         var data = JSON.parse(JSON.parse(msg.message));
                         dlg.data(item)['geometry'] = {type: 'point', points: [data['point']]};
                     });
@@ -1294,9 +1289,9 @@ function WorldMapEditBlock(runtime, element) {
     function onChangeGeoTool(e) {
         var type = $(e.target).val();
         $("#geometry-type-label").text("Specify "+type);
-        myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new myApp.Message("reset-answer-tool", null));
-        myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new myApp.Message("reset-highlights", null));
-        myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new myApp.Message("set-answer-tool", {type: type, color: '0000FF'}));
+        XB.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new XB.Message("reset-answer-tool", null));
+        XB.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new XB.Message("reset-highlights", null));
+        XB.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new XB.Message("set-answer-tool", {type: type, color: '0000FF'}));
     }
 
     function onChangeConstraintType() {
@@ -1308,28 +1303,32 @@ function WorldMapEditBlock(runtime, element) {
 
     function onChangeConstraintTool(e) {
         var type = $(e.target).val();
-        myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("reset-answer-tool", null));
-        myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("reset-highlights", null));
-        myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("set-answer-tool", {type: type, color: '0000FF'}));
+        XB.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new XB.Message("reset-answer-tool", null));
+        XB.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new XB.Message("reset-highlights", null));
+        XB.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new XB.Message("set-answer-tool", {type: type, color: '0000FF'}));
 
-        $('#constraint-maxAreaFactor-span').toggle( constraintDialog.data('responseType')=='polygon' && $('#constraint-geometry-type').val() === 'polygon' );
-
+        $('#constraint-maxAreaFactor-span').toggle(
+                constraintDialog.data('responseType')=='polygon'
+//                    && $('#constraint-geometry-type').val() === 'polygon'
+                && $('#constraint-type',constraintDialog).val() === 'includes'
+                && $('#constraint-geometry-type',constraintDialog).val() !== 'point'
+        );
         constraintDialog.validate();
     }
 
     function initGeoViewMap() {
-        myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new myApp.Message("reset-highlights", null));
+        XB.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new XB.Message("reset-highlights", null));
         if( $('#center-lon').val() != "" && $('#center-lat').val() != "") {
             var lon = parseFloat($('#center-lon').val());
             var lat = parseFloat($('#center-lat').val());
             setTimeout(function() {
-                myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new myApp.Message("setCenter", {centerLat: lat, centerLon: lon}));
+                XB.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new XB.Message("setCenter", {centerLat: lat, centerLon: lon}));
             },750);
         }
         if( $('#zoom').val() != "") {
             var zoom = parseInt($('#zoom').val());
             setTimeout(function() {
-                myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new myApp.Message("setZoomLevel",zoom));
+                XB.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new XB.Message("setZoomLevel",zoom));
             }, 750);
         }
     }
@@ -1340,12 +1339,12 @@ function WorldMapEditBlock(runtime, element) {
         data['duration'] = -1;
         var type = $("#geo-boundary-type input:checked").val();
         $("#geometry-type-label").text("Specify "+ (type==undefined?"the type of geometry you wish to define":type));
-        myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new myApp.Message("reset-highlights", null));
+        XB.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new XB.Message("reset-highlights", null));
         if( type != undefined) {
-            myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new myApp.Message("highlight-geometry", data));
-            myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new myApp.Message("set-answer-tool", {type: type, color: '0000FF'}));
+            XB.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new XB.Message("highlight-geometry", data));
+            XB.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new XB.Message("set-answer-tool", {type: type, color: '0000FF'}));
         } else {
-            myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new myApp.Message("reset-answer-tool", null));
+            XB.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-form'), new XB.Message("reset-answer-tool", null));
         }
     }
 
@@ -1354,12 +1353,12 @@ function WorldMapEditBlock(runtime, element) {
         data['relativeZoom'] = -2;
         data['duration'] = -1;
         var type = $("#constraint-geometry-type option:selected").val();
-        myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("reset-highlights", null));
+        XB.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new XB.Message("reset-highlights", null));
         if( type != undefined) {
-            myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("highlight-geometry", data));
-            myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("set-answer-tool", {type: type, color: '0000FF'}));
+            XB.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new XB.Message("highlight-geometry", data));
+            XB.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new XB.Message("set-answer-tool", {type: type, color: '0000FF'}));
         } else {
-            myApp.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new myApp.Message("reset-answer-tool", null));
+            XB.MESSAGING.getInstance().send(getUniqueId('#dialog-constraint-form'), new XB.Message("reset-answer-tool", null));
         }
     }
 

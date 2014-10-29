@@ -2,7 +2,7 @@
 
 console.log("worldmap.js loaded and executing....");
 
-var myApp = myApp || {};
+var XB = XB || {};  // global used for xblock adapter scripts
 
 /**
  * called once for each frag on the page
@@ -11,7 +11,7 @@ var myApp = myApp || {};
 var CORRECT_HTML  ="<img src='/xblock/resource/worldmap/public/images/correct-icon.png'/>";
 var INCORRECT_HTML="<img src='/xblock/resource/worldmap/public/images/incorrect-icon.png'/>";
 
-myApp.WorldMapRegistry = Array();
+XB.WorldMapRegistry = Array();
 
 function gettext(s) { return s;}  //TODO: replace with django's javascript i18n utilities
 
@@ -65,23 +65,24 @@ function WorldMapXBlock(runtime, element) {
         onPostInit: function() {
             //now that the control is created, we need to update layer visibility based on state stored serverside
             //after map is loaded.
+            debugger;
             setupWorldmap();
             setupLayerTree();
         }
     });
 
 
-    myApp.WorldMapRegistry[ getUniqueId('.worldmap_block')] = { runtime: runtime, element: element };
+    XB.WorldMapRegistry[ getUniqueId('.worldmap_block')] = { runtime: runtime, element: element };
 
     function setupWorldmap() {
-        myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"info", function(m) { alert("info: "+m.getMessage()); });
-        myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"zoomend", function(m) { on_setZoomLevel(m.getMessage()); });
-        myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"moveend", function(m) { on_setCenter(m.getMessage()); });
-        myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"changelayer", function(m) { on_changeLayer(m.getMessage()); });
+        XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"info", function(m) { alert("info: "+m.getMessage()); });
+        XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"zoomend", function(m) { on_setZoomLevel(m.getMessage()); });
+        XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"moveend", function(m) { on_setCenter(m.getMessage()); });
+        XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"changelayer", function(m) { on_changeLayer(m.getMessage()); });
 
-        myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"postLegends", function(m) { postLegends(m.getMessage()); })
+        XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"postLegends", function(m) { postLegends(m.getMessage()); })
 
-        myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"portalReady", function(m) {
+        XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"portalReady", function(m) {
             $.ajax({
                type: "POST",
                url:  runtime.handlerUrl(element,"getLayerStates"),
@@ -98,9 +99,9 @@ function WorldMapXBlock(runtime, element) {
                  data: "null",
                  success: function(result) {
                     if( result ) {
-                       myApp.MESSAGING.getInstance().send(
+                       XB.MESSAGING.getInstance().send(
                            getUniqueId('.worldmap_block'),
-                           new myApp.Message("setCenter", {
+                           new XB.Message("setCenter", {
                                zoomLevel: result.zoomLevel,
                                centerLat: result.centerLat,
                                centerLon: result.centerLon
@@ -180,7 +181,7 @@ function WorldMapXBlock(runtime, element) {
                                 setPostLayerStatusToHost(false);
                                 $(this).find(".ui-slider-handle .slider-thumb-value").text(ui.value);
 
-                                var layerSpecs = myApp.worldmapLayerSpecs[getUniqueId('.worldmap_block')];
+                                var layerSpecs = XB.worldmapLayerSpecs[getUniqueId('.worldmap_block')];
                                 for (var i=0; i<layerSpecs.length; i++) {
                                     if( layerSpecs[i].params != undefined ) {
                                         for( var j=0; j<layerSpecs[i].params.length; j++) {
@@ -235,8 +236,8 @@ function WorldMapXBlock(runtime, element) {
                  url: runtime.handlerUrl(element, 'getLayerSpecs'),
                  data: "null",
                  success: function(result) {
-                    if( typeof myApp.worldmapLayerSpecs == "undefined" ) myApp.worldmapLayerSpecs = [];
-                    myApp.worldmapLayerSpecs[getUniqueId('.worldmap_block')] = result;
+                    if( typeof XB.worldmapLayerSpecs == "undefined" ) XB.worldmapLayerSpecs = [];
+                    XB.worldmapLayerSpecs[getUniqueId('.worldmap_block')] = result;
                  }
             });
 
@@ -260,11 +261,11 @@ function WorldMapXBlock(runtime, element) {
                             var tool = $('.auxArea',element).find('#question-'+result.questions[i].id).find('.'+result.questions[i].type+'-tool');
                             tool.css('background-color','#'+result.questions[i].color);
                             tool.click( result.questions[i], function(e) {
-                                myApp.MESSAGING.getInstance().sendAll( new myApp.Message("reset-answer-tool",null));
-                                myApp.MESSAGING.getInstance().sendAll( new myApp.Message("reset-highlights",null));
-                                myApp.MESSAGING.getInstance().send(
+                                XB.MESSAGING.getInstance().sendAll( new XB.Message("reset-answer-tool",null));
+                                XB.MESSAGING.getInstance().sendAll( new XB.Message("reset-highlights",null));
+                                XB.MESSAGING.getInstance().send(
                                     getUniqueId('.worldmap_block'),
-                                    new myApp.Message("set-answer-tool", e.data)
+                                    new XB.Message("set-answer-tool", e.data)
                                 );
                             });
                             var score = result.scores[result.questions[i].id];
@@ -281,9 +282,9 @@ function WorldMapXBlock(runtime, element) {
                  }
             });
 
-            myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"point_response", responseHandler );
-            myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"polygon_response", responseHandler);
-            myApp.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"polyline_response", responseHandler);
+            XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"point_response", responseHandler );
+            XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"polygon_response", responseHandler);
+            XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"polyline_response", responseHandler);
         });
 
         //finally cause the worldmap to load
@@ -309,7 +310,7 @@ function WorldMapXBlock(runtime, element) {
                     if( result.isHit ) {
                         //   "/resource/worldmap/public/images/correct-icon.png" seems to work for workbench
                         div.html(CORRECT_HTML);
-                        myApp.MESSAGING.getInstance().sendAll( new myApp.Message("reset-answer-tool",null));
+                        XB.MESSAGING.getInstance().sendAll( new XB.Message("reset-answer-tool",null));
                         info("Correct!", 1000,200);
                     } else {
                         div.html(INCORRECT_HTML+"&nbsp;"+result.correctExplanation);  //TODO: Fix url to point to local image
@@ -325,11 +326,11 @@ function WorldMapXBlock(runtime, element) {
                                 if( nAttempt % hintAfterAttempt == 0) {
                                     var uniqId = getUniqueId('.worldmap_block');
                                     var html = "<ul>";
-                                    myApp.HintManager.getInstance().reset();
+                                    XB.HintManager.getInstance().reset();
                                     for( var i=0;i<result.unsatisfiedConstraints.length; i++) {
                                         var constraint = result.unsatisfiedConstraints[i];
-                                        myApp.HintManager.getInstance().addConstraint(i,constraint);
-                                        html += "<li>"+constraint.explanation+" <a href='#' title='click to show a hint on the map' onclick='return myApp.HintManager.getInstance().flashHint(\""+uniqId+"\","+i+")'><img src='/xblock/resource/worldmap/public/images/flashlight.png'/></a></li>";
+                                        XB.HintManager.getInstance().addConstraint(i,constraint);
+                                        html += "<li>"+constraint.explanation+" <a href='#' title='click to show a hint on the map' onclick='return XB.HintManager.getInstance().flashHint(\""+uniqId+"\","+i+")'><img src='/xblock/resource/worldmap/public/images/flashlight.png'/></a></li>";
                                     }
                                     html += "</ul>";
                                     info(html,result.question.hintDisplayTime);
@@ -355,9 +356,9 @@ function WorldMapXBlock(runtime, element) {
             var layerData = JSON.stringify(JSON.parse("{\""+layerid+"\":"+JSON.stringify(layer)+"}"));
 
 //            console.log("layer: "+layer+"  layerData: "+layerData+"  sent to slave");
-            myApp.MESSAGING.getInstance().send(
+            XB.MESSAGING.getInstance().send(
                 uniqId,
-                new myApp.Message('setLayers', layerData)
+                new XB.Message('setLayers', layerData)
             )
             layerVisibilityCache[uniqId+layerid] = select;
         }
@@ -569,7 +570,7 @@ function addUniqIdToArguments( uniqId, str) {
 
 function highlight(uniqId, id, duration, relativeZoom) {
     var relZoom = relativeZoom == undefined ? 0 : relativeZoom;
-    var worldmapData = myApp.WorldMapRegistry[uniqId];
+    var worldmapData = XB.WorldMapRegistry[uniqId];
     $.ajax({
         type: "POST",
         url: worldmapData.runtime.handlerUrl(worldmapData.element, 'getGeometry'),
@@ -577,7 +578,7 @@ function highlight(uniqId, id, duration, relativeZoom) {
         success: function(result) {
             result['relativeZoom'] = relZoom;
             result['duration'] = duration;
-            myApp.MESSAGING.getInstance().send(uniqId, new myApp.Message("highlight-geometry", result));
+            XB.MESSAGING.getInstance().send(uniqId, new XB.Message("highlight-geometry", result));
         }
     });
     return false;
@@ -585,16 +586,16 @@ function highlight(uniqId, id, duration, relativeZoom) {
 
 function highlightLayer(uniqId, layerid, duration, relativeZoom) {
     var relZoom = relativeZoom == undefined ? 0 : relativeZoom;
-    myApp.MESSAGING.getInstance().send(
+    XB.MESSAGING.getInstance().send(
         uniqId,
-        new myApp.Message('highlight-layer', JSON.stringify({layer: layerid, duration: duration, relativeZoom:relZoom}))
+        new XB.Message('highlight-layer', JSON.stringify({layer: layerid, duration: duration, relativeZoom:relZoom}))
     )
     return false;
 }
 
 
 
-myApp.HintManager = (function HintManagerSingleton() { // declare 'Singleton' as the return value of a self-executing anonymous function
+XB.HintManager = (function HintManagerSingleton() { // declare 'Singleton' as the return value of a self-executing anonymous function
     var _instance = null;
     var _constructor = function() {
         this.constraints = [];
@@ -612,7 +613,7 @@ myApp.HintManager = (function HintManagerSingleton() { // declare 'Singleton' as
             var type = _this.constraints[indx]['geometry']['type'];
             var geo = _this.constraints[indx]['geometry']['points'];
 
-            var worldmapData = myApp.WorldMapRegistry[uniqId];
+            var worldmapData = XB.WorldMapRegistry[uniqId];
             $.ajax({
                 type: "POST",
                 url: worldmapData.runtime.handlerUrl(worldmapData.element,"getFuzzyGeometry"),
@@ -622,7 +623,7 @@ myApp.HintManager = (function HintManagerSingleton() { // declare 'Singleton' as
                     geometry: geo
                 }),
                 success: function(result) {
-                    myApp.MESSAGING.getInstance().send(uniqId, new myApp.Message("flash-polygon", result));
+                    XB.MESSAGING.getInstance().send(uniqId, new XB.Message("flash-polygon", result));
                 }
             })
             return false;

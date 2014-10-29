@@ -1,8 +1,11 @@
-"use strict";
-var queryParams = null;
+
+var XB = XB || {};  // global used for xblock adapter scripts
+
+XB.queryParams = null;
+
 
 (function() {
-   queryParams = Ext.urlDecode(location.search.substring(1));
+   XB.queryParams = Ext.urlDecode(location.search.substring(1));
 })();
 
 function getHost(r) {
@@ -12,7 +15,7 @@ function getHost(r) {
 }
 
 /** MESSAGING is a singleton for easy access **/
-var MESSAGING = (function Messaging() { // declare 'Singleton' as the return value of a self-executing anonymous function
+XB.MESSAGING = (function() { // declare 'Singleton' as the return value of a self-executing anonymous function
     var _instance = null;
     var _constructor = function() {
         this.referringHost = getHost(document.referrer);
@@ -22,10 +25,10 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
     };
     _constructor.prototype = { // *** prototypes will be "public" methods available to the instance
         initialize: function() {
-           if( this.opener && this.opener != window ) {
+           if( this.opener && this.opener == window ) {
                this.isMasterSlave = false;
            } else {
-               this.send(new Message("init", {}));
+               this.send(new Message("init", {}), true);
            }
         },
         setMasterSlave: function(b) { this.isMasterSlave = b; },
@@ -36,9 +39,9 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
            this.opener = o;
            if( !this.opener ) this.isMasterSlave = false;
         },
-        send: function(msg) {
-           if( this.isMasterSlave ) {
-              this.opener.postMessage({xblockId:queryParams.xblockId, uniqueClientId:this.uniqueId, message: msg}, this.getReferringHost());
+        send: function(msg, force) {
+           if( (force != undefined && force == true) || this.isMasterSlave ) {
+              this.opener.postMessage({xblockId:XB.queryParams.xblockId, uniqueClientId:this.uniqueId, message: msg}, this.getReferringHost());
            } else {
               console.log("not sending message: "+msg.type+", this.isMasterSlave:"+this.isMasterSlave);
            }
@@ -82,7 +85,7 @@ var MESSAGING = (function Messaging() { // declare 'Singleton' as the return val
         // because getInstance is defined within the same scope, it can access the "private" '_instance' and '_constructor' vars
         getInstance: function() {
            if( !_instance ) {
-              console.log("creating Messaging singleton");
+              console.log("creating XB.MESSAGING singleton");
               _instance = new _constructor();
            }
            return _instance;
@@ -95,6 +98,7 @@ function Message(t,m) {
    this.type = t;
    this.message = JSON.stringify(m);
 }
+
 Message.prototype = {
     constructor: Message,
     getType: function() { return this.type; },
@@ -106,22 +110,22 @@ window.addEventListener('DOMContentLoaded',
     function(event){
        console.log("DOMContentLoaded handler called");
        var parentWindow =  event.currentTarget.opener ? event.currentTarget.opener : window.parent;
-       MESSAGING.getInstance().setOpener(parentWindow);
-       MESSAGING.getInstance().registerHandler("master-acknowledge",
+       XB.MESSAGING.getInstance().setOpener(parentWindow);
+       XB.MESSAGING.getInstance().registerHandler("master-acknowledge",
                             function(msg) {
                                console.log("handler for master-acknowledge called  type="+msg.getType()+",   message="+msg.getMessage());
-                               if( msg.getType() === "master-acknowledge" && msg.getMessage()===MESSAGING.getInstance().uniqueId) {
-                                    console.log("master-acknowledge: masterSlave = true");
-                                    MESSAGING.getInstance().setMasterSlave(true);
-//                                    MESSAGING.getInstance().send(new Message("portalReady", {}));
+                               if( msg.getType() === "master-acknowledge" && msg.getMessage()===XB.MESSAGING.getInstance().uniqueId) {
+                                   console.log("master-acknowledge: masterSlave = true");
+                                   XB.MESSAGING.getInstance().setMasterSlave(true);
+//                                    XB.MESSAGING.getInstance().send(new Message("portalReady", {}));
                                }
                             });
-       MESSAGING.getInstance().initialize();
+       XB.MESSAGING.getInstance().initialize();
 
        window.addEventListener(
           'message',
           function(event){
-             MESSAGING.getInstance().handleMessageEvent(event);
+             XB.MESSAGING.getInstance().handleMessageEvent(event);
           },
           false
         );

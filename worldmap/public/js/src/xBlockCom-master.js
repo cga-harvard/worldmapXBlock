@@ -1,10 +1,10 @@
 console.log("xBlockCom-master.js loaded - executing...");
 
-var myApp = myApp || {};
+var XB = XB || {};  // global used for xblock adapter scripts
 /**
  * This controls the messaging between the master page and the slaves within the various iframes on the page
  */
-myApp.MESSAGING = (function Messaging() { // declare 'Singleton' as the return value of a self-executing anonymous function
+XB.MESSAGING = (function Messaging() { // declare 'Singleton' as the return value of a self-executing anonymous function
     var _instance = null;
     var _constructor = function() {
         this.host = location.protocol+"//"+location.host+(location.host.indexOf(":") != -1 ? "" : (":"+(location.port ? location.port : "80")))+"/";
@@ -98,12 +98,12 @@ myApp.MESSAGING = (function Messaging() { // declare 'Singleton' as the return v
     }      
 })();
 
-myApp.Message = function Message(t,m) {
+XB.Message = function Message(t,m) {
    this.type = t;
    this.message = JSON.stringify(m);
 }
-myApp.Message.prototype = {
-    constructor: myApp.Message,
+XB.Message.prototype = {
+    constructor: XB.Message,
     getType: function() { return this.type; },
     getMessage: function() { return JSON.parse(this.message); },
     getMessageStr: function() { return this.message; }
@@ -114,15 +114,15 @@ window.addEventListener('message',
     function(e){
         if( e.data.message.type == "init" ) {
            console.log("xBlockCom-master got an 'init'.  Sending back a master-acknowledge");
-           myApp.MESSAGING.getInstance().setClientCredentials(e.data.xblockId, {uniqueClientId: e.data.uniqueClientId, source: e.source, clientHost: e.origin});
-           e.source.postMessage(JSON.stringify( new myApp.Message("master-acknowledge",e.data.uniqueClientId)),e.origin);
+           XB.MESSAGING.getInstance().setClientCredentials(e.data.xblockId, {uniqueClientId: e.data.uniqueClientId, source: e.source, clientHost: e.origin});
+           e.source.postMessage(JSON.stringify( new XB.Message("master-acknowledge",e.data.uniqueClientId)),e.origin);
         } else {
            if(e.data.message.type == "portalReady" ) {
                console.log("portalReady received at master code for id: "+ e.data.xblockId);
-               myApp.MESSAGING.getInstance().setPortalReady(e.data.xblockId);
+               XB.MESSAGING.getInstance().setPortalReady(e.data.xblockId);
            }
-           var msg = new myApp.Message(e.data.message.type, e.data.message.message);
-           myApp.MESSAGING.getInstance().handleMessage(e.data.xblockId, e.data.uniqueClientId, msg);
+           var msg = new XB.Message(e.data.message.type, e.data.message.message);
+           XB.MESSAGING.getInstance().handleMessage(e.data.xblockId, e.data.uniqueClientId, msg);
         }
     }, false);
 
