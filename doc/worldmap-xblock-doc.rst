@@ -15,7 +15,7 @@ In this release we provide the following functionality:
 2. Custom "prose" to be inserted above the map with live links that will cause the map to reframe and highlight a particular polyline, polygon or marker
 3. A author-defined collapsable tree-based layer control to allow layers to have courseware-specific names as well as display the internal legends to the user.
 4. Questions can be defined which require the user to respond by giving map-oriented answers (such as "draw a polygon around XYZ" or "draw a polyline which shows UVW" or "point to ABC")
-5. The answers to these questions are judged based on a set of arbitrary constraints defined by the courseware author.
+5. The answers to these questions are judged based on a set of arbitrary geometric constraints defined by the courseware author.
 6. If the student does not answer the question in a specified number of tries, a "hint" is displayed.
 7. There is also a "layer animation slider" which allows you to create simple animations of layers.  These animations may be time-based or some other parameter-based such as population density, income levels etc.
 

@@ -21,12 +21,15 @@ Installing worldmapXblock
 download the zip file from github:
     https://github.com/cga-harvard/worldmapXBlock/archive/master.zip
 
-Unzip worldmapXBlock-master.zip
+$ unzip worldmapXBlock-master.zip
 
-sudo -u edxapp /edx/bin/pip.edxapp install /path/to/your/block
+$ sudo -u edxapp /edx/bin/pip.edxapp install [path to worldmapXBlock]
 
 In /edx/app/edxapp/edx-platform/cms/envs/common.py   set:
    'ALLOW_ALL_ADVANCED_COMPONENTS': True,
+
+Make sure libgeos is installed >= v3.2.2
+  (I believe this is included in the ami-0d393848 image)
 
 upgrade to Shapely 1.4.3
     sudo -u edxapp /edx/bin/pip.edxapp uninstall Shapely

@@ -1,12 +1,14 @@
-worldmapXBlock
+WorldmapXBlock
 ==============
 
-WorldMap XBlock
+The worldmap "xblock adaptor" satisfies a plugin architecture for the edX MOOC courseware system.
+It allows for integration of a Harvard WorldMap into an edX courseware - either as an educational "unit" or as an assessment "unit".
 
+Documentation
+-------------
 
-System Configuration
+  * [architecture](doc/worldmap-xblock-arch.rst) - An overview of how everything goes together.
+  * [user-documentation](doc/worldmap-xblock-doc.rst) - A user-level document describing how to create a worldmap-based edX "unit"
+  * [setting up AWS](doc/aws-setup.txt) - How to set up an Amazon AWS instance of edX with the worldmap plugin working.
+  * [development environment](doc/dev_configure.rst) - How to setup a development environment.
 
- Shapely - port of JTS code  - more at: http://toblerity.org/shapely/manual.html
-  1) sudo apt-get install libgeos-c1
-  2) pip uninstall Shapely (to remove 1.2.x)
-  3) pip install Shapely   (to get 1.4)
