@@ -14,13 +14,13 @@
 
 .prose-area .CodeMirror {
     width: 500px !important;
-    height:250px !important;
+    height:240px !important;
     border: none;
     background-color: #e5e5e5;
 }
 
 #prose-polygon-list {
-    max-height: 250px;
+    max-height: 240px;
     overflow: auto;
     width: 100%;
     height: 100%;
@@ -43,7 +43,7 @@
 
 
 #tabs {
-    height: 324px;
+    height: 320px;
 }
 
 .ui-tabs .ui-tabs-nav li {
@@ -99,10 +99,10 @@ input.checkbox {
 #slider-position { width:95%; height:30px; display:block;}
 #slider-html {width:95%; height:150px; margin:1px;}
 #slider-layers {
-    height:75px !important;
+    height:70px !important;
 }
 #sliders {
-    height:55px !important;
+    height:45px !important;
 }
 #sliderLayer-params {
     height: 85px;
@@ -246,3 +246,7 @@ label.dependent-property {
     padding: 0px !important;
 }
 
+span .ui-button-icon-primary .ui-icon .ui-icon-closethick {
+    left: 0px;
+    top: 0px;
+}

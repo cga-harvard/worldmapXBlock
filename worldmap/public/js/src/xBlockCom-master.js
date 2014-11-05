@@ -56,11 +56,11 @@ XB.MESSAGING = (function Messaging() { // declare 'Singleton' as the return valu
                         }
                      }
                  } else {
-                     console.log("No handler found for id: "+id+" for message type: "+msg.getType());
+                     throw "SecurityException: No handler found for id: "+id+" for message type: "+msg.getType();
                  }
              } else {
                  debugger;
-                 console.log("No handlers found for id: "+id+ " could not find a message type: "+msg.getType());
+                 throw "SecurityException: No handlers found for id: "+id+ " could not find a message type: "+msg.getType();
              }
           }
         },

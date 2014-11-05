@@ -203,3 +203,8 @@
     border-bottom: 2px solid black !important;
     border-right:  2px solid black !important;
 }
+
+span .ui-button-icon-primary .ui-icon .ui-icon-closethick {
+    left: 0px;
+    top: 0px;
+}

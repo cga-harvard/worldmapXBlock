@@ -35,6 +35,10 @@ After you are done running in the workbench, you will have to re-install ora2 to
 
     $ paver devstack studio
 
+    $ sudo pip uninstall Shapely
+
+    $ sudo pip install Shapely
+
 pyCharm configuration:
 
 .. figure:: images/workbenchConfig.png
@@ -52,11 +56,15 @@ Shapely python package
 Important - The serverside code worldmap.py uses topological calculations to evaluate user responses to see if they satisfy the geometric constraints as defined by the courseware author.
 This facility uses the Shapely python package which requires the libgeos computations of the Java Topology Suite (JTS_)
 
-1. install Shapely_, a python GIS package based on Java JTS library.
+1. install libgeos_c1
+
+   $ sudo apt-get install libgeos-c1
+
+2. install Shapely_, a python GIS package based on Java JTS library.
 
    $ pip install Shapely
 
-2. Shapely version >= 1.4.3 is needed - if necessary, you will need to upgrade to 1.4:
+4. Shapely version >= 1.4.3 is needed - if necessary, you will need to upgrade to 1.4:
 
    $ pip install --upgrade Shapely
 

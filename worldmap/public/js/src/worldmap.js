@@ -46,7 +46,7 @@ function WorldMapXBlock(runtime, element) {
         },
         initAjax: {
                type: "POST",
-               url: runtime.handlerUrl(element, 'layerTree'),
+               url: runtime.handlerUrl(element, 'getLayerTree'),
                data: JSON.stringify({
                    key: "root", // Optional arguments to append to the url
                    mode: "all",
@@ -65,7 +65,6 @@ function WorldMapXBlock(runtime, element) {
         onPostInit: function() {
             //now that the control is created, we need to update layer visibility based on state stored serverside
             //after map is loaded.
-            debugger;
             setupWorldmap();
             setupLayerTree();
         }
@@ -83,7 +82,8 @@ function WorldMapXBlock(runtime, element) {
         XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"postLegends", function(m) { postLegends(m.getMessage()); })
 
         XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"portalReady", function(m) {
-            $.ajax({
+
+            $.ajax({  // SETUP INITIAL LAYER STATES
                type: "POST",
                url:  runtime.handlerUrl(element,"getLayerStates"),
                data: "null",
@@ -93,7 +93,8 @@ function WorldMapXBlock(runtime, element) {
                    }
                }
             });
-            $.ajax({
+
+            $.ajax({  //SETUP VIEWPORT (pan & zoom)
                  type: "POST",
                  url: runtime.handlerUrl(element, 'getViewInfo'),
                  data: "null",
@@ -111,13 +112,13 @@ function WorldMapXBlock(runtime, element) {
                  }
             });
 
+            // Choose base layer if defined.
             if( $('.frame',element).attr("baseLayer") != undefined ) {
                 selectLayer(true,$('.frame',element).attr("baseLayer"));
             }
 
 
-            debugger;
-            $.ajax({
+            $.ajax({ // SETUP SLIDERS
                  type: "POST",
                  url: runtime.handlerUrl(element, 'getSliderSetup'),
                  data: "null",
@@ -231,7 +232,7 @@ function WorldMapXBlock(runtime, element) {
                  }
             });
 
-            $.ajax({
+            $.ajax({  // Get Layer specs
                  type: "POST",
                  url: runtime.handlerUrl(element, 'getLayerSpecs'),
                  data: "null",
@@ -242,7 +243,7 @@ function WorldMapXBlock(runtime, element) {
             });
 
             //********************** POINT, POLYLINE & POLYGON TOOLS**************************
-            $.ajax({
+            $.ajax({  //Setup all the questions
                  type: "POST",
                  url: runtime.handlerUrl(element, 'getQuestions'),
                  data: "null",
@@ -282,6 +283,7 @@ function WorldMapXBlock(runtime, element) {
                  }
             });
 
+            //Setup response handlers when the user draws a polygon, polyline or clicks at a marker location
             XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"point_response", responseHandler );
             XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"polygon_response", responseHandler);
             XB.MESSAGING.getInstance().addHandler(getUniqueId('.worldmap_block'),"polyline_response", responseHandler);
@@ -296,7 +298,7 @@ function WorldMapXBlock(runtime, element) {
     function responseHandler(m) {
         var data = JSON.parse(JSON.parse(m.message));
 
-        $.ajax({
+        $.ajax({  // send user's response on to the backend for adjudication against geometric constraints
             type: "POST",
             url: runtime.handlerUrl(element, m.type),
             data: JSON.stringify(data),
@@ -344,8 +346,7 @@ function WorldMapXBlock(runtime, element) {
     }
 
     var layerVisibilityCache = {};
-    function selectLayer(select,layerid,moveTo) {
-//        console.log("selectLayer("+select+",'"+layerid+"') called");
+    function selectLayer(select,layerid,moveTo) {  //turn a layer on and optionally move to view it
         var uniqId = getUniqueId('.worldmap_block');
         var cachedValue = layerVisibilityCache[uniqId+layerid];
 //        console.log("cachedValue = "+cachedValue);
@@ -363,11 +364,12 @@ function WorldMapXBlock(runtime, element) {
             layerVisibilityCache[uniqId+layerid] = select;
         }
     }
+
     function getUniqueId(id) {
         return $(id,element).find('.frame').attr('id');
     }
 
-    function on_setZoomLevel(level) {
+    function on_setZoomLevel(level) {  //user zoomed, need to remember it in the xblock's state
         $.ajax({
             type: "POST",
             url: runtime.handlerUrl(element, 'set_zoom_level'),
@@ -378,7 +380,7 @@ function WorldMapXBlock(runtime, element) {
             }
         });
     }
-    function on_setCenter(json) {
+    function on_setCenter(json) { //user panned, need to remember it in the xblock's state
         var data = JSON.parse(json);
         $.ajax({
             type: "POST",
@@ -392,7 +394,7 @@ function WorldMapXBlock(runtime, element) {
         });
     }
 
-    function postLegends(json) {
+    function postLegends(json) {  //called from the worldmap client when the legends are available.
         var layerInfo = JSON.parse(json);
         for( var i=0; i<layerInfo.length; i++) {
             var legendData = layerInfo[i].legendData;
@@ -479,6 +481,7 @@ function WorldMapXBlock(runtime, element) {
     }
 
 
+    // a convenient little dbg window for output (requires the DBG checkbox to be checked on the Map tab
     function debug(str) {
        if( $('.frame',element).attr('debug') == 'True' ) {
             var psconsole = $(".debugInfo",element);
@@ -491,6 +494,7 @@ function WorldMapXBlock(runtime, element) {
         }
     }
 
+    //pops an info dialog to communicate something to the user
     function info(msgHtml, duration, width) {
         if( duration == undefined ) duration = 5000;
         if( document.getElementById("dialog") == undefined ) {
@@ -524,6 +528,7 @@ function WorldMapXBlock(runtime, element) {
         }
     }
 
+    //pops an error dialog
     function error(msgHtml) {
         if( document.getElementById("dialog") == undefined ) {
             $("body").append($('<div/>', {id: 'dialog'}));
@@ -550,20 +555,7 @@ function WorldMapXBlock(runtime, element) {
 
 }
 
-//var timeoutID = null;
-//function deferredCollapseLayerTree() {
-//    if( timeoutID != null ) clearTimeout(timeoutID);
-//    timeoutID = setTimeout(function() {
-//          $('.layerControls').dynatree("getTree").redraw();
-//        $('.layerControls').dynatree("getRoot").visit(function(node) {
-//            if( !node.data.isFolder && node.data.children !== null ) { //found root node
-//                node.expand(false);
-//                $('.layerControls').dynatree("getTree").redraw();
-//            }
-//        });
-//    },1000);
-//}
-
+// adds the uniqueId for the particular worldmap to the javascript calls for hightlight and highlightLayer
 function addUniqIdToArguments( uniqId, str) {
     return str.replace(/highlight\(/g,"highlight(\""+uniqId+"\",").replace(/highlightLayer\(/g,"highlightLayer(\""+uniqId+"\",")
 }
@@ -594,7 +586,10 @@ function highlightLayer(uniqId, layerid, duration, relativeZoom) {
 }
 
 
-
+/*
+ * when user gets the question wrong too many times, a hint is displayed and let's the user click on a flashlight
+ * to display some fuzzy/blurred geometry to the user.
+ */
 XB.HintManager = (function HintManagerSingleton() { // declare 'Singleton' as the return value of a self-executing anonymous function
     var _instance = null;
     var _constructor = function() {

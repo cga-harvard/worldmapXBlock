@@ -267,5 +267,9 @@ The style properties that the courseware author would be interested in are the f
     :.dynatree-title:  Affects only the title of the layer name in the layer tree control.
 
 
-
+Getting OpenLayers Layer IDs
+----------------------------
+The openlayers layerId is the only "permanent" id to a layer.  The layer's name is not static/stable so we have to use
+the internal openlayers layerId.  To get this layerId, you will have to check the DBG checkbox on the *Map Tab* of the configuration control.  This will expose a little
+debugging window just below the map and layer control.  Every time you use the worldmap UI to turn on or off a layer, the openlayers layerID will be reported in this window.  The courseware author should just write down these layer ids for later use when specifying layers.
 

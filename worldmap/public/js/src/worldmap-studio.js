@@ -1,3 +1,7 @@
+/*
+ * This code is required to display and control the "configuration" dialog for setting the configuration of the xblock.
+ */
+
 console.log("worldmap-studio.js loaded and executing....");
 
 var XB = XB || {};  // global used for xblock adapter scripts
@@ -12,18 +16,20 @@ function WorldMapEditBlock(runtime, element) {
 
     $('#config' ).val(JSON.stringify(config,null, '\t'));
     $('#worldmapConfig' ).val(JSON.stringify(worldmapConfig,null, '\t'));
-//    $('#stylesheet').val(JSON.stringify(stylesheet,null,'\t'));
 
+    // the configEditor and worldmapConfigEditor are only visible when the DBG checkbox is checked.
     var configEditor         = CodeMirror.fromTextArea($('#config')[0],         { mode: 'json', json: true, lineWrapping: true, lineNumbers:true});
     var worldmapConfigEditor = CodeMirror.fromTextArea($('#worldmapConfig')[0], { mode: 'json', json: true, lineWrapping: true, lineNumbers:true });
+
+    // these editors are used on the "Style" and "General" tabs respectively
     var stylesheetEditor     = CodeMirror.fromTextArea($('#stylesheet')[0],     { mode: 'text/css',  matchBrackets:true,  lineWrapping:  false, lineNumbers:true });
     var htmlEditor           = CodeMirror.fromTextArea($('#prose')[0],          { mode: 'text/html', lineWrapping: true, htmlMode: true });
 
+    //TODO:  I think this may be a problem if there are more than one xblock per page
     window.scrollTo(0,0);  //otherwise, the dialogs can't be dragged properly
 
+    // SAVE FUNCTIONALITY
     $(element).find('.save-button').bind('click', function() {
-
-        //TODO:  add validation here
 
         //cleanse all the add'l info after last ":" in layer-control node titles
         $('#layer-controls',element).dynatree("getRoot").visit( function( n ) {
@@ -69,16 +75,20 @@ function WorldMapEditBlock(runtime, element) {
         questionDialog.empty().remove();
         geoViewDialog.empty().remove();
     });
+
+    // CANCEL FUNCTIONALITY
     $(element).find('.cancel-button').bind('click', function() {
        //TODO:  this is a hack to get around the fact that Studio doesn't remove these DOM objects
        geoDialog.empty().remove();
        constraintDialog.empty().remove();
        questionDialog.empty().remove();
        geoViewDialog.empty().remove();
+       runtime.notify('cancel', {});
     });
 
     refreshGeoList();
 
+    // Update validation errors on the Map tab*********************************
     $('#map-tab .required').each(function() {
         $(this).change(function() {
             $(this).toggleClass('field-error', $(this).val() === "");
@@ -94,7 +104,10 @@ function WorldMapEditBlock(runtime, element) {
             $(this).toggleClass('field-error', !$(this).val().match(/^[-+]?\d+\.?\d*$/));
         });
     });
+    //*************************************************************************
 
+
+    // SETUP add-reference-geometry button
     $('#add-reference-geometry').click( function() {
         config['highlights'].push( {
             id: 'new reference',
@@ -107,7 +120,7 @@ function WorldMapEditBlock(runtime, element) {
        $('#prose-polygon-list').animate({scrollTop: 1000},{speed:'fast'});
     });
 
-    //******************* Questions Tab ********************************
+    // SETUP Questions Tab
     $( "#sortable-questions" ).sortable({
        items: ".content",
        forcePlaceholderSize: true,
@@ -121,12 +134,16 @@ function WorldMapEditBlock(runtime, element) {
            }
        }
     }).disableSelection();
+
+    //TODO - I'm not sure why I do this again.
     $( ".content" ).disableSelection();
 
+    //Refresh the GUI
     refreshQuestions();
     refreshSliders();
     refreshSliderLayers();
 
+    // SETUP new-slider button
     $('#new-slider').click(function() {
        worldmapConfig['sliders'].push({
            id: "slider-"+$.now()/1000,
@@ -136,6 +153,8 @@ function WorldMapEditBlock(runtime, element) {
        $('#sliders').animate({scrollTop: 1000},{speed:'fast'});
 
     });
+
+    // SETUP new-sliderLayer button
     $('#new-sliderLayer').click(function() {
        worldmapConfig['layers'].push({
            id: "New Slider Layer",
@@ -147,6 +166,7 @@ function WorldMapEditBlock(runtime, element) {
        $('#slider-layers').animate({scrollTop: 1000},{speed:'fast'});
     });
 
+    // SETUP new-question button
     $('#new-question').click( function() {
         inquire("Enter the html for a new question:","", function(b,v) {
             if( b ) {
@@ -165,6 +185,7 @@ function WorldMapEditBlock(runtime, element) {
         });
     });
 
+    // SETUP new-constraint button
     $('#new-constraint').click( function(e) {
         questionDialog.data('question')['constraints'].push(
             {
@@ -179,6 +200,10 @@ function WorldMapEditBlock(runtime, element) {
         $('#constraint-list').animate({scrollTop: 1000},{speed:'fast'});
         e.preventDefault();
     });
+
+
+    // INITIALIZATIONS
+
     /******************* Map Tab ************************/
     $("#map-url").val(worldmapConfig['href']);
     $("#map-width").val(worldmapConfig['width']);
@@ -190,10 +215,11 @@ function WorldMapEditBlock(runtime, element) {
     $("#zoom").val(worldmapConfig['zoom']);
     $("#map-sticky").attr("checked", worldmapConfig['stickyMap']);
 
-    if( worldmapConfig['debug']) {
+    if( worldmapConfig['debug']) {  //Hide the JSON config tabs
         $('.dev-only').removeClass('dev-only');  //removes the JSON tabs from the tabset
     }
 
+    // SETUP layer control's dynatree
     $('#layer-controls',element).dynatree({
         title: "LayerControls",
 //            minExpandLevel: 1, // 1=rootnote not collapsible
@@ -294,6 +320,7 @@ function WorldMapEditBlock(runtime, element) {
         }
     });
 
+    // munge the labels of the dynatree
     $('#layer-controls',element).dynatree("getRoot").visit( function( n ) {
         if(n.data.isFolder || n.data.children == null) { //don't process root
             n.data.title = n.data.title+": "+ (n.data.isFolder? "(folder)" : "("+n.data.key+")");
@@ -310,6 +337,7 @@ function WorldMapEditBlock(runtime, element) {
         }
     });
 
+    // SETUP new-node button
     $('#new-node').click( function(e) {
         var n = $('#layer-controls',element).dynatree("getActiveNode");
         if( n ) {
@@ -334,6 +362,7 @@ function WorldMapEditBlock(runtime, element) {
         e.preventDefault();
     });
 
+    // SETUP new-param button
     $('#new-param').click( function() {
         if( !sliderLayerDialog.data('sliderLayer')['params']) {
             sliderLayerDialog.data('sliderLayer')['params'] = [];
@@ -348,13 +377,12 @@ function WorldMapEditBlock(runtime, element) {
 
 
 
-    /******************** overall controls ********************/
-    $(element).find('.cancel-button').bind('click', function() {
-        runtime.notify('cancel', {});
-    });
+    /******************** setup overall controls ********************/
 
+    // TABS
     $( "#tabs" ).tabs();
 
+    // SLIDER DIALOG
     var sliderDialog = $('#dialog-slider-form').dialog({
         autoOpen: false,
         height: 475,
@@ -446,15 +474,10 @@ function WorldMapEditBlock(runtime, element) {
             $('#slider-incr',this).val(slider['increment']);
             $('#slider-html',this).val(slider['help']);
             $('#slider-position option[value='+slider['position']+']',this).attr('selected','selected');
-//            $('#dialog-slider-form .required').each( function() {
-//                $(this).toggleClass('field-error', $(this).val() === "");
-//            });
-//            $('#dialog-slider-form .required-number').each( function() {
-//                $(this).toggleClass('field-error', !$.isNumeric($(this).val()));
-//            });
         }
     });
 
+    // LAYER CONTROL DIALOG
     var layerControlDialog = $('#dialog-layerControl-form').dialog({
         autoOpen: false,
         height: 375,
@@ -570,6 +593,7 @@ function WorldMapEditBlock(runtime, element) {
         }
     });
 
+    // SLIDER LAYER DIALOG
     var sliderLayerDialog = $('#dialog-sliderLayer-detail').dialog({
         autoOpen: false,
         height: 365,
@@ -627,6 +651,7 @@ function WorldMapEditBlock(runtime, element) {
         }
     });
 
+    // PARAM DIALOG
     var paramDialog = $('#dialog-param-form').dialog({
         autoOpen: false,
         height: 290,
@@ -709,6 +734,7 @@ function WorldMapEditBlock(runtime, element) {
             paramDialog.validate();
         }
     });
+    // VALIDATION for PARAM DIALOG
     paramDialog.validate = function() {
         var result = true;
         $('#dialog-param-form .required').each( function() {
@@ -729,6 +755,7 @@ function WorldMapEditBlock(runtime, element) {
     $('#dialog-param-form .required-number').change(paramDialog.validate);
 
 
+    // QUESTION DIALOG
     var questionDialog = $('#dialog-question-detail').dialog({
         autoOpen: false,
         height: 545,
@@ -800,6 +827,7 @@ function WorldMapEditBlock(runtime, element) {
             refreshConstraints();
         }
     });
+    // VALIDATE FOR QUESTION DIALOG
     questionDialog.validate = function() {
         var result = true;
         var msg = "";
@@ -865,6 +893,7 @@ function WorldMapEditBlock(runtime, element) {
         return result;
     }
 
+    // DIALOG FOR SETTING INITIAL PAN/ZOOM for map
     var geoViewDialog = $("#dialog-geo-view-form").dialog({
         autoOpen: false,
         height: 500,
@@ -903,11 +932,13 @@ function WorldMapEditBlock(runtime, element) {
     });
 
 
+    // CLICK ON GLOBE ICON
     $('#map-view-helper').on("click", "img", function () {
         geoViewDialog.dialog("open");
     });
 
 
+    // USER SPECIFIED GEOMETRY DIALOG
     var geoDialog = $("#dialog-geo-form").dialog({
         autoOpen: false,
         height: 575,
@@ -992,6 +1023,7 @@ function WorldMapEditBlock(runtime, element) {
         return result;
     };
 
+    // CONSTRAINT DIALOG
     var constraintDialog = $("#dialog-constraint-form").dialog({
         autoOpen: false,
         height: 600,
@@ -1094,94 +1126,93 @@ function WorldMapEditBlock(runtime, element) {
     });
 
     constraintDialog.validate = function() {
-            var constraintGeoType = $('#constraint-geometry-type').val();
-            var constraintType = $('#constraint-type').val();
-            var constraintPercent = $('#constraint-percentOfGrade').val();
-            var responseType = constraintDialog.data('responseType');
-            var result = true;
-            var msg = "";
+        var constraintGeoType = $('#constraint-geometry-type').val();
+        var constraintType = $('#constraint-type').val();
+        var constraintPercent = $('#constraint-percentOfGrade').val();
+        var responseType = constraintDialog.data('responseType');
+        var result = true;
+        var msg = "";
 
-            //range check
-            if( constraintPercent < 0 || constraintPercent > 100 ) {
-                result = false;
-                msg += "% deducted from score must be in range [0-100]<br/>";
-                $('#constraint-percentOfGrade').toggleClass('field-error',true);
-            } else {
-                $('#constraint-percentOfGrade').toggleClass('field-error',false);
+        //range check
+        if( constraintPercent < 0 || constraintPercent > 100 ) {
+            result = false;
+            msg += "% deducted from score must be in range [0-100]<br/>";
+            $('#constraint-percentOfGrade').toggleClass('field-error',true);
+        } else {
+            $('#constraint-percentOfGrade').toggleClass('field-error',false);
+        }
+
+        var compatible = constraintType !== 'inside' || constraintGeoType === 'polygon';
+        $('#constraint-type').toggleClass('field-error', !compatible);
+        $('#constraint-geometry-type').toggleClass('field-error', !compatible);
+        if( !compatible ) {
+            msg += "Constraint type: 'inside' is only compatible with 'polygon'<br/>";
+            result = false;
+        }
+        if( responseType == 'polyline' ) {
+            compatible = compatible && (
+                (constraintType == 'matches' && constraintGeoType == 'polyline')
+              ||(constraintType == 'inside'  && constraintGeoType == 'polygon')
+              ||(constraintType == 'includes'&& constraintGeoType == 'point')
+              ||(constraintType == 'excludes'&& constraintGeoType == 'polygon'));
+
+            $('#constraint-type').toggleClass('field-error', !compatible);
+            $('#constraint-geometry-type').toggleClass('field-error', !compatible);
+            if( !compatible) {
+               msg += "Constraint type: "+$('#constraint-type').val()+"("+$('#constraint-geometry-type').val()+") is incompatible for a polyline user response<br/>";
+               result = false;
             }
 
-            var compatible = constraintType !== 'inside' || constraintGeoType === 'polygon';
+        } else if( responseType == 'point') {
+            $('#constraint-type').removeClass('field-error');
+            $('#constraint-geometry-type').removeClass('field-error');
+            compatible = constraintType == 'inside' && constraintGeoType == 'polygon';
             $('#constraint-type').toggleClass('field-error', !compatible);
             $('#constraint-geometry-type').toggleClass('field-error', !compatible);
             if( !compatible ) {
-                msg += "Constraint type: 'inside' is only compatible with 'polygon'<br/>";
-                result = false;
+                msg += "A 'point' user response can only be constrained to be 'inside' a 'polygon'<br/>";
+                result =false;
             }
-            if( responseType == 'polyline' ) {
-                compatible = compatible && (
-                    (constraintType == 'matches' && constraintGeoType == 'polyline')
-                  ||(constraintType == 'inside'  && constraintGeoType == 'polygon')
-                  ||(constraintType == 'includes'&& constraintGeoType == 'point')
-                  ||(constraintType == 'excludes'&& constraintGeoType == 'polygon'));
 
-                $('#constraint-type').toggleClass('field-error', !compatible);
-                $('#constraint-geometry-type').toggleClass('field-error', !compatible);
-                if( !compatible) {
-                   msg += "Constraint type: "+$('#constraint-type').val()+"("+$('#constraint-geometry-type').val()+") is incompatible for a polyline user response<br/>";
-                   result = false;
-                }
+        }
+        $('#constraint-maxAreaRatio-span').toggle(responseType == 'polygon');
 
-            } else if( responseType == 'point') {
-                $('#constraint-type').removeClass('field-error');
-                $('#constraint-geometry-type').removeClass('field-error');
-                compatible = constraintType == 'inside' && constraintGeoType == 'polygon';
-                $('#constraint-type').toggleClass('field-error', !compatible);
-                $('#constraint-geometry-type').toggleClass('field-error', !compatible);
-                if( !compatible ) {
-                    msg += "A 'point' user response can only be constrained to be 'inside' a 'polygon'<br/>";
-                    result =false;
-                }
-
+        var requiredEmpty = false;
+        $('#dialog-constraint-form .required').each( function() {
+            if( $(this).toggleClass('field-error',$(this).is(':visible') && $(this).val() === "" )
+                .hasClass('field-error')) {
+                requiredEmpty = true;
             }
-            $('#constraint-maxAreaRatio-span').toggle(responseType == 'polygon');
+        });
 
-            var requiredEmpty = false;
-            $('#dialog-constraint-form .required').each( function() {
-                if( $(this).toggleClass('field-error',$(this).is(':visible') && $(this).val() === "" )
-                    .hasClass('field-error')) {
-                    requiredEmpty = true;
-                }
-            });
-
-            var requiredNumber = false;
-            $('#dialog-constraint-form .required-number').each( function() {
-                if( $(this).toggleClass('field-error',$(this).is(':visible') && !$.isNumeric($(this).val()))
-                    .hasClass('field-error')) {
-                    requiredNumber = true;
-                }
-            });
-
-            if( requiredEmpty ) {
-                result = false;
-                msg += "Required fields are empty<br/>";
+        var requiredNumber = false;
+        $('#dialog-constraint-form .required-number').each( function() {
+            if( $(this).toggleClass('field-error',$(this).is(':visible') && !$.isNumeric($(this).val()))
+                .hasClass('field-error')) {
+                requiredNumber = true;
             }
-            if( requiredNumber ) {
-                result = false;
-                msg += "Field value must be numeric<br/>";
-            }
-            $('#constraint-dialog-error').html(msg);
+        });
 
-            return result;
-        };
+        if( requiredEmpty ) {
+            result = false;
+            msg += "Required fields are empty<br/>";
+        }
+        if( requiredNumber ) {
+            result = false;
+            msg += "Field value must be numeric<br/>";
+        }
+        $('#constraint-dialog-error').html(msg);
 
-//    setupPortalReady(geoDialog, '#dialog-geo-form', 'highlight');
-//    setupPortalReady(constraintDialog, '#dialog-constraint-form', 'constraint');
+        return result;
+    };
+
     setupPortalReady(geoDialog, 'highlight');
     setupPortalReady(constraintDialog, 'constraint');
     setupPortalReady(geoViewDialog);
 
 
 
+    // When the client portal is finally ready, we can setup our handlers
     function setupPortalReady(dlg, item) {
         var id = dlg.attr('id');
         var uniqueId = getUniqueId('#'+id);
@@ -1216,6 +1247,7 @@ function WorldMapEditBlock(runtime, element) {
     }
 
 
+    // FUNCTIONS FOR ADDING ITEMS TO VARIOUS LIST CONTROLS
     function createHighlight(h,idx) {
         return $("<li class='select-list-item' >"+h['id']+"("+h['geometry']['type']+")</li>").data('highlight',h).data('idx',idx).dblclick(editGeometry);
     }
@@ -1247,6 +1279,7 @@ function WorldMapEditBlock(runtime, element) {
                  });
     }
 
+    // FUNCTIONS FOR REFRESHING THE VARIOUS LIST CONTROLS
     function refreshQuestions() {
         $('#sortable-questions').empty().hide();
         for( var i in config['questions']) {
@@ -1286,6 +1319,16 @@ function WorldMapEditBlock(runtime, element) {
         }
         $('#slider-layers').fadeIn('fast');
     }
+    function refreshGeoList() {
+        $('#prose-polygon-list').empty().hide();
+        for( var i in config['highlights'] ) {
+           createHighlight(clone(config['highlights'][i]),i).appendTo($('#prose-polygon-list'));
+        }
+
+        $('#prose-polygon-list').fadeIn('fast');
+    }
+
+    // WHEN THINGS CHANGE, WE NEED TO UPDATE
     function onChangeGeoTool(e) {
         var type = $(e.target).val();
         $("#geometry-type-label").text("Specify "+type);
@@ -1316,6 +1359,7 @@ function WorldMapEditBlock(runtime, element) {
         constraintDialog.validate();
     }
 
+    // INITIALIZATION OF CONTROLS
     function initGeoViewMap() {
         XB.MESSAGING.getInstance().send(getUniqueId('#dialog-geo-view-form'), new XB.Message("reset-highlights", null));
         if( $('#center-lon').val() != "" && $('#center-lat').val() != "") {
@@ -1362,15 +1406,8 @@ function WorldMapEditBlock(runtime, element) {
         }
     }
 
-    function refreshGeoList() {
-        $('#prose-polygon-list').empty().hide();
-        for( var i in config['highlights'] ) {
-           createHighlight(clone(config['highlights'][i]),i).appendTo($('#prose-polygon-list'));
-        }
 
-        $('#prose-polygon-list').fadeIn('fast');
-    }
-
+    // EDIT METHODS
     function editGeometry(e) {
          geoDialog.data('highlight', $(e.target).data('highlight')).data('idx', $(e.target).data('idx')).dialog('open');
     }
@@ -1385,10 +1422,13 @@ function WorldMapEditBlock(runtime, element) {
             .dialog('open');
     }
 
+
+    // GET THE UNIQUE ID FOR THIS WORLDMAP
     function getUniqueId(id) {
         return $(id).find('.frame').attr('id');
     }
 
+    // UTILITY FUNCTIONS
     function confirm(msg,cb) {
         $("#dialog-confirm").html(msg);
 
@@ -1439,6 +1479,7 @@ function WorldMapEditBlock(runtime, element) {
     }
 }
 
+// TRIM TO SPECIFIC NUMBER OF DIGITS
 function precision( nDigits, val) {
     var str = val+" ";
     var loc = str.indexOf(".");
@@ -1449,6 +1490,7 @@ function precision( nDigits, val) {
     }
 }
 
+// A WAY TO CLONE AN OBJECT - guaranteed to get rid of any references
 function clone(o) {
     return JSON.parse(JSON.stringify(o));
 }

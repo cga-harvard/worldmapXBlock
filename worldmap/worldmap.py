@@ -52,6 +52,7 @@ def makeLineString(list):
         arr.append((pt['lon']+360., pt['lat']))   #pad longitude by 360 degrees to avoid int'l date line problems
     return LineString(arr)
 
+# NO LONGER USED
 def parse_contents(node):
     content = unicode(node.text or u"")
     for child in node:
@@ -71,20 +72,10 @@ def fixupLayerTree(node):
 
 class WorldMapXBlock(XBlock):
     """
-    A testing block that checks the behavior of the container.
+    Worldmap adaptor XBlock
     """
- #   threadLock = threading.Lock()
 
-    # Fields are defined on the class.  You can access them in your code as
-    # self.<fieldname>.
-
-    # worldmapId = Integer(
-    #     default=0, scope=Scope.user_state,
-    #     help="The id of this worldmap on the page - needs to be unique page-wide",
-    # )
-
-    # see:  https://xblock.readthedocs.org/en/latest/guide/xblock.html#guide-fields
-
+    # default configuration
     configJson = """
                 {
                     "highlights": [
@@ -238,6 +229,8 @@ class WorldMapXBlock(XBlock):
                     ]
                 }
                 """
+
+    # default configuration for map
     worldmapConfigJson = """
                 {
                     "layers": [
@@ -525,18 +518,14 @@ class WorldMapXBlock(XBlock):
                 }
     """
 
+    # FIELDS
     display_name = String(help="appears in horizontal nav at top of page", default="WorldMap", scope=Scope.content)
-
     zoomLevel = Integer(help="zoom level of map", default=None, scope=Scope.user_state)
     centerLat = Float(help="center of map (latitude)", default=None, scope=Scope.user_state)
     centerLon = Float(help="center of map (longitude)", default=None, scope=Scope.user_state)
-
     layerState= Dict(help="dictionary of layer states, layer name is key", default={}, scope=Scope.user_state)
-
     config = Dict(help="config data", scope=Scope.content, default=json.loads(configJson))
-
     worldmapConfig = Dict(help="worldmap config data", scope=Scope.content, default=json.loads(worldmapConfigJson))
-
     scores = Dict(help="score data", scope=Scope.user_state, default={})
 
     has_children = False
@@ -546,10 +535,6 @@ class WorldMapXBlock(XBlock):
     def sliders(self):
         return self.worldmapConfig['sliders']
 
-    # @property
-    # def layers(self):
-    #     return self.worldmapConfig.get('layers',None)
-
     def getUniqueId(self):
         return md5(unicode(str(self.scope_ids.usage_id) + str(time.time()))).hexdigest()
 
@@ -558,55 +543,55 @@ class WorldMapXBlock(XBlock):
         data = pkg_resources.resource_string(__name__, path)
         return data.decode("utf8")
 
-    @classmethod
-    def parse_xml(cls, node, runtime, keys, id_generator):
-        """
-        Use `node` to construct a new block.
-
-        Arguments:
-            node (etree.Element): The xml node to parse into an xblock.
-
-            runtime (:class:`.Runtime`): The runtime to use while parsing.
-
-            keys (:class:`.ScopeIds`): The keys identifying where this block
-                will store its data.
-
-            id_generator (:class:`.IdGenerator`): An object that will allow the
-                runtime to generate correct definition and usage ids for
-                children of this block.
-
-        """
-        block = runtime.construct_xblock_from_class(cls, keys)
-
-        explanationText = ''   #grovel out any explanation text out of <explanation> tag
-
-        # The base implementation: child nodes become child blocks.
-        for child in node:
-            if( child.tag == "explanation" ):
-                explanationText = parse_contents(child)  #found some explanation text
-            elif( child.tag == "config" ):
-                block.config = json.loads(parse_contents(child))
-            elif( child.tag == "worldmap-config" ):
-                block.worldmapConfig = json.loads(parse_contents(child))
-            else:
-                block.runtime.add_node_as_child(block, child, id_generator)
-
-        # Attributes become fields.
-        for name, value in node.items():
-            if name in block.fields:
-                setattr(block, name, value)
-
-       # setattr(block,'explanationHTML',explanationText)
-
-        # Text content becomes "content", if such a field exists.
-        if "content" in block.fields and block.fields["content"].scope == Scope.content:
-            text = node.text
-            if text:
-                text = text.strip()
-                if text:
-                    block.content = text
-
-        return block
+    # @classmethod
+    # def parse_xml(cls, node, runtime, keys, id_generator):
+    #     """
+    #     Use `node` to construct a new block.
+    #
+    #     Arguments:
+    #         node (etree.Element): The xml node to parse into an xblock.
+    #
+    #         runtime (:class:`.Runtime`): The runtime to use while parsing.
+    #
+    #         keys (:class:`.ScopeIds`): The keys identifying where this block
+    #             will store its data.
+    #
+    #         id_generator (:class:`.IdGenerator`): An object that will allow the
+    #             runtime to generate correct definition and usage ids for
+    #             children of this block.
+    #
+    #     """
+    #     block = runtime.construct_xblock_from_class(cls, keys)
+    #
+    #     explanationText = ''   #grovel out any explanation text out of <explanation> tag
+    #
+    #     # The base implementation: child nodes become child blocks.
+    #     for child in node:
+    #         if( child.tag == "explanation" ):
+    #             explanationText = parse_contents(child)  #found some explanation text
+    #         elif( child.tag == "config" ):
+    #             block.config = json.loads(parse_contents(child))
+    #         elif( child.tag == "worldmap-config" ):
+    #             block.worldmapConfig = json.loads(parse_contents(child))
+    #         else:
+    #             block.runtime.add_node_as_child(block, child, id_generator)
+    #
+    #     # Attributes become fields.
+    #     for name, value in node.items():
+    #         if name in block.fields:
+    #             setattr(block, name, value)
+    #
+    #    # setattr(block,'explanationHTML',explanationText)
+    #
+    #     # Text content becomes "content", if such a field exists.
+    #     if "content" in block.fields and block.fields["content"].scope == Scope.content:
+    #         text = node.text
+    #         if text:
+    #             text = text.strip()
+    #             if text:
+    #                 block.content = text
+    #
+    #     return block
 
     def student_view(self, context=None):
         """
@@ -668,6 +653,7 @@ class WorldMapXBlock(XBlock):
         Studio edit view
         """
 
+        #TODO: must be a better way... this is ugly
         delimiter = "?"
         try:
             self.worldmapConfig.get("href",None).index("?")
@@ -714,18 +700,6 @@ class WorldMapXBlock(XBlock):
 
     @XBlock.json_handler
     def studio_submit(self, submissions, suffix=''):
-      #   try:
-      #      config =  json.loads(submissions['config'])
-      #   except ValueError as e:
-      #       return {'result': 'error', 'message': e.message, 'tab':'Questions'}
-      #
-      #   try:
-      #       worldmapConfig =  json.loads(submissions['worldmapConfig'])
-      #   except ValueError as e:
-      #       return {'result': 'error', 'message':e.message, 'tab':'Map config'}
-      #
-      #   self.config = config
-      #   self.worldmapConfig = worldmapConfig
 
         self.display_name = submissions['display_name']
         self.config['explanation'] = submissions['prose']
@@ -750,13 +724,6 @@ class WorldMapXBlock(XBlock):
 
     #Radius of earth:
     SPHERICAL_DEFAULT_RADIUS = 6378137    #Meters
-
-    @XBlock.json_handler
-    def getStyleSheets(self, data, suffix=''):
-        return {
-            'globalStyleSheets' : self.globalStyleSheets,
-            'usedStyleSheets'   : self.usedStyleSheets
-        }
 
     @XBlock.json_handler
     def setGlobalStyleSheet(self, data, suffix=''):
@@ -906,7 +873,7 @@ class WorldMapXBlock(XBlock):
                 'error': _("Unexpected error: "+sys.exc_info()[0])
             }
 
-        percentIncorrect = math.min( totalIncorrect, 100);
+        percentIncorrect = min( totalIncorrect, 100);
 
         correctExplanation = "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
         self.setScore(data['question']['id'], 100-percentIncorrect, correctExplanation)
@@ -983,7 +950,7 @@ class WorldMapXBlock(XBlock):
         except:
             print _("Unexpected error: "), sys.exc_info()[0]
 
-        percentIncorrect = math.min( 100, totalIncorrect);
+        percentIncorrect = min( 100, totalIncorrect);
 
         correctExplanation = "{:.0f}% incorrect".format(percentIncorrect)+additionalErrorInfo
 
@@ -1015,6 +982,7 @@ class WorldMapXBlock(XBlock):
                 return highlight['geometry']
         return None
 
+    # This is used to create a blurred/fuzzy geometry for use as "hints"
     @XBlock.json_handler
     def getFuzzyGeometry(self, data, suffix=''):
 
@@ -1097,7 +1065,7 @@ class WorldMapXBlock(XBlock):
 
 
     @XBlock.json_handler
-    def layerTree(self, data, suffix=''):
+    def getLayerTree(self, data, suffix=''):
         """
         Called to get layer tree for a particular map
         """

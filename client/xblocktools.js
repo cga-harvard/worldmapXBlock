@@ -220,7 +220,7 @@ XB.xblocktools = function () {
         var data = JSON.parse(m.getMessage());
         for (var id in data) {
             try {
-                if (id !== "OpenLayers_Layer_Vector_132") {  //TODO: REMOVE THIS - it causes an exception that we can't seem to handle
+//                if (id !== "OpenLayers_Layer_Vector_132") {  //TODO: REMOVE THIS - it causes an exception that we can't seem to handle
                     var layer = app.mapPanel.map.getLayer(id);
                     if (layer != null) {
                         //  layer.setVisibility(data[id]['visibility']);
@@ -238,9 +238,9 @@ XB.xblocktools = function () {
                     } else {
                         console.log("ERROR: could not find layer for id: " + id);
                     }
-                } else {
-                    console.log("setLayer was asked to deal with a bad layer: " + id);
-                }
+//                } else {
+//                    console.log("setLayer was asked to deal with a bad layer: " + id);
+//                }
             } catch (e) {
                 console.log("slave caught exception during setLayers: " + e);
             }
@@ -273,7 +273,7 @@ XB.xblocktools = function () {
         $('.olMapViewport').css('cursor', "url(/static/geonode/externals/ext/resources/images/default/xblock-images/" + XB.currentQuestion.type + "Cursor.png) 16 16, auto");
         //document.getElementById(app.mapPanel.map.id+"_OpenLayers_ViewPort").style.cursor = "url(http://robertlight.com/tmp/"+XB.currentQuestion.type+"Cursor.png) 16 16, auto";
         if (XB.currentQuestion.type == 'point') {
-            Ext.example.msg("Info", "{% trans 'Click the map at the location requested' %}");
+            Ext.example.msg("Info", "Click the map at the location requested");
             XB.markerControl.activate();
         } else if (XB.currentQuestion.type == 'polygon') {
             // window.alert("color="+XB.currentQuestion.color);
@@ -281,10 +281,10 @@ XB.xblocktools = function () {
                 fillColor: '#' + XB.currentQuestion.color,
                 fillOpacity: 0.3
             });
-            Ext.example.msg("Info", "{%  trans 'Please click on the boundaries of a polygon. <br/> Double - click to end drawing.' %}");
+            Ext.example.msg("Info", "Please click on the boundaries of a polygon. <br/> Double - click to end drawing.");
             XB.polygonControl.activate();
         } else if (XB.currentQuestion.type == 'polyline') {
-            Ext.example.msg("Info", "{%  trans 'Please click on the verticies of a polyline.</br/>Double - click  to end drawing.' %}");
+            Ext.example.msg("Info", "Please click on the verticies of a polyline.</br/>Double - click  to end drawing.");
             XB.polylineControl.activate();
         }
 
