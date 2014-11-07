@@ -34,8 +34,14 @@ In the LTI-worldmap architecture you would have 3 servers interacting to provide
 2. The LTI server - handling the generation of display and interactivity surrounding the worldmap frame
 3. The CGA-worldmap server - handling the basic operations with worldmap (user-driven geometry drawing, pointing, geometry & layer highlighting as well as standard mapping operations of zoom/pan)
 
-The LTI server layer would interact with the CGA-worldmap layer much the same way as worldmap.py interacts with the worldmap embed.html via the javascript tools found in xblocktools.js and communicating via the message passing used in xBlockCom-master/slave.js
+The LTI server layer would interact with the CGA-worldmap layer much the same way as worldmap.py interacts
+with the worldmap embed.html via the javascript tools found in xblocktools.js and communicating via the message
+passing used in xBlockCom-master/slave.js
 The LTI layer would communicate up to the MOOC server via the standard LTI mechanisms for reporting grade values and completion statuses.
+
+The LTI Server would have to be stood up as an independent webserver and would execute all the JTS-based geometric calculations done via Shapely in today's xblock
+implementation.  If we use python, we could still use Shapely or we could do the entire worldmap.py functions in
+Java and use JTS (Java Topology Services) directly.
 
 I doubt that worldmap.py can be used directly without modification - it would simply be a starting point for development.  All the state management and page generation would have to be custom tailored to the LTI architecture.  The message passing javascript in xBlockCom-master/slave.js should be portable directly to the LTI architecture as should all the functions in xblocktools.js
 
