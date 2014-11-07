@@ -11,4 +11,4 @@ Documentation
   * [user-documentation](doc/worldmap-xblock-doc.rst) - A user-level document describing how to create a worldmap-based edX "unit"
   * [setting up AWS](doc/aws-setup.txt) - How to set up an Amazon AWS instance of edX with the worldmap plugin working.
   * [development environment](doc/dev_configure.rst) - How to setup a development environment.
-
+  * [Notes on LTI migration](doc/worldmap-connector-migration-to-LTI-notes.rst) - ideas on migrating to LTI
